@@ -294,6 +294,21 @@ test("pause blocks new obligations but permits existing simulation withdrawals",
   );
   await post(operator, "/admin/pause", { paused: false });
 });
+test("SPA requests preserve the API budget and API requests remain rate limited", async () => {
+  const remoteAddress = "198.51.100.77";
+  for (let i = 0; i < 245; i++) {
+    const response = await app.inject({ url: "/", remoteAddress });
+    assert.notEqual(response.statusCode, 429);
+    assert.equal(response.headers["x-ratelimit-limit"], undefined);
+  }
+  for (let i = 0; i < 240; i++) {
+    const response = await app.inject({ url: "/api/v1/health", remoteAddress });
+    assert.equal(response.statusCode, 200);
+  }
+  const limited = await app.inject({ url: "/api/v1/health", remoteAddress });
+  assert.equal(limited.statusCode, 429);
+  assert.ok(limited.headers["retry-after"]);
+});
 test("pool rejects deposits during lending and returns exact share assets", async () => {
   const credit = (
     await app.inject({

@@ -99,7 +99,12 @@ export async function buildApp() {
   await app.register(cookie);
   await app.register(cors, { origin: config.origin, credentials: true });
   await app.register(helmet, { contentSecurityPolicy: false });
-  await app.register(rateLimit, { max: 240, timeWindow: 60000 });
+  await app.register(rateLimit, {
+    max: 240,
+    timeWindow: 60000,
+    // SPA navigation and assets must not consume the API request budget.
+    allowList: (req) => !req.url.startsWith("/api/"),
+  });
   app.addHook("onRequest", async (req) => {
     if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
       const origin = req.headers.origin;
@@ -138,7 +143,7 @@ export async function buildApp() {
   });
   await authRoutes(app);
   if(process.env.LOCAL_SHUTDOWN_TOKEN&&process.send){
-    app.post('/api/v1/local/shutdown',async(req,reply)=>{
+    app.post('/api/v1/local/shutdown',{config:{rateLimit:false}},async(req,reply)=>{
       assert(req.headers['x-local-shutdown']===process.env.LOCAL_SHUTDOWN_TOKEN,'FORBIDDEN','Invalid local launcher token.',403);
       setTimeout(()=>process.send?.({type:'local-shutdown',token:process.env.LOCAL_SHUTDOWN_TOKEN}),100).unref();
       return {ok:true};

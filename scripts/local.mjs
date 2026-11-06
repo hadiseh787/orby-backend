@@ -39,7 +39,7 @@ async function healthy(target){try{return (await fetch(target,{signal:AbortSigna
 async function stopFromAnotherProcess(){
   if(!existsSync(state)){console.log('No local launcher is running.');return;}
   const current=JSON.parse(readFileSync(state,'utf8'));
-  if(current.token&&await healthy(current.url+'/api/v1/health')){
+  if(current.token&&await healthy(current.url)){
     const response=await fetch(current.url+'/api/v1/local/shutdown',{method:'POST',headers:{'x-local-shutdown':current.token},signal:AbortSignal.timeout(5000)});
     if(!response.ok)throw Error('The local server rejected shutdown. Use Ctrl+C in its terminal.');
   }
@@ -80,8 +80,8 @@ async function shutdown(code=0){
 
 try{
   if(process.argv.includes('--stop')){await stopFromAnotherProcess();process.exit(0);}
-  const major=Number(process.versions.node.split('.')[0]);
-  if(major!==22&&major!==24)throw Error('Use Node.js 22.19+ LTS or Node.js 24 LTS.');
+  const [major,minor]=process.versions.node.split('.').map(Number);
+  if(!((major===22&&minor>=19)||major===24))throw Error('Use Node.js 22.19+ LTS or Node.js 24 LTS.');
   if(existsSync(state)){
     const current=JSON.parse(readFileSync(state,'utf8'));
     if(alive(current.pid)&&await healthy(current.url+'/api/v1/health')){console.log('Already running: '+current.url);process.exit(0);}
@@ -108,7 +108,7 @@ try{
   }
   const localEnv={...require('dotenv').parse(readFileSync('.env')),...process.env};
   const connection=new URL(localEnv.DATABASE_URL||'postgresql://agent:agent_local_only@127.0.0.1:5433/agent_freelancer');
-  if(arg('--db-port'))connection.port=String(dbPort);
+  if(arg('--db-port')||process.env.LOCAL_DB_PORT)connection.port=String(dbPort);
   const env={...localEnv,HOST:'127.0.0.1',PORT:String(port),APP_ORIGIN:url,FRONTEND_DIST:join(frontend,'dist/agent-freelancer/browser'),DATABASE_URL:connection.href,LOCAL_SHUTDOWN_TOKEN:randomBytes(32).toString('hex'),NODE_ENV:'development'};
   if(!await free(port))throw Error(`Port ${port} is already in use. Use --port with another local port.`);
   console.log('Building backend and frontend…');await npm(['run','build'],root);await npm(['run','build'],frontend);

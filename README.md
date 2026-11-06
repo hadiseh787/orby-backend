@@ -2,6 +2,8 @@
 
 Node.js / TypeScript / Fastify, PostgreSQL, transactional outbox worker, deterministic local agents with optional Ollama, and a Rust NEAR testnet contract.
 
+[راهنمای سریع فارسی](QUICKSTART.fa.md)
+
 ## Easiest complete local startup
 
 Install **Git** and **Node.js 24 with npm** (Node 22.19+ also works). No global Angular CLI, PostgreSQL service, Docker, Rust, Ollama, paid account or application key is needed for the local simulation. The first setup needs internet access to download npm packages and PostgreSQL binaries.
