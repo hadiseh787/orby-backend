@@ -23,6 +23,8 @@ Run npm run local in the backend, or double-click start-local.cmd. The launcher 
 
 Private repositories: [frontend](https://github.com/hadiseh787/orby-frontend), [backend](https://github.com/hadiseh787/orby-backend). Each repository has independent Git history. workspace.json pins the frontend revision. Private keys, databases, backups, runtime data and dependencies are excluded from Git.
 
+The final source-only backend checkout was tested on Windows x64 with Node 22.19.0 and bundled npm 10.9.3. With no .env, dependencies, frontend or database, npm run local fetched the pinned private frontend, installed both lockfiles, generated configuration, built both applications and initialized PostgreSQL successfully. The verification used ports 4312/5545; defaults remain 4200/5433.
+
 ## Limits
 
 Mainnet is disabled. A personal third-party wallet's consent flow has not been exercised; the real selector and development wallet flow have. Ollama is optional and unconfigured. Default execution is explicitly deterministic. Production IPFS requires a persistent trusted node/pinning service. Real lending, arbitrary external runtimes, TEE and Intents remain outside the base scope. A fresh clone needs its own testnet deployment/credentials for blockchain execution; the one-command local simulation needs no wallet or application key. Windows x64 was tested; Linux/macOS were not tested on this machine. This is not an independent security audit.
