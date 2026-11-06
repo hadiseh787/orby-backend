@@ -27,6 +27,8 @@ import {
 } from "./market.js";
 import { move, balance } from "./ledger.js";
 import { proposal, reconcile, view } from "./near.js";
+import { nearUsdQuote } from "./price.js";
+import { uploadAttachment, claimAttachments } from "./attachments.js";
 export const criterionSchema = z.object({
   id: z.string().min(1).max(80),
   type: z.enum(["AUTO_CHECK", "CLIENT_APPROVE", "AI_REVIEW"]),
@@ -52,10 +54,12 @@ export const jobSchema = z
     title: z.string().min(5).max(120),
     description: z.string().min(10).max(8000),
     category: z.enum(["writing", "research", "review"]),
+    nearYocto: z.string().regex(/^[1-9]\d{0,26}$/, "Enter a positive budget in NEAR.").refine(v=>BigInt(v)<=100n*Q,"Budget cannot exceed 100 NEAR.").optional(),
+    attachmentIds: z.array(z.uuid()).max(5).default([]),
     usdMicro: z
       .string()
       .regex(/^[1-9]\d{6,8}$/)
-      .refine((v) => BigInt(v) >= 1000000n && BigInt(v) <= 100000000n),
+      .refine((v) => BigInt(v) >= 1000000n && BigInt(v) <= 100000000n).optional(),
     deadlineMinutes: z.number().int().min(1).max(10080),
     approvalPolicy: z.enum(["MANUAL_APPROVAL", "AUTO_AFTER_CHECKS"]),
     input: z.object({
@@ -72,6 +76,8 @@ export const jobSchema = z
     criteria: z.array(criterionSchema).min(1).max(20),
   })
   .superRefine((j, c) => {
+    if (!!j.nearYocto === !!j.usdMicro) c.addIssue({code:"custom",path:["nearYocto"],message:"Supply a NEAR budget, or a legacy USD budget, not both."});
+    if (new Set(j.attachmentIds).size !== j.attachmentIds.length) c.addIssue({code:"custom",path:["attachmentIds"],message:"Duplicate attachments are not allowed."});
     if (Buffer.byteLength(JSON.stringify(j.input)) > 262144)
       c.addIssue({ code: "custom", message: "Input exceeds 256 KiB." });
     if (
@@ -100,8 +106,9 @@ export async function buildApp() {
   await app.register(cors, { origin: config.origin, credentials: true });
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(rateLimit, {
-    max: 240,
+    max: req => ["GET","HEAD","OPTIONS"].includes(req.method) ? 600 : 120,
     timeWindow: 60000,
+    keyGenerator: req => req.ip+(["GET","HEAD","OPTIONS"].includes(req.method)?":read":":write"),
     // SPA navigation and assets must not consume the API request budget.
     allowList: (req) => !req.url.startsWith("/api/"),
   });
@@ -131,7 +138,7 @@ export async function buildApp() {
         code:
           e.code ||
           (e instanceof z.ZodError ? "VALIDATION_ERROR" : "INTERNAL_ERROR"),
-        message:
+        message: e instanceof z.ZodError ? e.issues.map((i:any)=>`${i.path.join('.') || 'Input'}: ${i.message}`).join("; ") :
           status === 500
             ? "An internal error occurred. See the server log."
             : e.message,
@@ -167,7 +174,7 @@ export async function buildApp() {
       );
     });
   app.get("/api/v1/config", async () => ({
-    name: "Agent Freelancer",
+    name: "Orby",
     demoLogin: config.demo,
     network: "testnet",
     contractId: config.contract,
@@ -175,13 +182,34 @@ export async function buildApp() {
     accelerated: config.accelerated,
     modelConfigured: !!config.model,
     books: ["SIMULATION", "TESTNET"],
-    priceMode: "FIXTURE",
+    priceMode: "NATIVE_NEAR",
     priceMicro: "5000000",
+    primaryAsset: "NEAR",
+    contractVersionRequired: 2,
+    attachmentLimits: {maxFiles:5,maxBytes:2097152,extensions:["pdf","txt","md","json","png","jpg","jpeg"]},
+    ipfsAvailable:!!process.env.IPFS_API_URL,
     referenceOnly: true,
   }));
+  app.get("/api/v1/price", async () => nearUsdQuote());
+  app.post("/api/v1/uploads", {bodyLimit:3000000}, async(req:any)=> {
+    const a=await actor(req);
+    return mutate(a,req.headers["idempotency-key"],{path:"/uploads",body:req.body},db=>uploadAttachment(db,a,req.body||{}));
+  });
+  mutation("/uploads/:id/remove",async(db,a,b,p)=>{
+    const result=await db.query("DELETE FROM job_attachments WHERE id=$1 AND owner_id=$2 AND book=$3 AND job_id IS NULL RETURNING id",[idSchema.parse(p.id),a.id,a.book]);
+    assert(result.rowCount,"NOT_FOUND","Unused attachment not found.",404);return {ok:true};
+  });
+  app.get("/api/v1/uploads/:id",async(req:any,reply)=>{
+    const a=await actor(req), id=idSchema.parse(req.params.id);
+    const f=(await pool.query("SELECT * FROM job_attachments WHERE id=$1",[id])).rows[0];
+    assert(f&&f.book===a.book,"NOT_FOUND","Attachment not found.",404);
+    if(f.owner_id!==a.id){assert(f.job_id,"FORBIDDEN","Attachment is private.",403);await loadJob(pool,f.job_id,a);}
+    reply.header("Content-Disposition",`attachment; filename*=UTF-8''${encodeURIComponent(f.name)}`).header("Cache-Control","private, no-store").header("X-Content-Type-Options","nosniff");
+    return reply.type(f.media_type).send(Buffer.from(f.content_base64,"base64"));
+  });
   app.get("/api/v1/health", async () => {
     await pool.query("SELECT 1");
-    return { status: "ok", database: "postgresql", version: "1.0.0" };
+    return { status: "ok", database: "postgresql", version: "1.1.0" };
   });
   app.get("/api/v1/templates", async () => ({
     templates: [
@@ -252,15 +280,19 @@ export async function buildApp() {
   mutation("/agents", async (db, a, b) => {
     const m = z
       .object({
-        id: z.string().regex(/^[a-z0-9-]{3,48}$/),
+        id: z.string().trim().toLowerCase().transform(s=>s.replace(/\s+/g,"-")).pipe(z.string().regex(/^[a-z0-9-]{3,48}$/, "Use 3–48 lowercase letters, numbers or hyphens for Agent ID.")),
         name: z.string().min(3).max(80),
         description: z.string().min(10).max(1000),
         category: z.enum(["writing", "research", "review"]),
-        minPriceUsdMicro: z.string().regex(/^[1-9]\d{0,8}$/),
+        minPriceUsdMicro: z.string().regex(/^[1-9]\d{0,8}$/).optional(),
+        minPriceNear: z.string().regex(/^[1-9]\d{0,26}$/, "Enter a positive minimum price in NEAR.").refine(v=>BigInt(v)<=100n*Q,"Minimum price cannot exceed 100 NEAR.").optional(),
         skills: z.array(z.string().min(1).max(40)).max(8),
         acceptsSubcontracts: z.boolean(),
       })
       .parse(b);
+    assert(m.minPriceNear || m.minPriceUsdMicro,"VALIDATION_ERROR","A positive minimum price in NEAR is required.");
+    const existing=(await db.query("SELECT owner_id FROM agents WHERE id=$1 AND book=$2",[m.id,a.book])).rows[0];
+    assert(!existing,"AGENT_EXISTS","This Agent ID is already registered. Use another ID or resume its pending wallet operation.",409);
     const data = {
       ...m,
       initials: m.name
@@ -307,11 +339,11 @@ export async function buildApp() {
           ...(await proposal(
             db,
             a.id,
-            "register_agent",
+            m.minPriceNear ? "register_near_agent" : "register_agent",
             {
               agent_id: m.id,
               manifest_hash: hash(data),
-              min_price: m.minPriceUsdMicro,
+              min_price: m.minPriceNear || m.minPriceUsdMicro,
             },
             "0",
           )),
@@ -387,24 +419,26 @@ export async function buildApp() {
   });
   mutation("/jobs", async (db, a, b) => {
     const parsed = jobSchema.parse(b);
+    const attachments=await claimAttachments(db,a,parsed.attachmentIds);
     if (!config.accelerated)
       assert(
         parsed.deadlineMinutes >= 60,
         "VALIDATION_ERROR",
         "Deadline must be at least one hour.",
       );
-    const j = await createJob(db, a, parsed);
+    const j = await createJob(db, a, {...parsed,attachments});
+    if(attachments.length)await db.query("UPDATE job_attachments SET job_id=$1 WHERE id=ANY($2::uuid[])",[j.id,parsed.attachmentIds]);
     return a.book === "TESTNET"
       ? {
           ...j,
           ...(await proposal(
             db,
             a.id,
-            "open_job",
+            j.nearYocto ? "open_near_job" : "open_job",
             {
               job_id: j.id,
               terms_hash: j.termsHash,
-              usd_micro: j.usdMicro,
+              ...(j.nearYocto ? {budget:j.nearYocto} : {usd_micro:j.usdMicro}),
               deadline_ms: String(Date.now() + j.deadlineMinutes * 60000),
               manual: j.approvalPolicy === "MANUAL_APPROVAL",
             },
@@ -413,6 +447,25 @@ export async function buildApp() {
           )),
         }
       : j;
+  });
+  app.get("/api/v1/jobs/open", async(req:any)=>{
+    const a=await actor(req);
+    return (await pool.query("SELECT id,data->>'title' AS title,data->>'nearYocto' AS near_budget,data->>'usdMicro' AS usd_micro,data->>'category' AS category,data->>'deadline' AS deadline FROM jobs WHERE book=$1 AND state='OPEN' AND client_id<>$2 AND (book='SIMULATION' OR data->>'chainConfirmed'='true') ORDER BY created_at DESC LIMIT 50",[a.book,a.id])).rows;
+  });
+  mutation("/jobs/:id/bids",async(db,a,b,p)=>{
+    const j=await loadJob(db,idSchema.parse(p.id),undefined,true);
+    assert(j.book===a.book&&j.state==='OPEN'&&j.client_id!==a.id,"INVALID_STATE","Only another account can bid on an open job.");
+    const ag=(await db.query("SELECT * FROM agents WHERE id=$1 AND book=$2 AND owner_id=$3 AND state='ACTIVE'",[b.agentId,a.book,a.id])).rows[0];
+    assert(ag,"FORBIDDEN","Choose an active agent owned by your account.",403);
+    const amount=amountSchema.parse(b.amount),native=!!j.data.nearYocto;
+    assert(BigInt(amount)<=BigInt(j.data.nearYocto||j.data.usdMicro)&&BigInt(amount)>=BigInt(native?(ag.data.minPriceNear||String(BigInt(ag.data.minPriceUsdMicro)*Q/5000000n)):ag.data.minPriceUsdMicro),"INVALID_AMOUNT","The proposal must be between the agent minimum and the job budget.");
+    assert(j.data.deadline>Date.now(),"JOB_EXPIRED","This job deadline has expired.");
+    const id=randomUUID(),expires=Date.now()+Math.min(1800000,j.data.deadline-Date.now());
+    const prior=(await db.query("SELECT id FROM bids WHERE job_id=$1 AND agent_id=$2",[j.id,ag.id])).rows[0];
+    assert(!prior,"BID_EXISTS","This agent has already submitted a proposal for this job.",409);
+    if(a.book==='TESTNET')return proposal(db,a.id,"record_bid",{bid_id:id,job_id:j.id,agent_id:ag.id,price:amount,eta_ms:"120000",expires_at:String(expires)},"0",j.id);
+    await db.query("INSERT INTO bids(id,job_id,agent_id,book,amount,data,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7)",[id,j.id,ag.id,a.book,amount,{etaMinutes:2,manifestVersion:ag.version,acceptanceHash:j.data.termsHash},new Date(expires)]);
+    return {id};
   });
   app.get("/api/v1/jobs/:id", async (req: any) => {
     const a = await actor(req),
@@ -758,6 +811,10 @@ export async function buildApp() {
     assert(op, "NOT_FOUND", "Operation not found.", 404);
     return op;
   });
+  app.get("/api/v1/operations",async(req)=>{
+    const a=await actor(req);
+    return (await pool.query("SELECT id,state,proposal,tx_hash,updated_at FROM chain_operations WHERE account_id=$1 ORDER BY created_at DESC LIMIT 50",[a.id])).rows;
+  });
   mutation("/operations/:id/transaction", async (db, a, b, p) => {
     const op = (
       await db.query(
@@ -787,7 +844,7 @@ export async function buildApp() {
       ),
       pool.query("SELECT state,count(*)::int FROM outbox_jobs GROUP BY state"),
       pool.query(
-        "SELECT count(*)::int FROM chain_operations WHERE state IN ('UNKNOWN','SUBMITTED')",
+        "SELECT count(*)::int FROM chain_operations WHERE state IN ('UNKNOWN','SUBMITTED') AND $1='TESTNET'",[a.book],
       ),
       pool.query(
         "SELECT d.*,j.data->>'title' AS title,j.book FROM disputes d JOIN jobs j ON j.id=d.job_id WHERE j.book=$1 AND d.decision IS NULL ORDER BY d.created_at",
@@ -810,6 +867,20 @@ export async function buildApp() {
           )
         ).rows[0]?.data?.paused || false,
     };
+  });
+  mutation('/admin/reconcile',async(db,a,b)=>{
+    assert(a.roles.includes('admin'),'FORBIDDEN','An administrator session is required.',403);
+    if(a.book!=='TESTNET')return {checked:0,confirmed:0,failed:0,unresolved:0};
+    const op=(await db.query("SELECT * FROM chain_operations WHERE state IN ('UNKNOWN','SUBMITTED') AND ($1::uuid IS NULL OR id=$1) ORDER BY updated_at LIMIT 1 FOR UPDATE SKIP LOCKED",[b.operationId?idSchema.parse(b.operationId):null])).rows[0];
+    if(!op)return {checked:0,confirmed:0,failed:0,unresolved:0};
+    let confirmed=0,failed=0;
+    if(op.tx_hash||b.txHash){const result=await reconcile(db,op,b.txHash||op.tx_hash);confirmed=Number(result.state==='CONFIRMED');failed=Number(result.state==='FAILED');}
+    else if(op.account_id===config.serviceAccount){
+      const outcome=await view('get_operation',{account_id:op.account_id,request_id:op.request_id});
+      if(outcome){await db.query("UPDATE chain_operations SET state='CONFIRMED',receipt=$2,updated_at=now() WHERE id=$1",[op.id,{contractOperation:outcome,finality:'FINAL'}]);confirmed=1;}
+    }
+    await db.query('UPDATE chain_operations SET updated_at=now() WHERE id=$1',[op.id]);
+    return {checked:1,confirmed,failed,unresolved:1-confirmed-failed};
   });
   app.get("/api/v1/admin/audit", async (req) => {
     await admin(req);
@@ -912,7 +983,7 @@ export async function buildApp() {
   await creditRoutes(app, mutation);
   app.get("/api/v1/openapi.json", async () => ({
     openapi: "3.1.0",
-    info: { title: "Agent Freelancer API", version: "1.0.0" },
+    info: { title: "Orby API", version: "1.0.0" },
     servers: [{ url: "/api/v1" }],
     components: {
       schemas: {
@@ -948,15 +1019,20 @@ export async function buildApp() {
       },
     },
   }));
-  const frontend = resolve(process.env.FRONTEND_DIST || "../frontend/dist/agent-freelancer/browser");
+  const frontend = resolve(process.env.FRONTEND_DIST || "../frontend/dist/orby/browser");
   if (existsSync(frontend)) {
-    await app.register(staticFiles, { root: frontend, wildcard: false });
+      await app.register(staticFiles, { root: frontend, wildcard: true });
     app.setNotFoundHandler((req, reply) =>
       req.url.startsWith("/api/")
         ? reply
             .code(404)
             .send({ code: "NOT_FOUND", message: "API route not found." })
-        : reply.sendFile("index.html"),
+          : (()=>{
+              const pathname=req.url.split('?')[0];
+              if(/\.(?:js|css|png|jpe?g|svg|ico|woff2?|json|map)$/.test(pathname))return reply.code(404).send({code:'NOT_FOUND',message:'Asset not found.'});
+              const known=/^\/(?:$|settings$|trust$|explorer$|client\/jobs(?:\/(?:new|[0-9a-f-]{36}))?$|agents\/[a-z0-9-]{3,48}$|creator\/(?:agents|earnings|runs|credit)$|lender\/pool$|admin\/system$)/.test(pathname);
+              return reply.code(known?200:404).sendFile('index.html');
+            })(),
     );
   }
   return app;
@@ -1167,7 +1243,7 @@ async function creditRoutes(app: any, mutation: any) {
 if (process.argv[1]?.replaceAll("\\", "/").match(/server\.(ts|js)$/)) {
   const app = await buildApp();
   await app.listen({ host: config.host, port: config.port });
-  console.log(`Agent Freelancer API: http://${config.host}:${config.port}`);
+  console.log(`Orby API: http://${config.host}:${config.port}`);
   const close = async () => {
     await app.close();
     await pool.end();

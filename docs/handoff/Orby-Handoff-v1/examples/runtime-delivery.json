@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "runId": "job-example-042:revision:0",
+  "jobId": "job-example-042",
+  "revision": 0,
+  "status": "SUCCEEDED",
+  "artifact": {
+    "mediaType": "application/json",
+    "content": {
+      "comparison": [],
+      "recommendation": "Illustrative result, not an accepted output.",
+      "sources": [
+        "source-1"
+      ]
+    },
+    "sha256": "RECOMPUTE_FROM_CANONICAL_CONTENT"
+  },
+  "note": "Intentionally incomplete content for validation testing."
+}

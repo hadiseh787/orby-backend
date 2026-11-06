@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
-import { connect, keyStores, KeyPair, utils } from "near-api-js";
+import { connect, keyStores, KeyPair, utils, transactions } from "near-api-js";
 import { pool } from "../src/db.js";
 import { hash } from "../src/domain.js";
 import { createHash } from "node:crypto";
@@ -84,9 +84,9 @@ for (const role of [
 }
 const wasm = await readFile(
   resolve(
-    existsSync(".data/near/agent_market.wasm")
-      ? ".data/near/agent_market.wasm"
-      : "contracts/agent-market/target/wasm32-unknown-unknown/release/agent_market.wasm",
+    existsSync(".data/near/orby_market.wasm")
+      ? ".data/near/orby_market.wasm"
+      : "contracts/orby-market/target/wasm32-unknown-unknown/release/orby_market.wasm",
   ),
 );
 const contract = await near.account(credentials.contract.accountId);
@@ -97,7 +97,7 @@ if ((await contract.state()).code_hash !== expectedCodeHash) {
   const uploader = await readFile(
     existsSync(".data/near/uploader.wasm")
       ? ".data/near/uploader.wasm"
-      : "contracts/uploader/target/wasm32-unknown-unknown/release/agent_contract_uploader.wasm",
+      : "contracts/uploader/target/wasm32-unknown-unknown/release/orby_contract_uploader.wasm",
   );
   const uploaderHash = bs58.encode(
     createHash("sha256").update(uploader).digest(),
@@ -115,22 +115,16 @@ if ((await contract.state()).code_hash !== expectedCodeHash) {
     progress = { codeHash: expectedCodeHash, nextChunk: 0 };
   const size = 12288,
     count = Math.ceil(wasm.length / size);
-  for (let index = progress.nextChunk; index < count; index++) {
-    await contract.functionCall({
-      contractId: contract.accountId,
-      methodName: "stage",
-      args: {
-        index,
-        data: wasm
-          .subarray(index * size, (index + 1) * size)
-          .toString("base64"),
-      },
-      gas: 30000000000000n,
-    });
-    console.log(`Uploaded contract chunk ${index + 1}/${count}`);
+  for (let offset = progress.nextChunk; offset < count; offset+=4) {
+    const end=Math.min(offset+4,count);
+    await contract.signAndSendTransaction({receiverId:contract.accountId,actions:Array.from({length:end-offset},(_,n)=>{
+      const index=offset+n;
+      return transactions.functionCall("stage",{index,data:wasm.subarray(index*size,(index+1)*size).toString("base64")},20000000000000n,0n);
+    })});
+    console.log(`Uploaded contract chunks ${offset+1}–${end}/${count}`);
     await writeFile(
       progressFile,
-      JSON.stringify({ codeHash: expectedCodeHash, nextChunk: index + 1 }),
+      JSON.stringify({ codeHash: expectedCodeHash, nextChunk: end }),
     );
   }
   await contract.functionCall({
@@ -167,6 +161,14 @@ async function callOnce(
   });
 }
 let initialized = false;
+if(process.argv.includes('--migrate-v1')) {
+  let currentVersion=1;
+  try{currentVersion=await contract.viewFunction({contractId:contract.accountId,methodName:'get_version',args:{}})}catch{}
+  if(currentVersion!==2){
+    await contract.functionCall({contractId:contract.accountId,methodName:'migrate_v1',args:{},gas:150000000000000n});
+    console.log('V1 state migrated; existing balances and jobs preserved.');
+  }
+}
 try {
   await contract.viewFunction({
     contractId: contract.accountId,
@@ -232,6 +234,7 @@ for (const role of ["writer", "researcher", "reviewer"]) {
         : role === "researcher"
           ? "5000000"
           : "2000000",
+    minPriceNear:role==='writer'?'4000000000000000000000000':role==='researcher'?'1000000000000000000000000':'400000000000000000000000',
     initials: role === "writer" ? "BW" : role === "researcher" ? "SE" : "FR",
     health: "DETERMINISTIC",
     completed: 0,
@@ -245,6 +248,8 @@ for (const role of ["writer", "researcher", "reviewer"]) {
       manifest_hash: hash(manifest),
       min_price: manifest.minPriceUsdMicro,
     });
+  const nearPrice=await contract.viewFunction({contractId:contract.accountId,methodName:'get_near_price',args:{agent_id:id}});
+  if(!nearPrice)await callOnce(role,'set_agent_near_price',{agent_id:id,min_price:manifest.minPriceNear});
   await callOnce(role, "set_execution_policy", {
     agent_id: id,
     executor: credentials.executor.accountId,
@@ -261,8 +266,8 @@ for (const role of ["writer", "researcher", "reviewer"]) {
     [account.accountId],
   );
   await pool.query(
-    "INSERT INTO agents(id,book,owner_id,name,category,data) VALUES($1,'TESTNET',$2,$3,$4,$5) ON CONFLICT(id,book) DO UPDATE SET data=EXCLUDED.data",
-    [id, account.accountId, manifest.name, manifest.category, manifest],
+    "INSERT INTO agents(id,book,owner_id,name,category,data,version) VALUES($1,'TESTNET',$2,$3,$4,$5,$6) ON CONFLICT(id,book) DO UPDATE SET data=EXCLUDED.data,version=EXCLUDED.version",
+    [id, account.accountId, manifest.name, manifest.category, manifest,(await contract.viewFunction({contractId:contract.accountId,methodName:'get_agent',args:{agent_id:id}})).version],
   );
   await pool.query(
     "INSERT INTO agent_versions(agent_id,book,version,manifest,hash) VALUES($1,'TESTNET',1,$2,$3) ON CONFLICT DO NOTHING",

@@ -7,5 +7,5 @@ if ($compiler) {
 }
 $cargoPath = (Get-Command cargo.exe -ErrorAction SilentlyContinue).Source
 if (-not $cargoPath) { $cargoPath = Join-Path $env:USERPROFILE '.cargo/bin/cargo.exe' }
-& $cargoPath test --manifest-path (Join-Path $backendRoot 'contracts/agent-market/Cargo.toml')
+& $cargoPath test --manifest-path (Join-Path $backendRoot 'contracts/orby-market/Cargo.toml')
 exit $LASTEXITCODE

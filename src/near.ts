@@ -58,6 +58,8 @@ export async function proposal(
     "Deploy the contract and configure NEAR_CONTRACT_ID first.",
     503,
   );
+  let gasCapEstimateYocto:string|null=null;
+  try{const price=await rpc('gas_price',[null]);gasCapEstimateYocto=String(150000000000000n*BigInt(price.gas_price));}catch{}
   const id = randomUUID(),
     requestId = randomUUID();
   const data = {
@@ -70,6 +72,8 @@ export async function proposal(
     args: { ...args, request_id: requestId },
     attachedDepositYocto: deposit,
     gas: "150000000000000",
+    gasCapEstimateYocto,
+    storagePayer: "Contract-sponsored testnet storage; no separate product fee for this action.",
   };
   await db.query(
     "INSERT INTO chain_operations(id,request_id,account_id,job_id,state,payload_hash,proposal) VALUES($1,$2,$3,$4,'PREPARED',$5,$6)",
@@ -117,6 +121,7 @@ export async function reconcile(db: DB, op: any, txHash: string) {
       tx.actions.length === 1 &&
       call?.method_name === p.methodName &&
       call.deposit === p.attachedDepositYocto &&
+      (!p.gas || String(call.gas) === p.gas) &&
       hash(JSON.parse(Buffer.from(call.args, "base64").toString())) ===
         hash(p.args),
     "INVALID_TRANSACTION",
@@ -132,16 +137,21 @@ export async function reconcile(db: DB, op: any, txHash: string) {
   if (state === "CONFIRMED") {
     const outcome = await view("get_operation", {
       account_id: op.account_id,
-      request_id: p.requestId,
+      request_id: p.requestId || op.request_id || p.args.request_id,
     });
     assert(
       outcome,
       "RECONCILIATION_REQUIRED",
       "Transaction finished but the expected contract operation is absent.",
     );
-    if(['register_agent','set_agent_active','update_agent'].includes(p.methodName)){
+    if(['register_agent','register_near_agent','set_agent_active','update_agent'].includes(p.methodName)){
       const a=await view('get_agent',{agent_id:p.args.agent_id});
       if(a)await db.query('UPDATE agents SET state=$3,version=$4 WHERE id=$1 AND book=$2',[p.args.agent_id,'TESTNET',a.active?'ACTIVE':'SUSPENDED',a.version]);
+    }
+    if(p.methodName==='record_bid'){
+      const bid=await view('get_bid',{bid_id:p.args.bid_id});
+      assert(bid,"RECONCILIATION_REQUIRED","Confirmed bid could not yet be read from the contract.");
+      await db.query("INSERT INTO bids(id,job_id,agent_id,book,amount,data,expires_at) VALUES($1,$2,$3,'TESTNET',$4,$5,$6) ON CONFLICT DO NOTHING",[p.args.bid_id,bid.job_id,bid.agent_id,bid.price,{etaMinutes:Number(bid.eta_ms)/60000,manifestVersion:bid.manifest_version},new Date(Number(bid.expires_at))]);
     }
     if(p.methodName==='set_execution_policy'){
       const policy=await view('get_policy',{agent_id:p.args.agent_id});
@@ -173,6 +183,9 @@ export async function reconcile(db: DB, op: any, txHash: string) {
     state,
     receiptId: result.transaction_outcome?.id,
     network: "testnet",
+    txHash,
+    explorerUrl: "https://testnet.nearblocks.io/txns/"+txHash,
+    failure: state==='FAILED' ? JSON.stringify(result.status?.Failure || 'The contract rejected this transaction.') : undefined,
   };
 }
 let service: any;
@@ -230,6 +243,7 @@ export async function serviceCall(
         signerId: config.serviceAccount,
         receiverId: config.contract,
         attachedDepositYocto: "0",
+        gas:"150000000000000",
       },
     ],
   );
@@ -246,9 +260,12 @@ export async function serviceCall(
     );
     await ingestEvents(result);
   } catch (e) {
+    const error=e as any;
+    const failed=error.type==='ActionError'||!!error.transaction_outcome?.outcome?.status?.Failure;
+    const transactionHash=error.context?.transactionHash||error.transaction_outcome?.id||null;
     await pool.query(
-      "UPDATE chain_operations SET state='UNKNOWN',updated_at=now() WHERE request_id=$1",
-      [requestId],
+      "UPDATE chain_operations SET state=$2,tx_hash=COALESCE(tx_hash,$3),receipt=CASE WHEN $2='FAILED' THEN $4::jsonb ELSE receipt END,updated_at=now() WHERE request_id=$1",
+      [requestId,failed?'FAILED':'UNKNOWN',transactionHash,JSON.stringify({failure:error.message||'Executor request failed.'})],
     );
     throw e;
   }
@@ -298,6 +315,18 @@ export async function tickNear() {
         .rows[0].locked
     )
       return;
+    // Start funded work before spending time collecting bids for other jobs.
+    // A slow RPC must not make an already funded job miss its start deadline.
+    const urgent=(await pool.query("SELECT id FROM jobs WHERE book='TESTNET' AND state='FUNDED' AND COALESCE((data->>'needsClientAction')::boolean,false)=false AND COALESCE((data->>'executionRetryAt')::numeric,0)<=extract(epoch from now())*1000 ORDER BY created_at LIMIT 20")).rows;
+    for(const row of urgent){
+      try{
+        const funded=await projectJob(row.id);
+        if(funded?.state==='FUNDED'){
+          if(Number(funded.start_deadline)<=Date.now())await pool.query("UPDATE jobs SET data=data||$2::jsonb WHERE id=$1",[row.id,JSON.stringify({needsClientAction:true,executionIssue:'The start window expired. The client must sign Claim due transition to open a non-delivery case.'})]);
+          else {await serviceCall('start:'+row.id,'start_job',{job_id:row.id});await projectJob(row.id);}
+        }
+      }catch(error){console.error('Funded job start failed:',row.id,error);await pool.query("UPDATE jobs SET data=data||$2::jsonb WHERE id=$1",[row.id,JSON.stringify({executionRetryAt:Date.now()+60000,executionIssue:'The worker could not start this job. Confirmation will be checked before retrying.'})]);}
+    }
     const tasks = (
       await pool.query(
         "SELECT o.*,j.data FROM outbox_jobs o JOIN jobs j ON j.id=o.job_id WHERE j.book='TESTNET' AND o.type='NEAR_BIDS' AND o.state='QUEUED' LIMIT 1",
@@ -305,14 +334,18 @@ export async function tickNear() {
     ).rows;
     for (const task of tasks) {
       const j = await projectJob(task.job_id);
-      if (!j || j.state !== "OPEN") continue;
+      if (!j || j.state !== "OPEN" || Number(j.deadline_ms)<=Date.now()) {
+        await pool.query("UPDATE outbox_jobs SET state='DONE' WHERE id=$1",[task.id]);
+        continue;
+      }
       const agents = (
         await pool.query(
-          "SELECT * FROM agents WHERE book='TESTNET' AND state='ACTIVE' AND (data->>'chainPolicyReady') IS DISTINCT FROM 'false'",
+          "SELECT ag.* FROM agents ag JOIN execution_policies p ON p.agent_id=ag.id AND p.book=ag.book WHERE ag.book='TESTNET' AND ag.state='ACTIVE' AND (ag.data->>'chainPolicyReady') IS DISTINCT FROM 'false' AND (p.data->>'paused')='false' AND (p.data->>'expiresAt')::numeric > extract(epoch from now())*1000",
         )
       ).rows;
       for (const ag of agents) {
-        if (BigInt(ag.data.minPriceUsdMicro) > BigInt(task.data.usdMicro))
+        const amount=task.data.nearYocto ? ag.data.minPriceNear || String((BigInt(ag.data.minPriceUsdMicro)*10n**24n+4999999n)/5000000n) : ag.data.minPriceUsdMicro;
+        if (!amount || BigInt(amount) > BigInt(task.data.nearYocto || task.data.usdMicro))
           continue;
         const prior = (
           await pool.query(
@@ -327,7 +360,7 @@ export async function tickNear() {
           bid_id: id,
           job_id: task.job_id,
           agent_id: ag.id,
-          price: ag.data.minPriceUsdMicro,
+          price: amount,
           eta_ms: "120000",
           expires_at: String(expires),
         });
@@ -337,7 +370,7 @@ export async function tickNear() {
             id,
             task.job_id,
             ag.id,
-            ag.data.minPriceUsdMicro,
+            amount,
             {
               etaMinutes: 2,
               manifestVersion: ag.version,
@@ -353,14 +386,17 @@ export async function tickNear() {
     }
     const jobs = (
       await pool.query(
-        "SELECT * FROM jobs WHERE book='TESTNET' AND state IN ('FUNDED','RUNNING','DELIVERED','REVISION_REQUIRED','REVIEW_OPEN','DISPUTED') ORDER BY parent_id NULLS LAST LIMIT 20",
+        "SELECT * FROM jobs WHERE book='TESTNET' AND state IN ('FUNDED','RUNNING','DELIVERED','REVISION_REQUIRED','REVIEW_OPEN','DISPUTED') AND NOT(state='FUNDED' AND COALESCE((data->>'needsClientAction')::boolean,false)) AND COALESCE((data->>'executionRetryAt')::numeric,0)<=extract(epoch from now())*1000 ORDER BY parent_id NULLS LAST LIMIT 20",
       )
     ).rows;
     for (const row of jobs) {
       let j = await projectJob(row.id);
       if (!j) continue;
       if (j.state === "FUNDED") {
-        await serviceCall("start:" + row.id, "start_job", { job_id: row.id });
+        if(Number(j.start_deadline)<=Date.now()){
+          await pool.query("UPDATE jobs SET data=data||$2::jsonb WHERE id=$1",[row.id,JSON.stringify({needsClientAction:true,executionIssue:'The start window expired. The client must sign Claim due transition to open a non-delivery case.'})]);continue;
+        }
+        await serviceCall('start:'+row.id,'start_job',{job_id:row.id});
         j = await projectJob(row.id);
       }
       if (j.state === "RUNNING" || j.state === "REVISION_REQUIRED") {

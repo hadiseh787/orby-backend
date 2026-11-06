@@ -1,6 +1,6 @@
 {
-  "name": "agent-freelancer-backend",
-  "version": "1.0.0",
+  "name": "orby-backend",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -23,7 +23,9 @@
     "near:smoke": "tsx scripts/near-smoke.ts",
     "local": "node scripts/local.mjs",
     "local:stop": "node scripts/local.mjs --stop",
-    "contract:test:portable": "cargo test --manifest-path contracts/agent-market/Cargo.toml"
+    "contract:test:portable": "cargo test --manifest-path contracts/orby-market/Cargo.toml",
+    "test:browser:testnet": "tsx tests/browser-testnet.ts",
+    "test:ipfs": "tsx tests/ipfs-smoke.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

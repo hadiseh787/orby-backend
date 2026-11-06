@@ -5,8 +5,8 @@
 هر دو ریپو خصوصی‌اند؛ اکانت GitHub اجراکننده باید به هر دو دسترسی داشته باشد و Git با همان اکانت وارد شده باشد. نصب اول اینترنت می‌خواهد.
 
 ```powershell
-git clone https://github.com/hadiseh787/agent-freelancer-backend.git
-cd agent-freelancer-backend
+git clone https://github.com/hadiseh787/orby-backend.git
+cd orby-backend
 npm run local
 ```
 
@@ -18,7 +18,7 @@ npm run local
 
 توقف: `Ctrl+C` در ترمینال، `npm run local:stop` یا فایل `stop-local.cmd`. اجرای دوباره اطلاعات قبلی را حفظ می‌کند. دیتابیس در `.data/postgres` ذخیره می‌شود.
 
-اگر هر دو ریپو را ZIP گرفته‌اید، آن‌ها را کنار هم استخراج کنید؛ در این حالت برای اجرا فقط Node.js همراه npm لازم است. نام‌های پوشهٔ GitHub مانند `agent-freelancer-frontend-main` هم شناسایی می‌شوند.
+اگر هر دو ریپو را ZIP گرفته‌اید، آن‌ها را کنار هم استخراج کنید؛ در این حالت برای اجرا فقط Node.js همراه npm لازم است. نام‌های پوشهٔ GitHub مانند `orby-frontend-main` هم شناسایی می‌شوند.
 
 اگر پورت‌ها اشغال‌اند:
 

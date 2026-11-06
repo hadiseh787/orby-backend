@@ -1,11 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { pool, transaction } from "../src/db.js";
 import { hash, assert } from "../src/domain.js";
+import {createHash} from 'node:crypto';
 const file = process.argv[2];
 assert(file, "BACKUP_REQUIRED", "Pass the path to a backup file.");
 const backup = JSON.parse(await readFile(file, "utf8"));
 assert(
-  backup.format === "agent-freelancer-postgres-v1" &&
+  backup.format === "orby-postgres-v1" &&
     hash(backup.records) === backup.sha256,
   "INVALID_BACKUP",
   "Backup integrity check failed.",
@@ -31,6 +32,7 @@ await transaction(async (db) => {
     "agent_versions",
     "execution_policies",
     "jobs",
+    "job_attachments",
     "bids",
     "funding_previews",
     "balances",
@@ -49,6 +51,7 @@ await transaction(async (db) => {
     "pool_shares",
     "loans",
   ];
+  assert(tables.every(table=>table==='schema_migrations'||order.includes(table)),"UNSUPPORTED_SCHEMA","Restore does not support every table in this database schema.");
   for (const table of order) {
     let rows = backup.records[table] || [];
     if (table === "jobs")
@@ -56,7 +59,11 @@ await transaction(async (db) => {
         ...rows.filter((r: any) => !r.parent_id),
         ...rows.filter((r: any) => r.parent_id),
       ];
-    for (const row of rows)
+    for (const row of rows) {
+      if(table==='job_attachments'){
+        const bytes=Buffer.from(row.content_base64,'base64');
+        assert(bytes.length===row.bytes&&createHash('sha256').update(bytes).digest('hex')===row.sha256,"INVALID_BACKUP","Attachment content does not match its recorded hash.");
+      }
       await db.query(
         'INSERT INTO "' +
           table +
@@ -65,6 +72,7 @@ await transaction(async (db) => {
           '",$1::jsonb)',
         [JSON.stringify(row)],
       );
+    }
   }
   for (const table of ["ledger_entries", "job_events", "audit_log"])
     await db.query(

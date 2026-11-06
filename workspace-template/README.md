@@ -1,4 +1,4 @@
-# Agent Freelancer
+# Orby
 
 پیاده‌سازی محلی بر اساس بستهٔ تحویل: فرانت **Angular**، بک **Node.js** و دیتابیس **PostgreSQL**. رابط انگلیسی، ریسپانسیو، با حالت روشن، تیره و خودکار.
 
@@ -7,7 +7,7 @@
 ```text
 frontend/                 Angular application
 backend/                  API, worker, agents, migrations, tests
-  contracts/agent-market/ Rust NEAR testnet contract
+  contracts/orby-market/ Rust NEAR testnet contract
   contracts/uploader/     Owner-only staged deployer
 handoff/                  Original developer handoff
 start.ps1                 Local startup
@@ -19,8 +19,8 @@ stop.ps1                  Stop only recorded project processes
 پیش‌نیاز: Git و Node.js نسخهٔ 24 همراه npm. برای دریافت و اجرای پروژه از GitHub:
 
 ```powershell
-git clone https://github.com/hadiseh787/agent-freelancer-backend.git
-cd agent-freelancer-backend
+git clone https://github.com/hadiseh787/orby-backend.git
+cd orby-backend
 npm run local
 ```
 
@@ -44,8 +44,10 @@ powershell -ExecutionPolicy Bypass -File .\stop.ps1
 
 بازار ایجنت، ساخت کار و معیار پذیرش، پیشنهاد قیمت، پیش‌نمایش مالی منقضی‌شونده، تضمین و Escrow، اجرای زیرایجنت، تحویل و چک قطعی، اصلاح، اختلاف و رأی ادمین، تسویه، دفتر مالی، برداشت، شواهد، گزارش‌ها و تنظیمات ظاهر در برنامه پیاده شده‌اند.
 
-قیمت نسخهٔ پایه fixture است. مدل زبانی با Ollama اختیاری است؛ بدون آن خروجی با برچسب `Deterministic demo` ساخته می‌شود. اعتبار نسخهٔ پایه، پیش‌نمایش تأمین مالی و چرخهٔ استخر **شبیه‌سازی** است. وام واقعی P1، endpoint خارجی، TEE، مین‌نت و Intents جزو این تحویل پایه نیستند.
+کارهای جدید با مبلغ ثابت NEAR توافق می‌شوند؛ نرخ زندهٔ USD فقط برای نمایش است. توافق‌های قدیمی منطق مرجع خود را حفظ می‌کنند. مدل زبانی با Ollama اختیاری است؛ بدون آن خروجی با برچسب `Deterministic demo` ساخته می‌شود. اعتبار نسخهٔ پایه، پیش‌نمایش تأمین مالی و چرخهٔ استخر **شبیه‌سازی** است. وام واقعی P1، endpoint خارجی، TEE، مین‌نت و Intents جزو این تحویل پایه نیستند.
 
 اتصال تست‌نت فقط وقتی واقعی محسوب می‌شود که قرارداد مستقر، شناسهٔ قرارداد تنظیم، worker اجرا و رسید شبکه تأیید شده باشد. وضعیت دقیق تست‌ها و استقرار در `VERIFICATION.md` ثبت می‌شود.
 
 راهنمای جزئی: [فرانت](frontend/README.md)، [بک و قرارداد](backend/README.md). فایل‌های `.env`، `.data`، کلیدها و دیتابیس محلی از Git حذف شده‌اند؛ پوشه‌های برنامه را بدون این داده‌های خصوصی منتقل کنید.
+
+گزارش تغییرات و آزمون نسخهٔ Orby 1.1: [ORBY_RELEASE.fa.md](backend/docs/ORBY_RELEASE.fa.md).

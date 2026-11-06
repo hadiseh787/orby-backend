@@ -1,0 +1,21 @@
+{
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "accounts": {
+    "contract": "af-contract-1793954330698.testnet",
+    "admin": "af-admin-1793954341293.testnet",
+    "executor": "af-executor-1793954351979.testnet",
+    "updater": "af-updater-1793954361938.testnet",
+    "client": "af-client-1793954382407.testnet",
+    "writer": "af-writer-1793954392244.testnet",
+    "researcher": "af-researcher-1793954401423.testnet",
+    "reviewer": "af-reviewer-1793954651084.testnet"
+  },
+  "deployedAt": "2026-11-06T13:22:53.927Z",
+  "wasmBytes": 375269,
+  "version": 2,
+  "codeHash": "95ka2kdTcsmxctNFNXVVPeSQJ5EFnGYJVN49S8NhgVNM",
+  "wasmSha256": "78151533d9eca7509e7cdf44aa18ec027a24a3c9f754575bf5ba6311ac57adbe",
+  "source": "contracts/orby-market",
+  "verifiedAt": "2026-11-06T13:40:33.374Z"
+}

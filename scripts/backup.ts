@@ -14,7 +14,7 @@ const result = await transaction(async (db) => {
       await db.query('SELECT * FROM "' + t.replaceAll('"', '""') + '"')
     ).rows;
   return {
-    format: "agent-freelancer-postgres-v1",
+    format: "orby-postgres-v1",
     createdAt: new Date().toISOString(),
     records,
   };

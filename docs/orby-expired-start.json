@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "jobId": "cdbee9d1-54aa-4935-990d-96062d24521c",
+  "clientClaimHash": "41P9HM49dtcdaSNj9FHwb3Ne3kdth9VTyDSMpTQLBHDz",
+  "checkedAt": "2026-11-06T13:26:27.651Z",
+  "checks": [
+    "client signature required for non-delivery",
+    "real dispute deadline observed",
+    "no fake completion",
+    "escrow fully refunded",
+    "contract penalty policy applied"
+  ],
+  "settlement": {
+    "award": "0",
+    "fee": "0",
+    "refund": "110000000000000000000000",
+    "creator_credit": "0",
+    "penalty": "5000000000000000000000",
+    "shortfall": false,
+    "fallback_used": true
+  }
+}

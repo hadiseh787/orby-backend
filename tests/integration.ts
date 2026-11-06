@@ -5,7 +5,7 @@ import pg from "pg";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 const name = "af_test_" + Date.now();
-const baseUrl=new URL(process.env.DATABASE_URL||'postgresql://agent:agent_local_only@127.0.0.1:5433/agent_freelancer');
+const baseUrl=new URL(process.env.DATABASE_URL||'postgresql://agent:agent_local_only@127.0.0.1:5433/orby');
 const adminUrl=new URL(baseUrl);adminUrl.pathname='/postgres';
 const admin = new pg.Client({
   connectionString:adminUrl.href,
@@ -294,6 +294,31 @@ test("pause blocks new obligations but permits existing simulation withdrawals",
   );
   await post(operator, "/admin/pause", { paused: false });
 });
+test("native NEAR jobs attach private files, normalize agent IDs and settle exact amounts", async () => {
+  const uploaded=await post(client,"/uploads",{name:"evidence.txt",dataBase64:Buffer.from("Actual attachment content").toString("base64")});
+  assert.equal(uploaded.statusCode,200);const file=uploaded.json();
+  const downloaded=await app.inject({url:"/api/v1/uploads/"+file.id,headers:{cookie:client.cookie}});
+  assert.equal(downloaded.body,"Actual attachment content");
+  assert.equal((await app.inject({url:"/api/v1/uploads/"+file.id,headers:{cookie:creator.cookie}})).statusCode,403);
+  const invalid=await post(client,"/uploads",{name:"bad.pdf",dataBase64:Buffer.from("not a PDF").toString("base64")});assert.equal(invalid.statusCode,400);
+  const registration={id:"My New Agent",name:"Native agent",description:"Organizes real supplied source text.",category:"writing",minPriceNear:"1000000000000000000000000",skills:["Writing"],acceptsSubcontracts:false};
+  const agent=await post(creator,"/agents",registration);assert.equal(agent.statusCode,200);assert.equal(agent.json().id,"my-new-agent");
+  assert.equal((await post(creator,"/agents",registration)).statusCode,409);
+  const {usdMicro,...rest}=fixture;
+  const created=await post(client,"/jobs",{...rest,nearYocto:"20000000000000000000000000",attachmentIds:[file.id]});assert.equal(created.statusCode,200);const job=created.json();
+  await post(client,"/jobs/"+job.id+"/bids/request");
+  let detail=(await app.inject({url:"/api/v1/jobs/"+job.id,headers:{cookie:client.cookie}})).json();
+  assert.equal(detail.attachments[0].sha256,file.sha256);
+  const bid=detail.bids.find((v:any)=>v.agentId==="my-new-agent");assert.ok(bid);
+  const pv=(await post(client,"/jobs/"+job.id+"/funding-preview",{bidId:bid.id})).json();assert.equal(pv.escrow,"1100000000000000000000000");
+  assert.equal((await post(client,"/jobs/"+job.id+"/fund",{previewId:pv.id})).statusCode,200);
+  await tick();
+  assert.equal((await post(client,"/jobs/"+job.id+"/approve")).statusCode,200);
+  detail=(await app.inject({url:"/api/v1/jobs/"+job.id,headers:{cookie:client.cookie}})).json();
+  assert.equal(detail.settlement.award,"1000000000000000000000000");
+  assert.equal(detail.settlement.refund,"100000000000000000000000");
+  assert.equal((await app.inject({url:"/api/v1/uploads/"+file.id,headers:{cookie:creator.cookie}})).statusCode,200);
+});
 test("SPA requests preserve the API budget and API requests remain rate limited", async () => {
   const remoteAddress = "198.51.100.77";
   for (let i = 0; i < 245; i++) {
@@ -301,13 +326,14 @@ test("SPA requests preserve the API budget and API requests remain rate limited"
     assert.notEqual(response.statusCode, 429);
     assert.equal(response.headers["x-ratelimit-limit"], undefined);
   }
-  for (let i = 0; i < 240; i++) {
+  for (let i = 0; i < 600; i++) {
     const response = await app.inject({ url: "/api/v1/health", remoteAddress });
     assert.equal(response.statusCode, 200);
   }
   const limited = await app.inject({ url: "/api/v1/health", remoteAddress });
   assert.equal(limited.statusCode, 429);
   assert.ok(limited.headers["retry-after"]);
+  assert.equal((await app.inject({method:"POST",url:"/api/v1/auth/challenge",remoteAddress})).statusCode,200);
 });
 test("pool rejects deposits during lending and returns exact share assets", async () => {
   const credit = (

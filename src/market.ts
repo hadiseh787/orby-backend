@@ -126,9 +126,10 @@ export async function createJob(db: DB, a: Actor, b: any) {
   const id = randomUUID(),
     data = {
       ...b,
+      deadline: Date.now()+b.deadlineMinutes*60000,
       revision: 0,
       termsVersion: 1,
-      priceMode: "FIXTURE",
+      priceMode: b.nearYocto ? "NATIVE_NEAR" : "FIXTURE",
       fundingPrice: "5000000",
       feeBps: 1000,
       bufferBps: 1000,
@@ -180,7 +181,8 @@ export async function requestBids(db: DB, a: Actor, id: string) {
     )
   ).rows;
   for (const agent of agents) {
-    if (BigInt(agent.data.minPriceUsdMicro) > BigInt(j.data.usdMicro)) continue;
+    const amount=j.data.nearYocto ? agent.data.minPriceNear || String((BigInt(agent.data.minPriceUsdMicro)*Q+4999999n)/5000000n) : agent.data.minPriceUsdMicro;
+    if (!amount || BigInt(amount) > BigInt(j.data.nearYocto || j.data.usdMicro)) continue;
     await db.query(
       "INSERT INTO bids(id,job_id,agent_id,book,amount,data,expires_at) VALUES($1,$2,$3,$4,$5,$6,now()+interval '30 minutes') ON CONFLICT(job_id,agent_id) DO UPDATE SET expires_at=EXCLUDED.expires_at",
       [
@@ -188,7 +190,7 @@ export async function requestBids(db: DB, a: Actor, id: string) {
         id,
         agent.id,
         a.book,
-        agent.data.minPriceUsdMicro,
+        amount,
         {
           etaMinutes: agent.data.etaMinutes,
           manifestVersion: agent.version,
@@ -228,7 +230,8 @@ export async function preview(db: DB, a: Actor, id: string, bidId: string) {
     "POLICY_LIMIT",
     "The agent execution policy is paused or expired.",
   );
-  const f = funding(b.amount);
+  assert(j.data.deadline>Date.now(),"JOB_EXPIRED","The job deadline has expired.");
+  const f = funding(b.amount,j.data.nearYocto ? Q.toString() : "5000000");
   if (a.book === "SIMULATION")
     assert(
       BigInt(await balance(db, a.book, b.owner_id, "bond")) >= BigInt(f.bond),
@@ -240,14 +243,15 @@ export async function preview(db: DB, a: Actor, id: string, bidId: string) {
     bidId,
     agentId: b.agent_id,
     creatorId: b.owner_id,
-    usdMicro: b.amount,
+    usdMicro: j.data.nearYocto ? "0" : b.amount,
+    ...(j.data.nearYocto ? {nearYocto:b.amount} : {}),
     feeBps: 1000,
     bufferBps: 1000,
     policyVersion: b.policy_version,
     jobVersion: j.version,
     quoteId: "fixed-demo-v1",
     priceMicro: "5000000",
-    source: "Fixture price",
+    source: j.data.nearYocto ? "Fixed NEAR agreement" : "Legacy fixture reference",
     quoteObservedAt: Date.now(),
     expiresAt: Date.now() + 60000,
     approvalPolicy: j.data.approvalPolicy,
@@ -277,6 +281,7 @@ export async function fund(db: DB, a: Actor, id: string, pid: string) {
     "INVALID_STATE",
     "The job has already been funded or cancelled.",
   );
+  assert(j.data.deadline>Date.now(),"JOB_EXPIRED","The job deadline has expired.");
   assert(
     p &&
       !p.consumed &&
@@ -370,7 +375,7 @@ export async function fund(db: DB, a: Actor, id: string, pid: string) {
     creatorId: p.data.creatorId,
     fundedAt: Date.now(),
     startDeadline: Date.now() + (config.accelerated ? 30000 : 600000),
-    deadline: Date.now() + j.data.deadlineMinutes * 60000,
+    deadline: j.data.deadline,
   });
   await event(db, id, a.id, "job_funded", {
     escrow: p.data.escrow,
@@ -408,8 +413,8 @@ export async function settleJob(
   );
   const s = settlement(
     j.data.escrow,
-    j.data.usdMicro,
-    j.data.fundingPrice || "5000000",
+    j.data.nearYocto ? j.data.n0 : j.data.usdMicro,
+    j.data.nearYocto ? Q.toString() : j.data.fundingPrice || "5000000",
     awardBps,
     j.parent_id ? 0 : j.data.feeBps,
     "0",

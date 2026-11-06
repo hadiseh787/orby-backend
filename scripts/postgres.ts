@@ -24,11 +24,11 @@ await client.connect();
 if (
   !(
     await client.query(
-      "SELECT 1 FROM pg_database WHERE datname='agent_freelancer'",
+      "SELECT 1 FROM pg_database WHERE datname='orby'",
     )
   ).rowCount
 )
-  await client.query("CREATE DATABASE agent_freelancer");
+  await client.query("CREATE DATABASE orby");
 await client.end();
 console.log("PostgreSQL ready on 127.0.0.1:"+port);
 let stopped = false;

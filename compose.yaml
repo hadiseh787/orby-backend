@@ -4,11 +4,11 @@ services:
     environment:
       POSTGRES_USER: agent
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
-      POSTGRES_DB: agent_freelancer
+      POSTGRES_DB: orby
     ports: ["127.0.0.1:5433:5432"]
     volumes: ["postgres_data:/var/lib/postgresql"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agent -d agent_freelancer"]
+      test: ["CMD-SHELL", "pg_isready -U agent -d orby"]
       interval: 5s
       retries: 10
 volumes:

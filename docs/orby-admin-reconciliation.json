@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "network": "testnet",
+  "checkedAt": "2026-11-06T13:43:45.652Z",
+  "operationId": "572439be-7b36-4a69-8169-c9394c8ef2ce",
+  "result": {
+    "checked": 1,
+    "confirmed": 0,
+    "failed": 1,
+    "unresolved": 0
+  },
+  "checks": [
+    "real administrator NEP-413 session",
+    "actual receipt checked against prepared signer, method, gas, args and deposit",
+    "known failure resolved without inventing payment success"
+  ]
+}

@@ -119,7 +119,7 @@ export async function authRoutes(app: any) {
     const id = randomUUID(),
       nonce = randomBytes(32).toString("base64"),
       recipient = new URL(config.origin).host;
-    const message = `Sign in to Agent Freelancer on NEAR testnet. Request: ${id}. No transaction or spending permission.`;
+    const message = `Sign in to Orby on NEAR testnet. Request: ${id}. No transaction or spending permission.`;
     await pool.query(
       "INSERT INTO auth_nonces VALUES($1,$2,$3,$4,now()+interval '5 minutes',false)",
       [id, nonce, message, recipient],
@@ -144,12 +144,13 @@ export async function authRoutes(app: any) {
         )
       ).rows[0];
       assert(c, "AUTH_INVALID", "Expired or consumed challenge.", 401);
+      assert(/^ed25519:[1-9A-HJ-NP-Za-km-z]{40,50}$/.test(b.publicKey),"AUTH_INVALID","A valid Ed25519 public key is required.",401);
       const key = bs58.decode(b.publicKey.replace(/^ed25519:/, ""));
-      const valid = nacl.sign.detached.verify(
-        messageDigest(c.message, Buffer.from(c.nonce, "base64"), c.recipient,config.origin+'/settings'),
-        Buffer.from(b.signature, "base64"),
-        key,
-      );
+      assert(key.length===32 && Buffer.from(b.signature,"base64").length===64,"AUTH_INVALID","The wallet returned an invalid Ed25519 signature.",401);
+      const valid = [undefined,config.origin+'/settings'].some(callback=>nacl.sign.detached.verify(
+        messageDigest(c.message, Buffer.from(c.nonce, "base64"), c.recipient,callback),
+        Buffer.from(b.signature, "base64"), key,
+      ));
       assert(valid, "AUTH_INVALID", "Wallet signature does not match.", 401);
       const response = await fetch(config.rpc, {
         method: "POST",
@@ -166,6 +167,7 @@ export async function authRoutes(app: any) {
         }),
         signal: AbortSignal.timeout(15000),
       });
+      assert(response.ok,"RPC_UNAVAILABLE","NEAR testnet could not be reached. Retry wallet verification.",503);
       const rpc: any = await response.json();
       assert(
         rpc.result?.keys?.some(

@@ -1,0 +1,151 @@
+{
+  "status": "proposed-spec-vectors",
+  "unit": "yoctoNEAR",
+  "referenceOnly": true,
+  "vectors": [
+    {
+      "id": "unchanged",
+      "input": {
+        "usdMicro": "20000000",
+        "fundingPriceMicro": "5000000",
+        "settlementPriceMicro": "5000000",
+        "bufferBps": 1000,
+        "feeBps": 1000,
+        "awardBps": 10000,
+        "debtYocto": "0"
+      },
+      "expected": {
+        "n0": "4000000000000000000000000",
+        "escrow": "4400000000000000000000000",
+        "owed": "4000000000000000000000000",
+        "grossEligible": "4000000000000000000000000",
+        "award": "4000000000000000000000000",
+        "fee": "400000000000000000000000",
+        "refund": "400000000000000000000000",
+        "debtPaid": "0",
+        "creatorCredit": "3600000000000000000000000",
+        "shortfall": false
+      }
+    },
+    {
+      "id": "price_up",
+      "input": {
+        "usdMicro": "20000000",
+        "fundingPriceMicro": "5000000",
+        "settlementPriceMicro": "10000000",
+        "bufferBps": 1000,
+        "feeBps": 1000,
+        "awardBps": 10000,
+        "debtYocto": "0"
+      },
+      "expected": {
+        "n0": "4000000000000000000000000",
+        "escrow": "4400000000000000000000000",
+        "owed": "2000000000000000000000000",
+        "grossEligible": "2000000000000000000000000",
+        "award": "2000000000000000000000000",
+        "fee": "200000000000000000000000",
+        "refund": "2400000000000000000000000",
+        "debtPaid": "0",
+        "creatorCredit": "1800000000000000000000000",
+        "shortfall": false
+      }
+    },
+    {
+      "id": "price_down",
+      "input": {
+        "usdMicro": "20000000",
+        "fundingPriceMicro": "5000000",
+        "settlementPriceMicro": "4000000",
+        "bufferBps": 1000,
+        "feeBps": 1000,
+        "awardBps": 10000,
+        "debtYocto": "0"
+      },
+      "expected": {
+        "n0": "4000000000000000000000000",
+        "escrow": "4400000000000000000000000",
+        "owed": "5000000000000000000000000",
+        "grossEligible": "4400000000000000000000000",
+        "award": "4400000000000000000000000",
+        "fee": "440000000000000000000000",
+        "refund": "0",
+        "debtPaid": "0",
+        "creatorCredit": "3960000000000000000000000",
+        "shortfall": true
+      }
+    },
+    {
+      "id": "split_half",
+      "input": {
+        "usdMicro": "20000000",
+        "fundingPriceMicro": "5000000",
+        "settlementPriceMicro": "5000000",
+        "bufferBps": 1000,
+        "feeBps": 1000,
+        "awardBps": 5000,
+        "debtYocto": "0"
+      },
+      "expected": {
+        "n0": "4000000000000000000000000",
+        "escrow": "4400000000000000000000000",
+        "owed": "4000000000000000000000000",
+        "grossEligible": "4000000000000000000000000",
+        "award": "2000000000000000000000000",
+        "fee": "200000000000000000000000",
+        "refund": "2400000000000000000000000",
+        "debtPaid": "0",
+        "creatorCredit": "1800000000000000000000000",
+        "shortfall": false
+      }
+    },
+    {
+      "id": "refund",
+      "input": {
+        "usdMicro": "20000000",
+        "fundingPriceMicro": "5000000",
+        "settlementPriceMicro": "5000000",
+        "bufferBps": 1000,
+        "feeBps": 1000,
+        "awardBps": 0,
+        "debtYocto": "0"
+      },
+      "expected": {
+        "n0": "4000000000000000000000000",
+        "escrow": "4400000000000000000000000",
+        "owed": "4000000000000000000000000",
+        "grossEligible": "4000000000000000000000000",
+        "award": "0",
+        "fee": "0",
+        "refund": "4400000000000000000000000",
+        "debtPaid": "0",
+        "creatorCredit": "0",
+        "shortfall": false
+      }
+    },
+    {
+      "id": "with_loan",
+      "input": {
+        "usdMicro": "20000000",
+        "fundingPriceMicro": "5000000",
+        "settlementPriceMicro": "5000000",
+        "bufferBps": 1000,
+        "feeBps": 1000,
+        "awardBps": 10000,
+        "debtYocto": "1040000000000000000000000"
+      },
+      "expected": {
+        "n0": "4000000000000000000000000",
+        "escrow": "4400000000000000000000000",
+        "owed": "4000000000000000000000000",
+        "grossEligible": "4000000000000000000000000",
+        "award": "4000000000000000000000000",
+        "fee": "400000000000000000000000",
+        "refund": "400000000000000000000000",
+        "debtPaid": "1040000000000000000000000",
+        "creatorCredit": "2560000000000000000000000",
+        "shortfall": false
+      }
+    }
+  ]
+}

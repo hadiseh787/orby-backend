@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-06T12:59:25.610Z",
+  "implementation": "Real Kubo node: add, pin, CID retrieval and authenticated PostgreSQL fallback",
+  "cid": "bafkreig555zawxunqezpxsobddj46h2v2vm6cu36dyfzxtqpsdydgbawli",
+  "sha256": "ddef720b5e8d8132fbc9c118d3cf1f55d559e1537e1e0b9bce0f90f03304165a",
+  "bytes": 67,
+  "verificationLimit": "Local offline node; external replication and production pinning availability not verified."
+}

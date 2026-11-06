@@ -5,7 +5,7 @@ export const config = {
   origin: process.env.APP_ORIGIN || "http://127.0.0.1:4200",
   databaseUrl:
     process.env.DATABASE_URL ||
-    "postgresql://agent:agent_local_only@127.0.0.1:5433/agent_freelancer",
+    "postgresql://agent:agent_local_only@127.0.0.1:5433/orby",
   demo:
     process.env.ENABLE_DEMO_LOGIN !== "false" &&
     process.env.NODE_ENV !== "production",

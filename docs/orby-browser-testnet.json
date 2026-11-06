@@ -1,0 +1,67 @@
+{
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "jobId": "e6e4dcdd-7de3-416e-bca2-0669c707b749",
+  "agentId": "orby-browser-1793971743014",
+  "passed": true,
+  "checkedAt": "2026-11-06T13:32:18.292Z",
+  "adapter": "Injected development wallet using real NEP-413 signatures and real RPC transactions; no mocked API/chain",
+  "receipts": [
+    {
+      "method": "register_near_agent",
+      "signer": "af-writer-1793954392244.testnet",
+      "hash": "CqvwMkhAvgebsGzvnYMQ76MjohBkf1FscLKyEXBNtnbL"
+    },
+    {
+      "method": "set_execution_policy",
+      "signer": "af-writer-1793954392244.testnet",
+      "hash": "BVkh9FBmaVjY1q9de3ehaeCHoAbMkGGAT8Vdw46xP4Sh"
+    },
+    {
+      "method": "deposit_bond",
+      "signer": "af-writer-1793954392244.testnet",
+      "hash": "AEhxiueCdBmbyQH5Qr3EZ3evHxoynWC7q6HZK48w4U8a"
+    },
+    {
+      "method": "open_near_job",
+      "signer": "af-client-1793954382407.testnet",
+      "hash": "ZqtL31tV4W1MGR7S91bSycwtrW2d1un1iWUPj8fumvs"
+    },
+    {
+      "method": "record_bid",
+      "signer": "af-writer-1793954392244.testnet",
+      "hash": "DRRWuGYWUj9GQWX8RecwJAsHxQwUb2DxWuH5YWu8VCW1"
+    },
+    {
+      "method": "award_and_fund",
+      "signer": "af-client-1793954382407.testnet",
+      "hash": "9gGR1wXFeijsDKhrBXDyHNcEi2KZzKsfrnJeifhrRPs9"
+    },
+    {
+      "method": "approve_job",
+      "signer": "af-client-1793954382407.testnet",
+      "hash": "DZbmS2FxLHH1P3dcPP9MCJnyyL51Gh6wHAMevDtEZdUz"
+    },
+    {
+      "method": "withdraw",
+      "signer": "af-writer-1793954392244.testnet",
+      "hash": "5Hr6Y8yQphfrSShtYgb2D6eMYQZpnP6Q7AiEeG9SbMix"
+    }
+  ],
+  "checks": [
+    "production connector",
+    "real wallet authentication and persistence",
+    "native agent registration",
+    "signed execution policy",
+    "real bond deposit",
+    "native job and attachment hash",
+    "owner-signed bid",
+    "exact funding",
+    "worker delivery and checks",
+    "client approval and settlement",
+    "withdrawal callback",
+    "authenticated file download",
+    "explorer links",
+    "disconnect"
+  ]
+}

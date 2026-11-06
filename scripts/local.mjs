@@ -33,6 +33,7 @@ function npmArgs(args){
   if(process.platform==='win32')throw Error('npm was not found. Install Node.js 22 LTS or 24 LTS with npm.');
   return ['npm',args];
 }
+function gitRead(args,cwd){const result=spawnSync('git',args,{cwd,encoding:'utf8',windowsHide:true});if(result.status!==0)throw Error('Could not inspect the managed frontend Git checkout.');return result.stdout.trim();}
 async function npm(args,cwd){const [command,parameters]=npmArgs(args);await run(command,parameters,{cwd});}
 async function free(candidatePort){return new Promise(r=>{const socket=net.connect(candidatePort,'127.0.0.1');socket.once('connect',()=>{socket.destroy();r(false)});socket.once('error',()=>r(true));});}
 async function healthy(target){try{return (await fetch(target,{signal:AbortSignal.timeout(1500)})).ok}catch{return false}}
@@ -84,7 +85,7 @@ try{
   if(!((major===22&&minor>=19)||major===24))throw Error('Use Node.js 22.19+ LTS or Node.js 24 LTS.');
   if(existsSync(state)){
     const current=JSON.parse(readFileSync(state,'utf8'));
-    if(alive(current.pid)&&await healthy(current.url+'/api/v1/health')){console.log('Already running: '+current.url);process.exit(0);}
+    if(alive(current.pid)&&await healthy(current.url)){console.log('Already running: '+current.url);process.exit(0);}
     if(alive(current.pid))throw Error('Another launcher is starting. Wait for its ready message.');
     rmSync(state);
   }
@@ -93,11 +94,21 @@ try{
   }
   lockHandle=openSync(lock,'wx');writeFileSync(lockHandle,String(process.pid));
   const workspace=JSON.parse(readFileSync('workspace.json','utf8'));
-  const zipSiblings=readdirSync(dirname(root),{withFileTypes:true}).filter(d=>d.isDirectory()&&d.name.startsWith('agent-freelancer-frontend')).slice(0,20).map(d=>resolve('..',d.name));
-  const candidates=[arg('--frontend'),process.env.FRONTEND_DIR,resolve('../frontend'),resolve('../agent-freelancer-frontend'),...zipSiblings,resolve('.workspace/frontend')].filter(Boolean).map(p=>resolve(p));
-  let frontend=candidates.find(p=>{try{return JSON.parse(readFileSync(join(p,'package.json'),'utf8')).name==='agent-freelancer-frontend'}catch{return false}});
+  const zipSiblings=readdirSync(dirname(root),{withFileTypes:true}).filter(d=>d.isDirectory()&&d.name.startsWith('orby-frontend')).slice(0,20).map(d=>resolve('..',d.name));
+  const candidates=[arg('--frontend'),process.env.FRONTEND_DIR,resolve('../frontend'),resolve('../orby-frontend'),...zipSiblings,resolve('.workspace/frontend')].filter(Boolean).map(p=>resolve(p));
+  let frontend=candidates.find(p=>{try{return JSON.parse(readFileSync(join(p,'package.json'),'utf8')).name==='orby-frontend'}catch{return false}});
+  const managed=resolve('.workspace/frontend');
+  if(!frontend&&existsSync(join(managed,'.git')))frontend=managed;
+  if(frontend===managed&&existsSync(join(managed,'.git'))&&gitRead(['rev-parse','HEAD'],managed)!==workspace.frontendRevision){
+    if(gitRead(['status','--porcelain'],managed))throw Error('The managed frontend has local changes. Preserve them and use --frontend with your development checkout.');
+    console.log('Updating the managed frontend to the pinned Orby revision…');
+    await run('git',['remote','set-url','origin',workspace.frontendRepository],{cwd:managed});
+    await run('git',['fetch','origin',workspace.frontendRevision],{cwd:managed});
+    await run('git',['checkout','--detach',workspace.frontendRevision],{cwd:managed});
+  }
   if(!frontend){
     frontend=resolve('.workspace/frontend');mkdirSync(dirname(frontend),{recursive:true});console.log('Fetching the matching private frontend repository…');
+    if(existsSync(frontend)&&readdirSync(frontend).length)throw Error('The frontend destination is not empty. Use --frontend to select your existing checkout.');
     await run('git',['clone',workspace.frontendRepository,frontend]);
     await run('git',['checkout','--detach',workspace.frontendRevision],{cwd:frontend});
   }
@@ -107,9 +118,9 @@ try{
     writeFileSync('.env',generated,{mode:0o600});console.log('Created local .env with a new development database password.');
   }
   const localEnv={...require('dotenv').parse(readFileSync('.env')),...process.env};
-  const connection=new URL(localEnv.DATABASE_URL||'postgresql://agent:agent_local_only@127.0.0.1:5433/agent_freelancer');
+  const connection=new URL(localEnv.DATABASE_URL||'postgresql://agent:agent_local_only@127.0.0.1:5433/orby');
   if(arg('--db-port')||process.env.LOCAL_DB_PORT)connection.port=String(dbPort);
-  const env={...localEnv,HOST:'127.0.0.1',PORT:String(port),APP_ORIGIN:url,FRONTEND_DIST:join(frontend,'dist/agent-freelancer/browser'),DATABASE_URL:connection.href,LOCAL_SHUTDOWN_TOKEN:randomBytes(32).toString('hex'),NODE_ENV:'development'};
+  const env={...localEnv,HOST:'127.0.0.1',PORT:String(port),APP_ORIGIN:url,FRONTEND_DIST:join(frontend,'dist/orby/browser'),DATABASE_URL:connection.href,LOCAL_SHUTDOWN_TOKEN:randomBytes(32).toString('hex'),NODE_ENV:'development'};
   if(!await free(port))throw Error(`Port ${port} is already in use. Use --port with another local port.`);
   console.log('Building backend and frontend…');await npm(['run','build'],root);await npm(['run','build'],frontend);
   if(['127.0.0.1','localhost'].includes(connection.hostname)&&await free(Number(connection.port||5432))){
@@ -124,7 +135,7 @@ try{
   launch('api',['dist/server.js'],env);launch('worker',['dist/worker.js'],env);
   writeFileSync(state,JSON.stringify({pid:process.pid,url,token:env.LOCAL_SHUTDOWN_TOKEN,frontend},null,2),{mode:0o600});
   process.on('SIGINT',()=>void shutdown());process.on('SIGTERM',()=>void shutdown());
-  for(let n=0;n<60;n++){if(stopping)break;if(await healthy(url+'/api/v1/health')&&await healthy(url)){console.log('\nAgent Freelancer ready: '+url+'\nPress Ctrl+C to stop all local services.');
+  for(let n=0;n<60;n++){if(stopping)break;if(await healthy(url+'/api/v1/health')&&await healthy(url)){console.log('\nOrby ready: '+url+'\nPress Ctrl+C to stop all local services.');
       if(!process.argv.includes('--no-browser')){const command=process.platform==='win32'?'rundll32.exe':process.platform==='darwin'?'open':'xdg-open';const args=process.platform==='win32'?['url.dll,FileProtocolHandler',url]:[url];const browser=spawn(command,args,{stdio:'ignore',windowsHide:true});browser.on('error',()=>{});browser.unref();}
       break;
     }if(n===59)throw Error('Application did not become ready.');await delay(1000);}

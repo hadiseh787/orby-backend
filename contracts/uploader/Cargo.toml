@@ -1,5 +1,5 @@
 [package]
-name = "agent-contract-uploader"
+name = "orby-contract-uploader"
 version = "1.0.0"
 edition = "2021"
 [lib]

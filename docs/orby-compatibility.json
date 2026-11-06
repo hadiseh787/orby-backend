@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "checkedAt": "2026-11-06T13:36:38.829Z",
+  "checks": [
+    "legacy priced jobs remain usable after migration",
+    "legacy creator can bid after setting a separate NEAR price",
+    "unfunded legacy job can be cancelled",
+    "actual failed executor receipt is FAILED, not UNKNOWN",
+    "failed action does not change refunded financial state"
+  ],
+  "receipts": [
+    {
+      "method": "open_job",
+      "hash": "33Enyaf4z7LeLLBviVW8cgMqaP8LQfJDvcrHxj2WSpqs"
+    },
+    {
+      "method": "record_bid",
+      "hash": "yNYn4bpaft4i7xqGwQmejPKQt7xrZf5HzHHpNL4Lg2W"
+    },
+    {
+      "method": "cancel_job",
+      "hash": "7Kj5c3a6TWHu6QRtsgrTJqsCM3s6WEq1YNBo1MaweEpg"
+    }
+  ],
+  "failedTransactionHash": "GiExGfgv4N59k9koUpKbdFaEiKfHPc3wg2yZvZz7HzJV"
+}

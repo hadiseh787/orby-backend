@@ -6,7 +6,7 @@ const files = (await readdir(".data/backups"))
   .filter((f) => f.endsWith(".json"))
   .sort();
 if (!files.length) throw Error("Run npm run backup first.");
-const baseUrl=new URL(process.env.DATABASE_URL||'postgresql://agent:agent_local_only@127.0.0.1:5433/agent_freelancer');
+const baseUrl=new URL(process.env.DATABASE_URL||'postgresql://agent:agent_local_only@127.0.0.1:5433/orby');
 const adminUrl=new URL(baseUrl);adminUrl.pathname='/postgres';
 const name = "af_restore_" + Date.now(),
   client = new pg.Client({

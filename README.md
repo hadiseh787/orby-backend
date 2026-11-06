@@ -1,8 +1,10 @@
-# Agent Freelancer backend
+# Orby backend
 
 Node.js / TypeScript / Fastify, PostgreSQL, transactional outbox worker, deterministic local agents with optional Ollama, and a Rust NEAR testnet contract.
 
 [راهنمای سریع فارسی](QUICKSTART.fa.md)
+
+Orby 1.1 adds the supplied violet brand, native NEAR agreements, a live informational USD quote, day-based deadlines, private attachments with on-chain hash commitments, opt-in IPFS publishing, owner-signed proposals and recoverable wallet transaction states. Read [the release verification](docs/ORBY_RELEASE.fa.md) for findings, evidence and remaining deployment requirements.
 
 The original two-folder workspace's root files are included in `workspace-template/`; the original handoff is in `docs/handoff/`. See [workspace layout](docs/WORKSPACE_LAYOUT.md). Each application has its own Git repository; the enclosing workspace is a normal folder.
 
@@ -13,8 +15,8 @@ Install **Git** and **Node.js 24 with npm** (Node 22.19+ also works). No global 
 Both repositories are private. The person cloning them needs access to both; authenticate Git through GitHub's supported sign-in flow first. No login credentials are distributed with the source.
 
 ```powershell
-git clone https://github.com/hadiseh787/agent-freelancer-backend.git
-cd agent-freelancer-backend
+git clone https://github.com/hadiseh787/orby-backend.git
+cd orby-backend
 npm run local
 ```
 
@@ -22,7 +24,7 @@ On Windows, double-click `start-local.cmd` instead of the last command. Keep its
 
 Stop everything with **Ctrl+C**, `npm run local:stop`, or `stop-local.cmd`. Data persists in `.data/postgres`. Re-running startup preserves existing data. If setup was interrupted, run the same startup command again.
 
-If both repositories were downloaded as ZIPs, extract them beside each other. The launcher recognizes `frontend`, `agent-freelancer-frontend`, and GitHub ZIP folder names such as `agent-freelancer-frontend-main`; Git is unnecessary when both source folders are already present. An explicit frontend path also works:
+If both repositories were downloaded as ZIPs, extract them beside each other. The launcher recognizes `frontend`, `orby-frontend`, and GitHub ZIP folder names such as `orby-frontend-main`; Git is unnecessary when both source folders are already present. An explicit frontend path also works:
 
 ```powershell
 node scripts/local.mjs --frontend ../path-to-frontend --no-browser
@@ -100,16 +102,43 @@ Ports 4101–4103 expose `/health`, `/bid`, `/runs`, `/runs/:id`, `/runs/:id/can
 
 ## NEAR testnet
 
-The contract source is `contracts/agent-market`. Monetary arithmetic is shared with a small native Rust crate under `financial`; `cargo test` from the market directory runs that crate without a native NEAR sandbox. Real contract integration must be validated against testnet or a supported Linux sandbox.
+New jobs and agent prices use native NEAR amounts. Existing reference-based agreements retain their original contract logic. USD quotes come from public market-data providers and never change a native agreement's payment amount. Testnet tokens do not acquire monetary value from this comparison.
+
+For an existing V1 deployment, deploy the current optimized WASM with `node --import tsx scripts/deploy.ts --migrate-v1`. Migration requires the contract account's full-access development key and preserves existing jobs and balances. The generated executor key remains restricted; no private key is shipped in Git.
+
+An opt-in browser test runs the full UI against the actual testnet contract with a development wallet adapter and ignored local development keys:
+
+```powershell
+npm run test:browser:testnet
+```
+
+The test sends real faucet-funded testnet transactions. It is not part of the normal unit suite and never selects mainnet. Its wallet adapter exists only in the test runner.
+
+## Attachments and IPFS
+
+The default stores files privately in PostgreSQL and commits their SHA-256 metadata through the job's signed terms hash. Up to five PDF, TXT, MD, JSON, PNG or JPEG files are allowed per job, with a 2 MiB limit per file. Downloads enforce job ownership and selected-creator access. Backups include file content and validate its hash during restoration.
+
+To enable opt-in public IPFS publishing, run a trusted Kubo node and set `IPFS_API_URL` to its private RPC endpoint. The upload form then exposes an explicit public-publishing checkbox. Public files cannot be made private by removing a link. Keep the Kubo API off the public internet and maintain its pins; the application also retains the authenticated database copy. This service is optional for private attachments and is not installed by the one-command launcher.
+
+With a running node, verify actual add, pin and CID retrieval using:
+
+```powershell
+$env:IPFS_API_URL='http://127.0.0.1:5001'
+npm run test:ipfs
+```
+
+## Contract build and deployment
+
+The contract source is `contracts/orby-market`. Monetary arithmetic is shared with a small native Rust crate under `financial`; `cargo test` from the market directory runs that crate without a native NEAR sandbox. Real contract integration must be validated against testnet or a supported Linux sandbox.
 
 With Rust and the WASM target installed:
 
 ```powershell
 rustup target add wasm32-unknown-unknown
-cargo build --manifest-path contracts/agent-market/Cargo.toml -p agent-market --target wasm32-unknown-unknown --release
+cargo build --manifest-path contracts/orby-market/Cargo.toml -p orby-market --target wasm32-unknown-unknown --release
 cargo build --manifest-path contracts/uploader/Cargo.toml --target wasm32-unknown-unknown --release
 node scripts/optimize-contract.mjs
-node scripts/optimize-contract.mjs contracts/uploader/target/wasm32-unknown-unknown/release/agent_contract_uploader.wasm .data/near/uploader.wasm
+node scripts/optimize-contract.mjs contracts/uploader/target/wasm32-unknown-unknown/release/orby_contract_uploader.wasm .data/near/uploader.wasm
 npm.cmd run near:deploy
 ```
 
@@ -129,6 +158,6 @@ Never infer a successful deployment from account creation. Deployment, receipt a
 - Amounts are unsigned decimal strings; calculations use BigInt / checked U256 arithmetic. Internal simulation transfers have equal debit and credit entries.
 - The NEAR contract is authoritative for testnet funds. PostgreSQL holds metadata, artifacts and projections.
 - Session cookies are HttpOnly and SameSite; mutations require CSRF and a stable idempotency key. Ownership is checked by the API and contract.
-- Reference prices are explicit fixtures in the base version. Live price adapters, external runtime registration, production lending, TEE and mainnet are later phases.
+- New agreements use fixed NEAR amounts; live USD quotes are informational. Legacy agreements retain their original reference rules. External runtime registration, production lending, TEE and mainnet are later phases.
 - Base credit functionality is a financing preview and a separate simulated pool lifecycle. It does not issue real loans or claim a connection to a lending protocol.
 - The administrator is a trusted arbitrator; the evaluator attests off-chain checks; the deployment owner can upgrade code. This is an unaudited testnet implementation.

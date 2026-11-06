@@ -5,7 +5,7 @@ export function enableLargeUploadTransport() {
   if (process.platform !== "win32") return;
   const native = globalThis.fetch;
   globalThis.fetch = async (input: any, init?: any) => {
-    if (typeof init?.body !== "string" || init.body.length < 400000)
+    if (typeof init?.body !== "string" || init.body.length < 8192)
       return native(input, init);
     const text = await new Promise<string>((resolve, reject) => {
       const child = spawn(
@@ -15,6 +15,11 @@ export function enableLargeUploadTransport() {
           "--show-error",
           "--fail",
           "--http1.1",
+          "--retry",
+          "2",
+          "--retry-all-errors",
+          "--retry-delay",
+          "1",
           "--max-time",
           "120",
           "-X",
