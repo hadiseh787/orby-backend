@@ -1,0 +1,16 @@
+**/node_modules/
+**/dist/
+**/.angular/
+**/coverage/
+**/test-results/
+**/playwright-report/
+**/.env
+**/.env.*
+!**/.env.example
+.verification/
+**/.data/
+**/target/
+**/.tools/
+*.log
+*.zip
+backend/contracts/agent-market/target/
