@@ -1,0 +1,14 @@
+import 'dotenv/config';
+import {readFile,writeFile} from 'node:fs/promises';
+import {randomUUID} from 'node:crypto';
+import {connect,keyStores,KeyPair} from 'near-api-js';
+import {config} from '../src/config.js';
+import assert from 'node:assert/strict';
+const c=JSON.parse(await readFile('.data/near/accounts.json','utf8'));
+const store=new keyStores.InMemoryKeyStore();await store.setKey('testnet',c.client.accountId,KeyPair.fromString(c.client.privateKey));await store.setKey('testnet',config.serviceAccount,KeyPair.fromString(config.serviceKey as any));
+const near=await connect({networkId:'testnet',nodeUrl:config.rpc,keyStore:store});const client=await near.account(c.client.accountId),executor=await near.account(config.serviceAccount);
+const job_id='key-check-'+Date.now();await client.functionCall({contractId:config.contract,methodName:'open_job',args:{request_id:randomUUID(),job_id,terms_hash:'a'.repeat(64),usd_micro:'20000000',deadline_ms:String(Date.now()+3600000),manual:true},gas:100000000000000n});
+const result=await executor.functionCall({contractId:config.contract,methodName:'record_bid',args:{request_id:randomUUID(),bid_id:randomUUID(),job_id,agent_id:'brief-writer',price:'20000000',eta_ms:'120000',expires_at:String(Date.now()+600000)},gas:100000000000000n});
+let rejected=false;try{await executor.functionCall({contractId:config.contract,methodName:'withdraw',args:{request_id:randomUUID(),amount:'1'},attachedDeposit:1n,gas:30000000000000n});}catch{rejected=true;}assert.ok(rejected,'A limited executor must not withdraw or attach deposits.');
+await client.functionCall({contractId:config.contract,methodName:'cancel_job',args:{request_id:randomUUID(),job_id},gas:100000000000000n});
+await writeFile('.data/near/executor-verification.json',JSON.stringify({network:'testnet',contractId:config.contract,allowedMethodExecuted:'record_bid',transactionHash:result.transaction.hash,withdrawalRejected:true,checkedAt:new Date().toISOString()},null,2));console.log('Limited executor: allowed call executed; withdrawal and attached deposit rejected.');

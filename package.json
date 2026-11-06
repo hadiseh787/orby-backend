@@ -1,0 +1,53 @@
+{
+  "name": "agent-freelancer-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "db:start": "tsx scripts/postgres.ts",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "demo:seed": "tsx scripts/seed.ts",
+    "worker": "tsx src/worker.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "test:integration": "tsx --test tests/integration.ts",
+    "backup": "tsx scripts/backup.ts",
+    "near:deploy": "tsx scripts/deploy.ts",
+    "agents": "tsx src/agent-server.ts",
+    "restore": "tsx scripts/restore.ts",
+    "backup:verify": "tsx scripts/verify-backup.ts",
+    "contract:optimize": "node scripts/optimize-contract.mjs",
+    "contract:test": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-contract.ps1",
+    "near:smoke": "tsx scripts/near-smoke.ts",
+    "local": "node scripts/local.mjs",
+    "local:stop": "node scripts/local.mjs --stop",
+    "contract:test:portable": "cargo test --manifest-path contracts/agent-market/Cargo.toml"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/static": "^8.3.0",
+    "bs58": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.6.2",
+    "near-api-js": "5.1.1",
+    "pg": "^8.16.3",
+    "tweetnacl": "^1.0.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "@types/pg": "^8.15.6",
+    "binaryen": "^132.0.0",
+    "embedded-postgres": "18.6.0-beta.19",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3"
+  },
+  "engines": {
+    "node": "^22.19.0 || ^24.0.0"
+  }
+}

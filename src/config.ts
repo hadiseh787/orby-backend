@@ -1,0 +1,25 @@
+import "dotenv/config";
+export const config = {
+  host: process.env.HOST || "127.0.0.1",
+  port: Number(process.env.PORT || 3000),
+  origin: process.env.APP_ORIGIN || "http://127.0.0.1:4200",
+  databaseUrl:
+    process.env.DATABASE_URL ||
+    "postgresql://agent:agent_local_only@127.0.0.1:5433/agent_freelancer",
+  demo:
+    process.env.ENABLE_DEMO_LOGIN !== "false" &&
+    process.env.NODE_ENV !== "production",
+  accelerated: process.env.DEMO_ACCELERATED !== "false",
+  contract: process.env.NEAR_CONTRACT_ID || "",
+  rpc: process.env.NEAR_RPC_URL || "https://rpc.testnet.near.org",
+  serviceAccount: process.env.NEAR_SERVICE_ACCOUNT || "",
+  serviceKey: process.env.NEAR_SERVICE_PRIVATE_KEY || "",
+  admin: process.env.NEAR_ADMIN_ACCOUNT || "",
+  ollama: process.env.OLLAMA_URL || "http://127.0.0.1:11434",
+  model: process.env.OLLAMA_MODEL || "",
+  secure: process.env.COOKIE_SECURE === "true",
+};
+if (process.env.NEAR_NETWORK && process.env.NEAR_NETWORK !== "testnet")
+  throw Error("Only NEAR testnet is supported.");
+if (config.demo && !["127.0.0.1", "localhost", "::1"].includes(config.host))
+  throw Error("Demo login must bind to loopback.");

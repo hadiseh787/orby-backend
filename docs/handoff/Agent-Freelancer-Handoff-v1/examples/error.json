@@ -1,0 +1,9 @@
+{
+  "code": "PREVIEW_STALE",
+  "message": "The price or terms changed. Refresh the preview before signing.",
+  "requestId": "req-example-001",
+  "retryable": false,
+  "details": {
+    "action": "REFRESH_PREVIEW"
+  }
+}

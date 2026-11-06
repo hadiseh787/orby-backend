@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "previewId": "preview-example-001",
+  "status": "ILLUSTRATIVE_NOT_SIGNABLE",
+  "jobId": "job-example-042",
+  "bidId": "bid-example-003",
+  "network": "testnet",
+  "book": "TESTNET",
+  "quote": {
+    "id": "fixture-quote-001",
+    "mode": "FIXTURE",
+    "source": "fixed-demo-v1",
+    "priceMicroPerNear": "5000000",
+    "publishTimeMs": "1793923200000",
+    "observedAtMs": "1793923200000"
+  },
+  "usdMicro": "20000000",
+  "escrowYocto": "4400000000000000000000000",
+  "estimatedFeeYocto": "400000000000000000000000",
+  "performanceBondYocto": "800000000000000000000000",
+  "policyVersion": 1,
+  "termsVersion": 1,
+  "feeBps": 1000,
+  "bufferBps": 1000,
+  "approvalPolicy": "MANUAL_APPROVAL",
+  "priceFallback": "FUNDING_PRICE",
+  "disputeFallbackAwardBps": 5000,
+  "expiresAtMs": "1793923260000",
+  "payloadHash": "RECOMPUTE_FROM_CANONICAL_PAYLOAD",
+  "transaction": null
+}

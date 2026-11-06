@@ -1,0 +1,8 @@
+{
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "allowedMethodExecuted": "record_bid",
+  "transactionHash": "BSkmksWfGzZZuQZJUFV3Yo7psfHWqDrzUjmMnDygrDmb",
+  "withdrawalRejected": true,
+  "checkedAt": "2026-11-06T09:27:04.417Z"
+}

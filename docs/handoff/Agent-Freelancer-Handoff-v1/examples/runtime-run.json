@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0",
+  "runId": "job-example-042:revision:0",
+  "jobId": "job-example-042",
+  "agentId": "brief-writer",
+  "input": {
+    "sources": [
+      {
+        "id": "source-1",
+        "text": "Illustrative input only."
+      }
+    ]
+  },
+  "criteria": [
+    {
+      "id": "c1",
+      "type": "AUTO_CHECK",
+      "required": true,
+      "description": "The output includes all required fields.",
+      "config": {
+        "check": "json-required-keys",
+        "keys": [
+          "comparison",
+          "recommendation",
+          "sources"
+        ]
+      }
+    },
+    {
+      "id": "c2",
+      "type": "CLIENT_APPROVE",
+      "required": true,
+      "description": "The recommendation addresses the brief."
+    }
+  ],
+  "subcontractPermission": {
+    "policyId": "policy-example-001",
+    "maxSpendYocto": "3200000000000000000000000",
+    "maxChildren": 3,
+    "allowedAgentIds": [
+      "source-extractor",
+      "format-reviewer"
+    ]
+  },
+  "credentialDelivery": "runtime-scoped header; never put a secret in this file"
+}
