@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { config } from "./config.js";
 import { type DB } from "./db.js";
-import { assert, hash } from "./domain.js";
+import { assert, hash, agentMinimum } from "./domain.js";
 import { connect, keyStores, KeyPair } from "near-api-js";
 import { pool, transaction } from "./db.js";
 import { runModel } from "./runtime.js";
@@ -43,6 +43,15 @@ export async function view(method: string, args: any = {}) {
     args_base64: Buffer.from(JSON.stringify(args)).toString("base64"),
   });
   return JSON.parse(Buffer.from(result.result).toString());
+}
+// Contract settlement and legacy conversions use this reference, never the display-only USD feed.
+export async function agreementPrice(book: string) {
+  if (book === 'SIMULATION') return {priceMicro:'5000000',quoteId:'fixed-demo-v1',source:'Simulation fixture',observedAt:Date.now()};
+  const p = await view('get_price');
+  assert(BigInt(p.price_micro || '0') > 0n && !p.quarantined &&
+    (p.mode === 'FIXTURE' || Number(p.publish_time) >= Date.now() - 300000),
+    'PRICE_STALE','The contract price is stale or quarantined. Refresh before continuing.',503);
+  return {priceMicro:String(p.price_micro),quoteId:'contract:'+config.contract+':'+p.publish_time+':'+p.price_micro,source:'Contract '+p.mode,observedAt:Number(p.publish_time)};
 }
 export async function proposal(
   db: DB,
@@ -343,8 +352,13 @@ export async function tickNear() {
           "SELECT ag.* FROM agents ag JOIN execution_policies p ON p.agent_id=ag.id AND p.book=ag.book WHERE ag.book='TESTNET' AND ag.state='ACTIVE' AND (ag.data->>'chainPolicyReady') IS DISTINCT FROM 'false' AND (p.data->>'paused')='false' AND (p.data->>'expiresAt')::numeric > extract(epoch from now())*1000",
         )
       ).rows;
+      let reference:Awaited<ReturnType<typeof agreementPrice>>|undefined;
       for (const ag of agents) {
-        const amount=task.data.nearYocto ? ag.data.minPriceNear || String((BigInt(ag.data.minPriceUsdMicro)*10n**24n+4999999n)/5000000n) : ag.data.minPriceUsdMicro;
+        const chainAgent=await view('get_agent',{agent_id:ag.id});
+        if(!chainAgent?.active)continue;
+        const nativePrice=await view('get_near_price',{agent_id:ag.id});
+        if(!nativePrice && task.data.nearYocto)reference ??= await agreementPrice('TESTNET');
+        const amount=agentMinimum({minPriceNear:nativePrice,minPriceUsdMicro:chainAgent.min_price},!!task.data.nearYocto,reference?.priceMicro||'1');
         if (!amount || BigInt(amount) > BigInt(task.data.nearYocto || task.data.usdMicro))
           continue;
         const prior = (

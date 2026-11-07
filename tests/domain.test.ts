@@ -7,6 +7,7 @@ import {
   evaluate,
   Q,
   canonical,
+  agentMinimum,
 } from "../src/domain.js";
 import { messageDigest } from "../src/auth.js";
 import {
@@ -15,6 +16,12 @@ import {
   deterministicBrief,
 } from "../src/runtime.js";
 import nacl from "tweetnacl";
+test('native bid floors round up identically and native-only agents cannot bid on legacy jobs',()=>{
+  const agent={minPriceUsdMicro:'1'};
+  assert.equal(agentMinimum(agent,true,'3000000'),String((Q+2999999n)/3000000n));
+  assert.equal(agentMinimum({minPriceNear:'17',minPriceUsdMicro:'0'},false,'3000000'),null);
+  assert.equal(agentMinimum({minPriceNear:'17'},true,'3000000'),'17');
+});
 test("golden settlement scenarios conserve the complete escrow", () => {
   const f = funding("20000000");
   assert.equal(f.escrow, String((44n * Q) / 10n));

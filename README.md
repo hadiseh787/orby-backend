@@ -1,5 +1,7 @@
 # Orby backend
 
+Latest fixes (7 November 2026): [document checklist, tests and boundaries](docs/CHANGES_2026-11-07.fa.md), [security policy](SECURITY.md). The launcher and startup command remain unchanged. Local seeds now include OPEN and SETTLED simulation examples.
+
 Node.js / TypeScript / Fastify, PostgreSQL, transactional outbox worker, deterministic local agents with optional Ollama, and a Rust NEAR testnet contract.
 
 [راهنمای سریع فارسی](QUICKSTART.fa.md)

@@ -13,6 +13,8 @@ enableLargeUploadTransport();
 const dir = resolve(".data/near");
 await mkdir(dir, { recursive: true });
 const file = resolve(dir, "accounts.json");
+const upgradeOnly=process.argv.includes('--upgrade-only');
+if(upgradeOnly && !existsSync(file))throw Error('Upgrade-only requires existing development contract credentials.');
 type Credential = { accountId: string; privateKey: string; publicKey: string };
 const credentials: Record<string, Credential> = existsSync(file)
   ? JSON.parse(await readFile(file, "utf8"))
@@ -24,7 +26,7 @@ const near = await connect({
   nodeUrl: rpcUrl,
   keyStore: store,
 });
-for (const role of [
+for (const role of (upgradeOnly?['contract']:[
   "contract",
   "admin",
   "executor",
@@ -33,8 +35,9 @@ for (const role of [
   "writer",
   "researcher",
   "reviewer",
-]) {
+])) {
   if (!credentials[role]) {
+    if(upgradeOnly)throw Error('Upgrade-only cannot create a missing contract account.');
     const key = KeyPair.fromRandom("ed25519");
     credentials[role] = {
       accountId: `af-${role}-${Date.now()}.testnet`,
@@ -51,7 +54,8 @@ for (const role of [
   );
   try {
     await (await near.account(c.accountId)).state();
-  } catch {
+  } catch (error) {
+    if(upgradeOnly)throw error;
     let response: Response | undefined;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
@@ -102,6 +106,7 @@ if ((await contract.state()).code_hash !== expectedCodeHash) {
   const uploaderHash = bs58.encode(
     createHash("sha256").update(uploader).digest(),
   );
+  if(upgradeOnly && (await contract.state()).code_hash!==uploaderHash && !(await contract.viewFunction({contractId:contract.accountId,methodName:'get_version',args:{}}).catch(()=>null)))throw Error('Upgrade-only requires an initialized contract.');
   const progressFile = resolve(dir, "upload-progress.json");
   let progress = existsSync(progressFile)
     ? JSON.parse(await readFile(progressFile, "utf8"))
@@ -136,6 +141,12 @@ if ((await contract.state()).code_hash !== expectedCodeHash) {
   if ((await contract.state()).code_hash !== expectedCodeHash)
     throw Error("Deployed contract hash does not match the verified WASM.");
   console.log("Main contract deployed and code hash verified.");
+}
+if(upgradeOnly){
+  const record={network:'testnet',contractId:contract.accountId,wasmBytes:wasm.length,version:await contract.viewFunction({contractId:contract.accountId,methodName:'get_version',args:{}}),codeHash:expectedCodeHash,wasmSha256:createHash('sha256').update(wasm).digest('hex'),source:'contracts/orby-market',verifiedAt:new Date().toISOString(),upgradeOnly:true};
+  await writeFile('docs/orby-deployment.json',JSON.stringify(record,null,2)+'\n');
+  console.log('Existing contract upgraded; account initialization and seed transactions skipped.');
+  await pool.end();process.exit(0);
 }
 async function callOnce(
   role: string,

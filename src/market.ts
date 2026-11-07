@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { pool, transaction, type DB } from "./db.js";
 import { type Actor } from "./auth.js";
 import { config } from "./config.js";
+import { agreementPrice } from "./near.js";
 import {
   assert,
   hash,
@@ -11,6 +12,9 @@ import {
   min,
   terminal,
   evaluate,
+  agentMinimum,
+  previewLifetimeMs,
+  startWindowMs,
 } from "./domain.js";
 import { move, balance } from "./ledger.js";
 export const dto = (row: any) => ({
@@ -129,8 +133,9 @@ export async function createJob(db: DB, a: Actor, b: any) {
       deadline: Date.now()+b.deadlineMinutes*60000,
       revision: 0,
       termsVersion: 1,
-      priceMode: b.nearYocto ? "NATIVE_NEAR" : "FIXTURE",
-      fundingPrice: "5000000",
+      priceMode: b.nearYocto ? "NATIVE_NEAR" : a.book==='SIMULATION' ? "FIXTURE" : "CONTRACT_REFERENCE",
+      fundingPrice: b.nearYocto ? Q.toString() : a.book==='SIMULATION' ? "5000000" : null,
+      deadlineBasis: "PUBLICATION",
       feeBps: 1000,
       bufferBps: 1000,
       bondBps: 2000,
@@ -180,8 +185,9 @@ export async function requestBids(db: DB, a: Actor, id: string) {
       [a.book],
     )
   ).rows;
+  const reference = await agreementPrice(a.book);
   for (const agent of agents) {
-    const amount=j.data.nearYocto ? agent.data.minPriceNear || String((BigInt(agent.data.minPriceUsdMicro)*Q+4999999n)/5000000n) : agent.data.minPriceUsdMicro;
+    const amount=agentMinimum(agent.data,!!j.data.nearYocto,reference.priceMicro);
     if (!amount || BigInt(amount) > BigInt(j.data.nearYocto || j.data.usdMicro)) continue;
     await db.query(
       "INSERT INTO bids(id,job_id,agent_id,book,amount,data,expires_at) VALUES($1,$2,$3,$4,$5,$6,now()+interval '30 minutes') ON CONFLICT(job_id,agent_id) DO UPDATE SET expires_at=EXCLUDED.expires_at",
@@ -231,7 +237,8 @@ export async function preview(db: DB, a: Actor, id: string, bidId: string) {
     "The agent execution policy is paused or expired.",
   );
   assert(j.data.deadline>Date.now(),"JOB_EXPIRED","The job deadline has expired.");
-  const f = funding(b.amount,j.data.nearYocto ? Q.toString() : "5000000");
+  const reference = j.data.nearYocto ? {priceMicro:Q.toString(),quoteId:'native-near-v1',source:'Fixed NEAR agreement (no FX conversion)',observedAt:Date.now()} : await agreementPrice(a.book);
+  const f = funding(b.amount,reference.priceMicro);
   if (a.book === "SIMULATION")
     assert(
       BigInt(await balance(db, a.book, b.owner_id, "bond")) >= BigInt(f.bond),
@@ -249,11 +256,13 @@ export async function preview(db: DB, a: Actor, id: string, bidId: string) {
     bufferBps: 1000,
     policyVersion: b.policy_version,
     jobVersion: j.version,
-    quoteId: "fixed-demo-v1",
-    priceMicro: "5000000",
-    source: j.data.nearYocto ? "Fixed NEAR agreement" : "Legacy fixture reference",
-    quoteObservedAt: Date.now(),
-    expiresAt: Date.now() + 60000,
+    quoteId: reference.quoteId,
+    priceMicro: reference.priceMicro,
+    source: reference.source,
+    quoteObservedAt: reference.observedAt,
+    expiresAt: Date.now() + previewLifetimeMs,
+    deadline: j.data.deadline,
+    deadlineBasis: "PUBLICATION",
     approvalPolicy: j.data.approvalPolicy,
     reviewSeconds: config.accelerated ? 90 : 86400,
     manualFallback: "50/50 after arbitrator deadline",
@@ -374,7 +383,8 @@ export async function fund(db: DB, a: Actor, id: string, pid: string) {
     ...p.data,
     creatorId: p.data.creatorId,
     fundedAt: Date.now(),
-    startDeadline: Date.now() + (config.accelerated ? 30000 : 600000),
+    startDeadline: Date.now() + startWindowMs(config.accelerated),
+    fundingPrice: p.data.priceMicro,
     deadline: j.data.deadline,
   });
   await event(db, id, a.id, "job_funded", {

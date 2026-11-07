@@ -1,7 +1,6 @@
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
-import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import staticFiles from "@fastify/static";
 import { existsSync } from "node:fs";
@@ -11,7 +10,7 @@ import { z } from "zod";
 import { config } from "./config.js";
 import { pool } from "./db.js";
 import { authRoutes, actor, type Actor } from "./auth.js";
-import { AppError, assert, hash, Q, terminal, min } from "./domain.js";
+import { AppError, assert, hash, Q, terminal, min, agentMinimum } from "./domain.js";
 import {
   dto,
   loadJob,
@@ -26,7 +25,9 @@ import {
   updateJob,
 } from "./market.js";
 import { move, balance } from "./ledger.js";
-import { proposal, reconcile, view } from "./near.js";
+import { proposal, reconcile, view, agreementPrice } from "./near.js";
+import {recoverRegistration} from './agent-registration.js';
+import {registerSecurity} from './security.js';
 import { nearUsdQuote } from "./price.js";
 import { uploadAttachment, claimAttachments } from "./attachments.js";
 export const criterionSchema = z.object({
@@ -104,7 +105,7 @@ export async function buildApp() {
   });
   await app.register(cookie);
   await app.register(cors, { origin: config.origin, credentials: true });
-  await app.register(helmet, { contentSecurityPolicy: false });
+  const serveSpa=await registerSecurity(app);
   await app.register(rateLimit, {
     max: req => ["GET","HEAD","OPTIONS"].includes(req.method) ? 600 : 120,
     timeWindow: 60000,
@@ -177,13 +178,13 @@ export async function buildApp() {
     name: "Orby",
     demoLogin: config.demo,
     network: "testnet",
+    walletRpcUrls:[config.walletRpc],
     contractId: config.contract,
     chainConfigured: !!config.contract,
     accelerated: config.accelerated,
     modelConfigured: !!config.model,
     books: ["SIMULATION", "TESTNET"],
     priceMode: "NATIVE_NEAR",
-    priceMicro: "5000000",
     primaryAsset: "NEAR",
     contractVersionRequired: 2,
     attachmentLimits: {maxFiles:5,maxBytes:2097152,extensions:["pdf","txt","md","json","png","jpg","jpeg"]},
@@ -291,7 +292,9 @@ export async function buildApp() {
       })
       .parse(b);
     assert(m.minPriceNear || m.minPriceUsdMicro,"VALIDATION_ERROR","A positive minimum price in NEAR is required.");
-    const existing=(await db.query("SELECT owner_id FROM agents WHERE id=$1 AND book=$2",[m.id,a.book])).rows[0];
+    await db.query('SELECT pg_advisory_xact_lock(hashtext($1))',['agent-registration:'+a.book+':'+m.id]);
+    const existing=(await db.query("SELECT owner_id,state FROM agents WHERE id=$1 AND book=$2",[m.id,a.book])).rows[0];
+    if(existing?.owner_id===a.id && existing.state==='PENDING' && a.book==='TESTNET')return recoverRegistration(db,a,m.id);
     assert(!existing,"AGENT_EXISTS","This Agent ID is already registered. Use another ID or resume its pending wallet operation.",409);
     const data = {
       ...m,
@@ -350,6 +353,7 @@ export async function buildApp() {
         }
       : { id: m.id };
   });
+  mutation('/agents/:id/retry-registration',async(db,a,b,p)=>recoverRegistration(db,a,p.id));
   mutation("/agents/:id/test", async (db, a, b, p) => {
     const r = (
       await db.query(
@@ -439,7 +443,7 @@ export async function buildApp() {
               job_id: j.id,
               terms_hash: j.termsHash,
               ...(j.nearYocto ? {budget:j.nearYocto} : {usd_micro:j.usdMicro}),
-              deadline_ms: String(Date.now() + j.deadlineMinutes * 60000),
+              deadline_ms: String(j.deadline),
               manual: j.approvalPolicy === "MANUAL_APPROVAL",
             },
             "0",
@@ -450,7 +454,7 @@ export async function buildApp() {
   });
   app.get("/api/v1/jobs/open", async(req:any)=>{
     const a=await actor(req);
-    return (await pool.query("SELECT id,data->>'title' AS title,data->>'nearYocto' AS near_budget,data->>'usdMicro' AS usd_micro,data->>'category' AS category,data->>'deadline' AS deadline FROM jobs WHERE book=$1 AND state='OPEN' AND client_id<>$2 AND (book='SIMULATION' OR data->>'chainConfirmed'='true') ORDER BY created_at DESC LIMIT 50",[a.book,a.id])).rows;
+    return (await pool.query("SELECT id,data->>'title' AS title,data->>'nearYocto' AS near_budget,data->>'usdMicro' AS usd_micro,data->>'category' AS category,data->>'deadline' AS deadline FROM jobs WHERE book=$1 AND state='OPEN' AND client_id<>$2 AND (data->>'deadline')::numeric>extract(epoch from now())*1000 AND (book='SIMULATION' OR data->>'chainConfirmed'='true') ORDER BY created_at DESC LIMIT 50",[a.book,a.id])).rows;
   });
   mutation("/jobs/:id/bids",async(db,a,b,p)=>{
     const j=await loadJob(db,idSchema.parse(p.id),undefined,true);
@@ -458,7 +462,16 @@ export async function buildApp() {
     const ag=(await db.query("SELECT * FROM agents WHERE id=$1 AND book=$2 AND owner_id=$3 AND state='ACTIVE'",[b.agentId,a.book,a.id])).rows[0];
     assert(ag,"FORBIDDEN","Choose an active agent owned by your account.",403);
     const amount=amountSchema.parse(b.amount),native=!!j.data.nearYocto;
-    assert(BigInt(amount)<=BigInt(j.data.nearYocto||j.data.usdMicro)&&BigInt(amount)>=BigInt(native?(ag.data.minPriceNear||String(BigInt(ag.data.minPriceUsdMicro)*Q/5000000n)):ag.data.minPriceUsdMicro),"INVALID_AMOUNT","The proposal must be between the agent minimum and the job budget.");
+    let data=ag.data;
+    if(a.book==='TESTNET') {
+      const chainAgent=await view('get_agent',{agent_id:ag.id});
+      assert(chainAgent?.active && chainAgent.owner===a.id,'INVALID_STATE','The agent is not active on the contract.');
+      data={minPriceUsdMicro:chainAgent.min_price,minPriceNear:await view('get_near_price',{agent_id:ag.id})};
+    }
+    const reference = native && data.minPriceNear ? {priceMicro:Q.toString()} : await agreementPrice(a.book);
+    const minimum=agentMinimum(data,native,reference.priceMicro);
+    assert(minimum,'INVALID_AMOUNT','A native-only agent cannot bid on a legacy USD job.');
+    assert(BigInt(amount)<=BigInt(j.data.nearYocto||j.data.usdMicro)&&BigInt(amount)>=BigInt(minimum),"INVALID_AMOUNT","The proposal must be between the agent minimum and the job budget, in the job currency.");
     assert(j.data.deadline>Date.now(),"JOB_EXPIRED","This job deadline has expired.");
     const id=randomUUID(),expires=Date.now()+Math.min(1800000,j.data.deadline-Date.now());
     const prior=(await db.query("SELECT id FROM bids WHERE job_id=$1 AND agent_id=$2",[j.id,ag.id])).rows[0];
@@ -513,6 +526,8 @@ export async function buildApp() {
     if (a.book === "SIMULATION")
       return fund(db, a, idSchema.parse(p.id), idSchema.parse(b.previewId));
     const j = await loadJob(db, p.id, a, true);
+    assert(j.client_id===a.id && j.state==='OPEN','INVALID_STATE','Only the client can fund an open job.');
+    assert(j.data.deadline>Date.now(),'JOB_EXPIRED','This job deadline has expired.');
     const pv = (
       await db.query(
         "SELECT * FROM funding_previews WHERE id=$1 AND job_id=$2 AND actor=$3 AND expires_at>now() AND consumed=false",
@@ -524,6 +539,7 @@ export async function buildApp() {
       "PREVIEW_STALE",
       "Refresh the funding preview.",
     );
+    if(!j.data.nearYocto)assert((await agreementPrice(a.book)).priceMicro===pv.data.priceMicro,'PREVIEW_STALE','The contract price changed. Refresh the funding preview.');
     return proposal(
       db,
       a.id,
@@ -1021,7 +1037,9 @@ export async function buildApp() {
   }));
   const frontend = resolve(process.env.FRONTEND_DIST || "../frontend/dist/orby/browser");
   if (existsSync(frontend)) {
-      await app.register(staticFiles, { root: frontend, wildcard: true });
+    app.get('/',async(req,reply)=>serveSpa(req,reply,frontend));
+    app.get('/index.html',async(req,reply)=>serveSpa(req,reply,frontend));
+    await app.register(staticFiles, { root: frontend, wildcard: true,index:false });
     app.setNotFoundHandler((req, reply) =>
       req.url.startsWith("/api/")
         ? reply
@@ -1031,7 +1049,7 @@ export async function buildApp() {
               const pathname=req.url.split('?')[0];
               if(/\.(?:js|css|png|jpe?g|svg|ico|woff2?|json|map)$/.test(pathname))return reply.code(404).send({code:'NOT_FOUND',message:'Asset not found.'});
               const known=/^\/(?:$|settings$|trust$|explorer$|client\/jobs(?:\/(?:new|[0-9a-f-]{36}))?$|agents\/[a-z0-9-]{3,48}$|creator\/(?:agents|earnings|runs|credit)$|lender\/pool$|admin\/system$)/.test(pathname);
-              return reply.code(known?200:404).sendFile('index.html');
+              return serveSpa(req,reply,frontend,known?200:404);
             })(),
     );
   }

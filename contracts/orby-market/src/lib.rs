@@ -191,10 +191,9 @@ impl Market {
     pub fn set_agent_near_price(&mut self, request_id: String, agent_id: String, min_price: U128) {
         let args=near_sdk::serde_json::json!([agent_id,min_price]);
         if self.once(&request_id,&args) { return; }
-        let mut agent=self.agent(&agent_id);
+        let agent=self.agent(&agent_id);
         assert_eq!(agent.owner,env::predecessor_account_id(),"FORBIDDEN");
         assert!(min_price.0>0 && min_price.0<=100*Q,"INVALID_AMOUNT");
-        agent.version+=1;self.agents.insert(agent_id.clone(),agent);
         self.native_agents.insert(agent_id,min_price);
         self.done(request_id,"NEAR price updated");
     }
@@ -475,7 +474,7 @@ impl Market {
         self.new_allowed();
         if !self.native_jobs.contains_key(&job_id) { self.valid_price(); }
         assert!(
-            self.now() <= preview_expires_at.0 && preview_expires_at.0 <= self.now() + 60000,
+            self.now() <= preview_expires_at.0 && preview_expires_at.0 <= self.now() + 300000,
             "PREVIEW_STALE"
         );
         let mut j = self.job(&job_id);
@@ -607,7 +606,7 @@ impl Market {
             child_spent: U128(0),
             children: vec![],
             parent: Some(job_id.clone()),
-            start_deadline: U64(self.now() + if self.accelerated { 30000 } else { 600000 }),
+            start_deadline: U64(self.now() + if self.accelerated { 300000 } else { 600000 }),
             review_deadline: U64(0),
             dispute_deadline: U64(0),
             revision: 0,

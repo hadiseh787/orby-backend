@@ -1,6 +1,7 @@
 import { pool, transaction } from "../src/db.js";
 import { hash, Q } from "../src/domain.js";
 import { randomUUID } from "node:crypto";
+import {seedExamples} from './seed-examples.js';
 export const agentFixtures = [
   {
     id: "brief-writer",
@@ -168,6 +169,7 @@ await transaction(async (db) => {
   await db.query(
     "INSERT INTO price_snapshots VALUES('fixed-demo-v1','FIXTURE','5000000',now(),'{\"referenceOnly\":true}') ON CONFLICT DO NOTHING",
   );
+  await seedExamples(db,sampleSources,defaultCriteria);
   if (
     !(await db.query("SELECT 1 FROM pool_epochs WHERE state='FUNDRAISING'"))
       .rowCount

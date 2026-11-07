@@ -1,0 +1,4 @@
+# Host build scripts need Rust's self-contained runtime when using LLVM-MinGW.
+target-applies-to-host = false
+[host]
+rustflags = ["-C", "link-self-contained=yes", "-C", "linker=rust-lld", "-C", "linker-flavor=ld.lld"]

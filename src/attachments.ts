@@ -3,6 +3,8 @@ import { assert } from "./domain.js";
 import { type DB } from "./db.js";
 import { type Actor } from "./auth.js";
 export const attachmentLimit = 2 * 1024 * 1024;
+export const accountAttachmentBytes = 50 * 1024 * 1024;
+export const accountAttachmentFiles = 100;
 export const attachmentTypes: Record<string, string[]> = {
   txt: ["text/plain"], md: ["text/markdown", "text/plain"], json: ["application/json", "text/plain"],
   pdf: ["application/pdf"], png: ["image/png"], jpg: ["image/jpeg"], jpeg: ["image/jpeg"],
@@ -21,8 +23,12 @@ export async function uploadAttachment(db: DB, a: Actor, body: any) {
     try { const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes); if (ext === "json") JSON.parse(text); }
     catch { assert(false, "INVALID_FILE", "Text must be UTF-8; JSON must be valid JSON."); }
   }
-  const count = (await db.query("SELECT count(*) FROM job_attachments WHERE owner_id=$1 AND job_id IS NULL", [a.id])).rows[0].count;
-  assert(Number(count) < 25, "UPLOAD_LIMIT", "Too many unused uploads. Remove unused attachments before uploading more.");
+  // All books and attached files count. The transaction lock serializes distinct upload request IDs.
+  await db.query('SELECT pg_advisory_xact_lock(hashtext($1))',['attachment-quota:'+a.id]);
+  const usage = (await db.query("SELECT count(*) AS files,COALESCE(sum(bytes),0)::text AS bytes,count(*) FILTER(WHERE job_id IS NULL) AS unused FROM job_attachments WHERE owner_id=$1", [a.id])).rows[0];
+  assert(Number(usage.unused) < 25, "UPLOAD_LIMIT", "Too many unused uploads. Remove unused attachments before uploading more.");
+  assert(Number(usage.files) < accountAttachmentFiles && Number(usage.bytes)+bytes.length <= accountAttachmentBytes,
+    'UPLOAD_QUOTA','Account attachment storage is limited to 100 files and 50 MiB, including files already attached to jobs.',413);
   let cid:string|null=null;
   if(body.publishToIpfs===true){
     assert(process.env.IPFS_API_URL,"STORAGE_NOT_CONFIGURED","Public IPFS storage is not configured.",503);

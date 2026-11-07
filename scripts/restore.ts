@@ -60,6 +60,7 @@ await transaction(async (db) => {
         ...rows.filter((r: any) => r.parent_id),
       ];
     for (const row of rows) {
+      if(table==='auth_nonces' && row.flow===undefined)row.flow='DIRECT';
       if(table==='job_attachments'){
         const bytes=Buffer.from(row.content_base64,'base64');
         assert(bytes.length===row.bytes&&createHash('sha256').update(bytes).digest('hex')===row.sha256,"INVALID_BACKUP","Attachment content does not match its recorded hash.");

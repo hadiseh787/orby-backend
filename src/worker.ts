@@ -6,7 +6,17 @@ import { runModel, deterministicBrief } from "./runtime.js";
 import { config } from "./config.js";
 import { tickNear } from "./near.js";
 let stopping = false;
-export async function tick() {
+const activeTicks=new Set<Promise<void>>();
+export async function stopWorker() {
+  stopping=true;
+  await Promise.all([...activeTicks]);
+}
+export function tick() {
+  if(stopping)return Promise.resolve();
+  const running=tickOnce();activeTicks.add(running);
+  return running.finally(()=>activeTicks.delete(running));
+}
+async function tickOnce() {
   const task = await transaction(async (db) => {
     const t = (
       await db.query(

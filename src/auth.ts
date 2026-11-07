@@ -101,11 +101,11 @@ export async function authRoutes(app: any) {
       "operator.demo",
     ];
     assert(
-      allowed.includes(req.body?.account),
+      allowed.includes(req.body?.accountId ?? req.body?.account),
       "AUTH_INVALID",
       "Choose a known local demo account.",
     );
-    return session(reply, req.body.account, "SIMULATION");
+    return session(reply, req.body.accountId ?? req.body.account, "SIMULATION");
   });
   app.post("/api/v1/auth/logout", async (req: any, reply: any) => {
     await actor(req);
@@ -115,14 +115,15 @@ export async function authRoutes(app: any) {
     reply.clearCookie("af_session", { path: "/" });
     return { ok: true };
   });
-  app.post("/api/v1/auth/challenge", async () => {
+  app.post("/api/v1/auth/challenge", async (req:any) => {
+    const flow=req.body?.flow==='REDIRECT'?'REDIRECT':'DIRECT';
     const id = randomUUID(),
       nonce = randomBytes(32).toString("base64"),
       recipient = new URL(config.origin).host;
     const message = `Sign in to Orby on NEAR testnet. Request: ${id}. No transaction or spending permission.`;
     await pool.query(
-      "INSERT INTO auth_nonces VALUES($1,$2,$3,$4,now()+interval '5 minutes',false)",
-      [id, nonce, message, recipient],
+      "INSERT INTO auth_nonces(id,nonce,message,recipient,expires_at,consumed,flow) VALUES($1,$2,$3,$4,now()+interval '5 minutes',false,$5)",
+      [id, nonce, message, recipient,flow],
     );
     return { id, nonce, message, recipient, callbackUrl:config.origin+'/settings', network: "testnet" };
   });
@@ -147,7 +148,10 @@ export async function authRoutes(app: any) {
       assert(/^ed25519:[1-9A-HJ-NP-Za-km-z]{40,50}$/.test(b.publicKey),"AUTH_INVALID","A valid Ed25519 public key is required.",401);
       const key = bs58.decode(b.publicKey.replace(/^ed25519:/, ""));
       assert(key.length===32 && Buffer.from(b.signature,"base64").length===64,"AUTH_INVALID","The wallet returned an invalid Ed25519 signature.",401);
-      const valid = [undefined,config.origin+'/settings'].some(callback=>nacl.sign.detached.verify(
+      const redirect=b.flow==='REDIRECT';
+      assert(!redirect || c.flow==='REDIRECT','AUTH_INVALID','This challenge was not issued for a wallet redirect.',401);
+      const callbacks = redirect ? [undefined,config.origin+'/settings'] : [config.origin+'/settings'];
+      const valid = callbacks.some(callback=>nacl.sign.detached.verify(
         messageDigest(c.message, Buffer.from(c.nonce, "base64"), c.recipient,callback),
         Buffer.from(b.signature, "base64"), key,
       ));

@@ -1,6 +1,13 @@
 import { createHash } from "node:crypto";
 export const Q = 10n ** 24n;
 export const BPS = 10000n;
+export const previewLifetimeMs = 5 * 60000;
+export const startWindowMs = (accelerated: boolean) => accelerated ? 300000 : 600000;
+export function agentMinimum(data: any, native: boolean, priceMicro: string): string | null {
+  if (native && data.minPriceNear) return data.minPriceNear;
+  if (!data.minPriceUsdMicro || BigInt(data.minPriceUsdMicro) <= 0n) return null;
+  return native ? String(ceil(BigInt(data.minPriceUsdMicro) * Q, atomic(priceMicro))) : data.minPriceUsdMicro;
+}
 export class AppError extends Error {
   constructor(
     public code: string,

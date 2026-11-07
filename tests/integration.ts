@@ -4,6 +4,10 @@ import assert from "node:assert/strict";
 import pg from "pg";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import {createServer} from 'node:http';
+import nacl from 'tweetnacl';
+import bs58 from 'bs58';
+import {hash,Q} from '../src/domain.js';
 const name = "af_test_" + Date.now();
 const baseUrl=new URL(process.env.DATABASE_URL||'postgresql://agent:agent_local_only@127.0.0.1:5433/orby');
 const adminUrl=new URL(baseUrl);adminUrl.pathname='/postgres';
@@ -22,7 +26,7 @@ for (const file of ["scripts/migrate.ts", "scripts/seed.ts"]) {
 }
 const { buildApp } = await import("../src/server.js");
 const { pool } = await import("../src/db.js");
-const { tick } = await import("../src/worker.js");
+const { tick,stopWorker } = await import("../src/worker.js");
 const app = await buildApp();
 await app.ready();
 type Session = { cookie: string; csrf: string };
@@ -114,9 +118,16 @@ async function job() {
   return { id, preview: p.json() };
 }
 after(async () => {
+  await stopWorker();
   await app.close();
   await pool.end();
-  await admin.query("DROP DATABASE " + name + " WITH (FORCE)");
+  // pg.Pool.end can resolve just before PostgreSQL processes the final socket close.
+  for(let n=0;n<100;n++){
+    const active=Number((await admin.query('SELECT count(*) FROM pg_stat_activity WHERE datname=$1',[name])).rows[0].count);
+    if(active===0)break;
+    await new Promise(r=>setTimeout(r,25));
+  }
+  await admin.query("DROP DATABASE " + name);
   await admin.end();
 });
 test("full workflow funds, delegates, delivers, settles and balances the ledger", async () => {
@@ -311,13 +322,78 @@ test("native NEAR jobs attach private files, normalize agent IDs and settle exac
   assert.equal(detail.attachments[0].sha256,file.sha256);
   const bid=detail.bids.find((v:any)=>v.agentId==="my-new-agent");assert.ok(bid);
   const pv=(await post(client,"/jobs/"+job.id+"/funding-preview",{bidId:bid.id})).json();assert.equal(pv.escrow,"1100000000000000000000000");
+  assert.equal(pv.quoteId,'native-near-v1');assert.equal(pv.priceMicro,Q.toString());
+  assert.ok(pv.expiresAt-Date.now()>240000);assert.equal(pv.deadline,job.deadline);
   assert.equal((await post(client,"/jobs/"+job.id+"/fund",{previewId:pv.id})).statusCode,200);
+  const funded=(await pool.query('SELECT data FROM jobs WHERE id=$1',[job.id])).rows[0].data;
+  assert.ok(funded.startDeadline-funded.fundedAt>=300000);assert.equal(funded.deadline,job.deadline);
   await tick();
   assert.equal((await post(client,"/jobs/"+job.id+"/approve")).statusCode,200);
   detail=(await app.inject({url:"/api/v1/jobs/"+job.id,headers:{cookie:client.cookie}})).json();
   assert.equal(detail.settlement.award,"1000000000000000000000000");
   assert.equal(detail.settlement.refund,"100000000000000000000000");
   assert.equal((await app.inject({url:"/api/v1/uploads/"+file.id,headers:{cookie:creator.cookie}})).statusCode,200);
+});
+test('legacy manual proposals keep USD units and native-only agents are rejected clearly',async()=>{
+  const created=await post(client,'/jobs',fixture),id=created.json().id;
+  const bid=await post(creator,'/jobs/'+id+'/bids',{agentId:'brief-writer',amount:'20000000'});
+  assert.equal(bid.statusCode,200,bid.body);
+  assert.equal((await pool.query('SELECT amount FROM bids WHERE id=$1',[bid.json().id])).rows[0].amount,'20000000');
+  const denied=await post(creator,'/jobs/'+id+'/bids',{agentId:'my-new-agent',amount:'20000000'});
+  assert.match(denied.json().message,/native-only/i);
+});
+
+test('account upload quotas include attached files and serialize concurrent request IDs',async()=>{
+  const created=await post(stranger,'/jobs',fixture),id=created.json().id;
+  const bytes=Buffer.from('x'),digest=hash('x');
+  for(let n=0;n<99;n++)await pool.query("INSERT INTO job_attachments(id,owner_id,book,job_id,name,media_type,bytes,sha256,content_base64) VALUES($1,'reviewer.demo','SIMULATION',$2,'quota.txt','text/plain',1,$3,$4)",[randomUUID(),id,digest,bytes.toString('base64')]);
+  const responses=await Promise.all([post(stranger,'/uploads',{name:'a.txt',dataBase64:'eA=='}),post(stranger,'/uploads',{name:'b.txt',dataBase64:'eA=='})]);
+  assert.deepEqual(responses.map(r=>r.statusCode).sort(),[200,413]);
+  assert.equal(Number((await pool.query("SELECT count(*) FROM job_attachments WHERE owner_id='reviewer.demo'")).rows[0].count),100);
+  await pool.query("DELETE FROM job_attachments WHERE owner_id='reviewer.demo'");
+  // Synthetic quota metadata exercises the 50 MiB bound without a 70 MiB base64 test fixture.
+  for(let n=0;n<25;n++)await pool.query("INSERT INTO job_attachments(id,owner_id,book,job_id,name,media_type,bytes,sha256,content_base64) VALUES($1,'reviewer.demo','SIMULATION',$2,'quota.txt','text/plain',2097152,$3,$4)",[randomUUID(),id,digest,'eA==']);
+  assert.equal((await post(stranger,'/uploads',{name:'overflow.txt',dataBase64:'eA=='})).statusCode,413);
+  await pool.query("DELETE FROM job_attachments WHERE owner_id='reviewer.demo'");
+});
+
+test('NEP-413 flow binding and pending registration recovery preserve identity and uncertain transactions',async()=>{
+  const {config}=await import('../src/config.js'),{messageDigest}=await import('../src/auth.js');
+  const previous={rpc:config.rpc,contract:config.contract};
+  const keys=nacl.sign.keyPair(),publicKey='ed25519:'+bs58.encode(keys.publicKey);let chainAgent:any=null;
+  const rpc=createServer(async(req,res)=>{
+    const parts:Buffer[]=[];for await(const part of req)parts.push(part);
+    const body=JSON.parse(Buffer.concat(parts).toString());
+    let result:any;
+    if(body.method==='gas_price')result={gas_price:'100000000'};
+    else if(body.params.request_type==='view_access_key_list')result={keys:[{public_key:publicKey,access_key:{permission:'FullAccess'}}]};
+    else result={result:[...Buffer.from(JSON.stringify(chainAgent))]};
+    res.setHeader('Content-Type','application/json');res.end(JSON.stringify({jsonrpc:'2.0',id:body.id,result}));
+  });
+  await new Promise<void>(r=>rpc.listen(0,'127.0.0.1',r));
+  config.rpc='http://127.0.0.1:'+(rpc.address() as any).port;config.contract='isolated.testnet';
+  try{
+    const challenge=async(flow:string)=> (await app.inject({method:'POST',url:'/api/v1/auth/challenge',payload:{flow}})).json();
+    const verify=async(c:any,callback:boolean,flow='DIRECT')=>app.inject({method:'POST',url:'/api/v1/auth/verify',payload:{accountId:'recovery.testnet',publicKey,challengeId:c.id,flow,signature:Buffer.from(nacl.sign.detached(messageDigest(c.message,Buffer.from(c.nonce,'base64'),c.recipient,callback?c.callbackUrl:undefined),keys.secretKey)).toString('base64')}});
+    const direct=await challenge('DIRECT');assert.equal((await verify(direct,false)).statusCode,401);assert.equal((await verify(direct,false,'REDIRECT')).statusCode,401);
+    const login=await verify(direct,true);assert.equal(login.statusCode,200,login.body);assert.equal((await verify(direct,true)).statusCode,401);
+    const redirect=await challenge('REDIRECT');assert.equal((await verify(redirect,false,'REDIRECT')).statusCode,200);
+    const owner={cookie:login.headers['set-cookie']!.toString().split(';')[0],csrf:login.json().csrf};
+    const manifest={id:'recoverable-id',name:'Recoverable agent',description:'An isolated pending registration fixture.',category:'writing',minPriceNear:Q.toString(),skills:[],acceptsSubcontracts:false};
+    const first=await post(owner,'/agents',manifest);assert.equal(first.statusCode,200,first.body);
+    const op=first.json().operation;
+    const same=await post(owner,'/agents/recoverable-id/retry-registration');assert.equal(same.json().operation.operationId,op.operationId);
+    await pool.query("UPDATE chain_operations SET state='FAILED' WHERE id=$1",[op.operationId]);
+    const retried=await post(owner,'/agents',manifest);assert.equal(retried.statusCode,200,retried.body);assert.notEqual(retried.json().operation.operationId,op.operationId);
+    const newId=retried.json().operation.operationId;
+    await pool.query("UPDATE chain_operations SET state='UNKNOWN' WHERE id=$1",[newId]);
+    assert.equal((await post(owner,'/agents/recoverable-id/retry-registration')).json().code,'RECONCILIATION_REQUIRED');
+    await pool.query("UPDATE chain_operations SET state='FAILED' WHERE id=$1",[newId]);
+    chainAgent={owner:'recovery.testnet',active:true,version:1,manifest_hash:hash((await pool.query("SELECT data FROM agents WHERE id='recoverable-id' AND book='TESTNET'")).rows[0].data)};
+    assert.equal((await post(owner,'/agents/recoverable-id/retry-registration')).json().recovered,true);
+    assert.equal((await pool.query("SELECT state FROM agents WHERE id='recoverable-id' AND book='TESTNET'")).rows[0].state,'ACTIVE');
+    assert.equal(Number((await pool.query("SELECT count(*) FROM agents WHERE id='recoverable-id' AND book='TESTNET'")).rows[0].count),1);
+  }finally{Object.assign(config,previous);await new Promise<void>((resolve,reject)=>rpc.close(e=>e?reject(e):resolve()));}
 });
 test("SPA requests preserve the API budget and API requests remain rate limited", async () => {
   const remoteAddress = "198.51.100.77";

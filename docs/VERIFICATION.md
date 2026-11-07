@@ -1,4 +1,8 @@
-# Orby 1.1 verification — 6 November 2026
+# Orby 1.1 verification
+
+Latest pass: 7 November 2026. [Current fixes and verification](CHANGES_2026-11-07.fa.md) and [security boundaries](../SECURITY.md) supersede the relevant 6 November findings below. Node tests: 10; isolated PostgreSQL tests: 12 (consecutive clean teardowns); browser tests: 10, including CSP, wallet sandbox RPC and legacy USD submission. Contract code was upgraded without changing the 7 existing jobs or 8 account balances; see [upgrade evidence](orby-upgrade-20261107.json). The real [browser/testnet flow](orby-browser-testnet.json) also passed with enforced CSP, an open bid surviving a price-only update, a five-minute funding preview, settlement and withdrawal.
+
+The following is the original 6 November baseline.
 
 Angular 21, Node.js and PostgreSQL, with the supplied Orby identity and a deployed NEAR testnet contract. New agreements use exact native NEAR amounts. USD quotes are informational; legacy agreements preserve their original rules.
 

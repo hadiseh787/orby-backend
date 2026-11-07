@@ -12,6 +12,7 @@ export const config = {
   accelerated: process.env.DEMO_ACCELERATED !== "false",
   contract: process.env.NEAR_CONTRACT_ID || "",
   rpc: process.env.NEAR_RPC_URL || "https://rpc.testnet.near.org",
+  walletRpc: process.env.NEAR_WALLET_RPC_URL || "https://rpc.testnet.near.org",
   serviceAccount: process.env.NEAR_SERVICE_ACCOUNT || "",
   serviceKey: process.env.NEAR_SERVICE_PRIVATE_KEY || "",
   admin: process.env.NEAR_ADMIN_ACCOUNT || "",
