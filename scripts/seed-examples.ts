@@ -4,6 +4,7 @@ import {createJob,requestBids,preview,fund,loadJob,updateJob,settleJob} from '..
 import {deterministicBrief} from '../src/runtime.js';
 import {hash,evaluate} from '../src/domain.js';
 import {randomUUID} from 'node:crypto';
+import {recordDecision} from '../src/delivery-decisions.js';
 
 export async function seedExamples(db:DB,sources:any[],criteria:any[]) {
   if((await db.query("SELECT data FROM price_snapshots WHERE id='system-config'")).rows[0]?.data?.paused)return;
@@ -20,6 +21,7 @@ export async function seedExamples(db:DB,sources:any[],criteria:any[]) {
     const row=await loadJob(db,job.id),content=deterministicBrief({sources}),checks=evaluate(content,criteria,sources);
     await db.query('INSERT INTO deliveries(id,job_id,revision,content,hash,checks) VALUES($1,$2,0,$3,$4,$5)',[randomUUID(),job.id,content,hash(content),JSON.stringify(checks)]);
     await updateJob(db,row,'REVIEW_OPEN',{executionMode:'DETERMINISTIC',reviewDeadline:Date.now()});
+    await recordDecision(db,row,client.id,'APPROVE',{revision:0,hash:hash(content)},{basis:'EXPLICIT_SIMULATION_EXAMPLE'});
     await settleJob(db,row,client.id);
     await db.query("UPDATE outbox_jobs SET state='DONE' WHERE job_id=$1",[job.id]);
   }

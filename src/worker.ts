@@ -5,6 +5,7 @@ import { hash, evaluate, terminal } from "./domain.js";
 import { runModel, deterministicBrief } from "./runtime.js";
 import { config } from "./config.js";
 import { tickNear } from "./near.js";
+import {tickPrograms} from './programs.js';
 let stopping = false;
 const activeTicks=new Set<Promise<void>>();
 export async function stopWorker() {
@@ -20,7 +21,7 @@ async function tickOnce() {
   const task = await transaction(async (db) => {
     const t = (
       await db.query(
-        "SELECT * FROM outbox_jobs WHERE (state='QUEUED' OR (state='RUNNING' AND lease_until<now())) AND next_attempt<=now() ORDER BY next_attempt FOR UPDATE SKIP LOCKED LIMIT 1",
+        "SELECT o.* FROM outbox_jobs o JOIN jobs j ON j.id=o.job_id WHERE j.book='SIMULATION' AND o.type='EXECUTE' AND (o.state='QUEUED' OR (o.state='RUNNING' AND o.lease_until<now())) AND o.next_attempt<=now() ORDER BY o.next_attempt FOR UPDATE OF o SKIP LOCKED LIMIT 1",
       )
     ).rows[0];
     if (!t) return null;
@@ -103,7 +104,7 @@ async function tickOnce() {
   if (task) {
     try {
       const result = await runModel(
-        {...(task.job.data.runtimeInput || task.job.data.input),brief:task.job.data.description,criteria:task.job.data.criteria},
+        {...(task.job.data.runtimeInput || task.job.data.input),brief:task.job.data.description,criteria:task.job.data.criteria,revisionFeedback:task.job.data.revisionFeedback},
       );
       await transaction(async (db) => {
         const j = await loadJob(db, task.job_id, undefined, true);
@@ -229,6 +230,9 @@ if (process.argv[1]?.replaceAll("\\", "/").match(/worker\.(ts|js)$/)) {
   while (!stopping) {
     try {
       await tick();
+      if(stopping)break;
+      await tickPrograms();
+      if(stopping)break;
       await tickNear();
     } catch (e: any) {
       console.error("Worker:", e.message);

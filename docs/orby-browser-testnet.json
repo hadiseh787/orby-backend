@@ -1,56 +1,66 @@
 {
   "network": "testnet",
   "contractId": "af-contract-1793954330698.testnet",
-  "jobId": "48292f93-d26f-4186-9525-fb3de9333093",
-  "agentId": "orby-browser-1794028972600",
+  "jobId": "20cb3dac-de7b-47f7-a395-6fa81c63b7de",
+  "agentId": "orby-browser-1794069440552",
   "passed": true,
-  "checkedAt": "2026-11-07T05:25:46.289Z",
+  "checkedAt": "2026-11-07T16:42:17.502Z",
   "adapter": "Injected development wallet using real NEP-413 signatures and real RPC transactions; no mocked API/chain",
   "receipts": [
     {
       "method": "register_near_agent",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "GneUvrspYBamuq3yGZdh41hyt3k43gFpmVPe6oNEkx5H"
+      "hash": "AQ3M9rHE1NSetgqJ86G5CkQ1AzJnUo8aNmBhqJn2DAT9"
     },
     {
       "method": "set_execution_policy",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "77d2KPH1wMyK1K1J4TBupEDtH89RopbPx3HAdH7oNXmC"
+      "hash": "5k5H9TffKKUQ2H8BbL9cE1Sfp9ekY2GY7ormn2fxUU4p"
     },
     {
       "method": "deposit_bond",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "4HUiscfFZvWn3Be7v4YRUYqcrhuSMWXyLf2hChs3aATs"
+      "hash": "DfWWpA5pfBjLFGoieekG7V8ntRnSN9sLaVeytNwWqt5P"
     },
     {
       "method": "open_near_job",
       "signer": "af-client-1793954382407.testnet",
-      "hash": "9PcHZijuegJYaNiVudoK4QKFzduwDfUSmHgnJKf45oNx"
+      "hash": "BwQkDj1HtwBfZbpwuy288ghUNaY6952U146MoGiNrpdt"
     },
     {
       "method": "record_bid",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "J2fUgZbbragrzVYwJXxU6V3XBCFqwKPhozYeVDy1dbnR"
+      "hash": "8xfjaThrGDFUs8R4cELFcThJm9HDogEvxxoSB2pWp5ZL"
     },
     {
       "method": "set_agent_near_price",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "2tBxrRWMsft1xNERQ4JMMqcJgY5xnBWxvahsMUrGxyFA"
+      "hash": "C9Y5C37Rfz9JSpgw8QqRsfC5fc4nRUTSoRVbkqceJirR"
     },
     {
       "method": "award_and_fund",
       "signer": "af-client-1793954382407.testnet",
-      "hash": "83SkQMZEmdycNV89KUPpzf68eAr9qWZZrrjSJ3GKmwcK"
+      "hash": "HW1q3DNXnDp26aWRoNxqSNqYAPMjKmBDTDzYbX5ppUo"
     },
     {
-      "method": "approve_job",
+      "method": "request_revision",
       "signer": "af-client-1793954382407.testnet",
-      "hash": "EFtHqgJjw2NGmVVhfpWTdAWNBjCyeo46Y4PuERMShkj7"
+      "hash": "BNcrbz4vYmjn2y4KAAWHuQK47osXpmBo3HGSRST5vmNG"
+    },
+    {
+      "method": "approve_delivery",
+      "signer": "af-client-1793954382407.testnet",
+      "hash": "7KvEmMTzLJ63Ueno3HGRXPnG8JiQWCzEQHjDwQJepCeH"
+    },
+    {
+      "method": "release_unused_bond",
+      "signer": "af-writer-1793954392244.testnet",
+      "hash": "J4CtQdHLXmXjvbAHCPPMzLp5YohrmmNdb8dGmxJTfQ3d"
     },
     {
       "method": "withdraw",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "8HAW25xw22aUHi2oswwZm4KEmftuer2uTFSuvsfc6PpK"
+      "hash": "6jArc151vzLN2US6KrvMSmntNHhgpmvuKHskfWZnBJQY"
     }
   ],
   "checks": [
@@ -62,6 +72,10 @@
     "native job and attachment hash",
     "owner-signed bid",
     "price-only change preserves open bid",
+    "explicit pre-wallet transaction review",
+    "targeted revision with real owner signature",
+    "approval bound to revision 1",
+    "unused bond release preserves reserved collateral",
     "five-minute funding preview accepted by contract",
     "exact funding",
     "worker delivery and checks",

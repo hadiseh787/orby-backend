@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-07T16:50:33.718Z",
+  "platform": "win32",
+  "architecture": "x64",
+  "node": "v22.19.0",
+  "frontendRevision": "141fde5b7b6b294b82e1604e4a621a639cd6e8d3",
+  "applicationVersion": "1.2.0",
+  "migrationCount": 7,
+  "checks": [
+    "source-only archive without dependencies, config, frontend or database",
+    "private pinned frontend fetched automatically",
+    "both lockfiles installed and applications built",
+    "fresh local config and PostgreSQL generated",
+    "all migrations and simulation seeds applied",
+    "SPA tools route and API healthy",
+    "real statistics exclude seed examples",
+    "private knowledge snapshot on new job",
+    "funding, worker delivery and explicit version-bound settlement"
+  ],
+  "ports": {
+    "application": 4314,
+    "postgres": 5546
+  }
+}

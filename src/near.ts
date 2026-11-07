@@ -6,6 +6,9 @@ import { connect, keyStores, KeyPair } from "near-api-js";
 import { pool, transaction } from "./db.js";
 import { runModel } from "./runtime.js";
 import { evaluate } from "./domain.js";
+import {transactionResult} from './transaction-result.js';
+import {loadJob} from './market.js';
+import {latestDelivery,recordDecision} from './delivery-decisions.js';
 export async function rpc(method: string, params: any) {
   const response = await fetch(config.rpc, {
     method: "POST",
@@ -102,7 +105,7 @@ export async function reconcile(db: DB, op: any, txHash: string) {
     "An operation cannot switch to another transaction.",
   );
   await db.query(
-    "UPDATE chain_operations SET state='SUBMITTED',tx_hash=$2,updated_at=now() WHERE id=$1",
+    "UPDATE chain_operations SET state='SUBMITTED',candidate_tx_hash=$2,updated_at=now() WHERE id=$1",
     [op.id, txHash],
   );
   let result: any;
@@ -136,12 +139,10 @@ export async function reconcile(db: DB, op: any, txHash: string) {
     "INVALID_TRANSACTION",
     "The transaction does not match the prepared operation.",
   );
-  const final = result.final_execution_status === "FINAL";
-  const success = result.status && Object.hasOwn(result.status, "SuccessValue");
-  const state = final ? (success ? "CONFIRMED" : "FAILED") : "UNKNOWN";
+  const {state,failure}=transactionResult(result,p);
   await db.query(
-    "UPDATE chain_operations SET state=$2,receipt=$3,updated_at=now() WHERE id=$1",
-    [op.id, state, result],
+    "UPDATE chain_operations SET state=$2,receipt=$3,tx_hash=$4,updated_at=now() WHERE id=$1",
+    [op.id, state, result,txHash],
   );
   if (state === "CONFIRMED") {
     const outcome = await view("get_operation", {
@@ -176,9 +177,25 @@ export async function reconcile(db: DB, op: any, txHash: string) {
             op.job_id,
             chainJob.state,
             chainJob.agent_id || null,
-            JSON.stringify({ onchain: chainJob, chainConfirmed: true,escrow:chainJob.escrow,bond:chainJob.bond,usdMicro:chainJob.usd_micro,creatorId:chainJob.creator,fundingPrice:chainJob.funding_price,childCap:chainJob.child_cap,deadline:Number(chainJob.deadline_ms),reviewDeadline:Number(chainJob.review_deadline),...(chainJob.settlement?{settlement:{award:chainJob.settlement.award,fee:chainJob.settlement.fee,refund:chainJob.settlement.refund,creatorCredit:chainJob.settlement.creator_credit,penalty:chainJob.settlement.penalty,shortfall:chainJob.settlement.shortfall,onchain:true}}:{}) }),
+            JSON.stringify({ onchain: chainJob, chainConfirmed: true,revision:chainJob.revision,deliveryHash:chainJob.delivery_hash,n0:chainJob.n0,startDeadline:Number(chainJob.start_deadline),escrow:chainJob.escrow,bond:chainJob.bond,usdMicro:chainJob.usd_micro,creatorId:chainJob.creator,fundingPrice:chainJob.funding_price,childCap:chainJob.child_cap,deadline:Number(chainJob.deadline_ms),reviewDeadline:Number(chainJob.review_deadline),...(chainJob.settlement?{settlement:{award:chainJob.settlement.award,fee:chainJob.settlement.fee,refund:chainJob.settlement.refund,creatorCredit:chainJob.settlement.creator_credit,penalty:chainJob.settlement.penalty,shortfall:chainJob.settlement.shortfall,onchain:true}}:{}) }),
           ],
         );
+    }
+    if(op.job_id){
+      const job=await loadJob(db,op.job_id);
+      if(['approve_job','approve_delivery'].includes(p.methodName)){
+        const delivery=await latestDelivery(db,job,p.args.revision,p.args.delivery_hash);
+        await recordDecision(db,job,op.account_id,'APPROVE',delivery,{txHash,basis:'FINAL_TESTNET_RECEIPT'});
+      }
+      if(p.methodName==='request_revision'){
+        const delivery=(await db.query('SELECT * FROM deliveries WHERE job_id=$1 AND revision=$2 AND hash=$3 FOR UPDATE',[op.job_id,p.args.revision,p.args.delivery_hash])).rows[0];
+        assert(delivery,'RECONCILIATION_REQUIRED','The revision transaction refers to an unavailable historical delivery.');
+        if(op.context?.feedback?.sourceId)await recordDecision(db,job,op.account_id,'EVIDENCE_FLAG',delivery,{...op.context.feedback,txHash});
+        await recordDecision(db,job,op.account_id,'REVISION_REQUEST',delivery,{...op.context?.feedback,txHash});
+        await db.query('UPDATE jobs SET data=data||$2::jsonb WHERE id=$1',[op.job_id,JSON.stringify({revisionFeedback:op.context?.feedback})]);
+      }
+      if(p.methodName==='open_dispute')await db.query("INSERT INTO disputes(id,job_id,actor,reason,evidence_hash,deadline) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(job_id) DO UPDATE SET actor=EXCLUDED.actor,reason=EXCLUDED.reason,evidence_hash=EXCLUDED.evidence_hash WHERE disputes.actor='contract'",[randomUUID(),op.job_id,op.account_id,op.context?.reason||'Dispute recorded on testnet.',p.args.reason_hash,new Date(Number(job.data.onchain.dispute_deadline))]);
+      if(p.methodName==='resolve_dispute')await db.query('UPDATE disputes SET decision=$2 WHERE job_id=$1',[op.job_id,{...op.context?.decision,txHash,decidedAt:Date.now()}]);
     }
     for (const receipt of result.receipts_outcome || [])
       for (const [index, log] of (receipt.outcome.logs || []).entries())
@@ -194,7 +211,7 @@ export async function reconcile(db: DB, op: any, txHash: string) {
     network: "testnet",
     txHash,
     explorerUrl: "https://testnet.nearblocks.io/txns/"+txHash,
-    failure: state==='FAILED' ? JSON.stringify(result.status?.Failure || 'The contract rejected this transaction.') : undefined,
+    failure,
   };
 }
 let service: any;
@@ -263,11 +280,15 @@ export async function serviceCall(
       args: payload,
       gas: 150000000000000n,
     });
+    const final=await rpc('tx',{tx_hash:result.transaction.hash,sender_account_id:config.serviceAccount,wait_until:'FINAL'});
+    const classified=transactionResult(final,{methodName:method,signerId:config.serviceAccount,receiverId:config.contract,args:payload});
     await pool.query(
-      "UPDATE chain_operations SET state='CONFIRMED',tx_hash=$2,receipt=$3,updated_at=now() WHERE request_id=$1",
-      [requestId, result.transaction.hash, result],
+      "UPDATE chain_operations SET state=$4,tx_hash=$2,receipt=$3,updated_at=now() WHERE request_id=$1",
+      [requestId, result.transaction.hash, final,classified.state],
     );
-    await ingestEvents(result);
+    if(classified.state==='FAILED')throw Object.assign(new Error(classified.failure),{type:'ActionError',context:{transactionHash:result.transaction.hash}});
+    assert(classified.state==='CONFIRMED','RECONCILIATION_REQUIRED',classified.failure||'The executor transaction is not final yet.',503);
+    await ingestEvents(final);
   } catch (e) {
     const error=e as any;
     const failed=error.type==='ActionError'||!!error.transaction_outcome?.outcome?.status?.Failure;
@@ -313,6 +334,20 @@ export async function projectJob(id: string) {
     "UPDATE jobs SET state=$2,agent_id=$3,data=data||$4::jsonb,updated_at=now() WHERE id=$1",
     [id, c.state, c.agent_id, JSON.stringify(data)],
   );
+  if(c.state==='DISPUTED')await pool.query("INSERT INTO disputes(id,job_id,actor,reason,evidence_hash,deadline) VALUES($1,$2,'contract',$3,$4,$5) ON CONFLICT(job_id) DO NOTHING",[randomUUID(),id,c.no_delivery?'No delivery was recorded before the contract deadline.':'A dispute was recorded on the contract.',hash({jobId:id,deliveryHash:c.delivery_hash}),new Date(Number(c.dispute_deadline))]);
+  if(['SETTLED','REFUNDED'].includes(c.state))await pool.query("UPDATE disputes SET decision=$2 WHERE job_id=$1 AND decision IS NULL",[id,{source:'CONTRACT_OUTCOME',settlement:c.settlement,decidedAt:Date.now()}]);
+  // The worker may observe a final contract decision before the browser reconciles its receipt.
+  const pendingDecisions=(await pool.query("SELECT o.* FROM chain_operations o WHERE o.job_id=$1 AND o.state<>'FAILED' AND o.proposal->>'methodName' IN ('approve_delivery','request_revision') AND NOT EXISTS(SELECT 1 FROM delivery_decisions d WHERE d.job_id=o.job_id AND d.revision=(o.proposal->'args'->>'revision')::int AND d.kind=CASE WHEN o.proposal->>'methodName'='request_revision' THEN 'REVISION_REQUEST' ELSE 'APPROVE' END) ORDER BY o.created_at DESC LIMIT 5",[id])).rows;
+  for(const op of pendingDecisions){
+    const args=op.proposal.args,revision=op.proposal.methodName==='request_revision';
+    if(revision?Number(c.revision)<=Number(args.revision):c.state!=='SETTLED')continue;
+    if(!await view('get_operation',{account_id:op.account_id,request_id:op.request_id}))continue;
+    await transaction(async db=>{
+      const job=await loadJob(db,id,undefined,true),delivery=(await db.query('SELECT * FROM deliveries WHERE job_id=$1 AND revision=$2 AND hash=$3',[id,args.revision,args.delivery_hash])).rows[0];if(!delivery)return;
+      if(revision){if(!op.context?.feedback||hash(op.context.feedback)!==args.feedback_hash)return;await db.query('UPDATE jobs SET data=data||$2::jsonb WHERE id=$1',[id,JSON.stringify({revisionFeedback:op.context.feedback})]);if(op.context.feedback.sourceId)await recordDecision(db,job,op.account_id,'EVIDENCE_FLAG',delivery,{...op.context.feedback,basis:'FINAL_CONTRACT_OPERATION'});}
+      await recordDecision(db,job,op.account_id,revision?'REVISION_REQUEST':'APPROVE',delivery,{...(revision?op.context.feedback:{}),basis:'FINAL_CONTRACT_OPERATION',...(op.tx_hash?{txHash:op.tx_hash}:{})});
+    });
+  }
   return c;
 }
 export async function tickNear() {
@@ -354,6 +389,7 @@ export async function tickNear() {
       ).rows;
       let reference:Awaited<ReturnType<typeof agreementPrice>>|undefined;
       for (const ag of agents) {
+        if(task.data.preferredAgentId&&task.data.preferredAgentId!==ag.id)continue;
         const chainAgent=await view('get_agent',{agent_id:ag.id});
         if(!chainAgent?.active)continue;
         const nativePrice=await view('get_near_price',{agent_id:ag.id});
@@ -472,7 +508,8 @@ export async function tickNear() {
               delegatedEvidenceHash: childDelivery.hash,
             };
           }
-          const result = await runModel({...input,brief:row.data.description,criteria:row.data.criteria}),
+          const currentData=(await pool.query('SELECT data FROM jobs WHERE id=$1',[row.id])).rows[0].data;
+          const result = await runModel({...input,brief:row.data.description,criteria:row.data.criteria,revisionFeedback:currentData.revisionFeedback}),
             checks = evaluate(
               result.content,
               row.data.criteria,

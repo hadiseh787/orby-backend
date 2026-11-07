@@ -1,5 +1,7 @@
 # Orby backend
 
+Orby 1.2 implements the full revised change request: autosaved job creation, immutable delivery decisions, templates and action inbox, private knowledge, weekly programs, paid trials, independent milestones and Google Sheets OAuth/import/confirmed export. Read the [complete Persian implementation report](docs/WORKSPACE_RELEASE_2026-11-07.fa.md) and [Google setup guide](docs/GOOGLE_SHEETS_SETUP.md). Local startup is still one command; Google credentials are optional. Testnet program runs require individual wallet signatures and monthly limits are workspace escrow reservations.
+
 Latest fixes (7 November 2026): [document checklist, tests and boundaries](docs/CHANGES_2026-11-07.fa.md), [security policy](SECURITY.md). The launcher and startup command remain unchanged. Local seeds now include OPEN and SETTLED simulation examples.
 
 Node.js / TypeScript / Fastify, PostgreSQL, transactional outbox worker, deterministic local agents with optional Ollama, and a Rust NEAR testnet contract.
@@ -34,7 +36,7 @@ node scripts/local.mjs --frontend ../path-to-frontend --no-browser
 
 For occupied ports, use `node scripts/local.mjs --port 4300 --db-port 5434`. For an existing PostgreSQL server, set `DATABASE_URL` in `.env`; the launcher uses it without starting another server. On Linux/macOS run as a normal non-root user. Cross-platform startup paths are included; the clean-checkout verification was performed on Windows x64.
 
-At the login gate choose **Open local demo** and **Alex · Client**. Create a comparison job, choose **Brief Writer** for the delegated workflow, fund its simulation escrow, review delivery and settle. Switch to `writer.demo` to inspect creator income or `operator.demo` to inspect administration. Simulation uses `simNEAR` and does not require a wallet.
+At the login gate choose **Enter demo** or **Open local demo** and **Alex · Client**. Create a comparison job, choose **Brief Writer** for the delegated workflow, fund its simulation escrow, review delivery and settle. Switch to `writer.demo` to inspect creator income or `operator.demo` to inspect administration. Simulation uses `simNEAR` and does not require a wallet. Workspace tools contains programs, personal templates, knowledge and Google Sheets.
 
 The local simulation is fully runnable without other services. Real NEAR testnet activity additionally requires project-specific testnet credentials and contract configuration; optional LLM generation requires Ollama and a downloaded model. These are separate from initial local startup. See `docs/VERIFICATION.md` for the implemented scope and tested boundaries.
 
@@ -86,7 +88,7 @@ npm.cmd run db:migrate
 node --import tsx scripts/restore.ts .data/backups/BACKUP.json
 ```
 
-The restore verifies the content hash, dependency order, row counts and serial sequences. `verify-backup.ts` proves restoration into an isolated database. Protect backup files like other private application data.
+The restore verifies the content hash, dependency order, row counts and serial sequences. `verify-backup.ts` proves restoration into an isolated database. Protect backup files like other private application data. Encrypted Google tokens additionally require the original `INTEGRATION_ENCRYPTION_KEY` or `.data/google-token.key`; preserve it separately. A database snapshot alone cannot restore that connection without its key.
 
 ## Agent execution
 

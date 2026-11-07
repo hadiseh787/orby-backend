@@ -341,6 +341,13 @@ impl Market {
     pub fn deposit_bond(&mut self, request_id: String) {
         self.deposit(request_id, true)
     }
+    pub fn release_unused_bond(&mut self,request_id:String,amount:U128){
+        let args=near_sdk::serde_json::json!([amount]);if self.once(&request_id,&args){return;}
+        assert!(amount.0>0,"INVALID_AMOUNT");let owner=env::predecessor_account_id();let mut b=self.get_balance(owner.clone());
+        b.bond=U128(b.bond.0.checked_sub(amount.0).expect("INSUFFICIENT_AVAILABLE_BOND"));
+        b.free=U128(b.free.0.checked_add(amount.0).expect("OVERFLOW"));self.balances.insert(owner,b);
+        self.done(request_id,"unused bond released");
+    }
     pub fn open_job(
         &mut self,
         request_id: String,
@@ -686,6 +693,23 @@ impl Market {
         self.jobs.insert(job_id.clone(), j);
         self.emit("checks_recorded", &job_id, args);
         self.done(request_id, "checks recorded");
+    }
+    pub fn approve_delivery(&mut self, request_id: String, job_id: String, revision: u8, delivery_hash: String) {
+        let j=self.job(&job_id);
+        assert_eq!(j.revision,revision,"DELIVERY_CHANGED");
+        assert_eq!(j.delivery_hash,delivery_hash,"DELIVERY_CHANGED");
+        self.approve_job(request_id,job_id);
+    }
+    pub fn request_revision(&mut self, request_id:String,job_id:String,revision:u8,delivery_hash:String,feedback_hash:String) {
+        let args=near_sdk::serde_json::json!([job_id,revision,delivery_hash,feedback_hash]);
+        if self.once(&request_id,&args){return;}
+        let mut j=self.job(&job_id);
+        assert_eq!(j.client,env::predecessor_account_id(),"FORBIDDEN");
+        assert_eq!(j.state,"REVIEW_OPEN","INVALID_STATE");
+        assert!(j.revision==0 && revision==j.revision && j.delivery_hash==delivery_hash,"DELIVERY_CHANGED");
+        assert!(self.now()<j.deadline_ms.0 && feedback_hash.len()==64,"INVALID_REVISION");
+        j.revision=1;j.state="REVISION_REQUIRED".into();j.version+=1;
+        self.jobs.insert(job_id.clone(),j);self.emit("revision_requested",&job_id,args);self.done(request_id,"revision requested");
     }
     pub fn approve_job(&mut self, request_id: String, job_id: String) {
         let args = near_sdk::serde_json::json!([job_id]);

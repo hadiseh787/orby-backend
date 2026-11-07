@@ -28,6 +28,7 @@ export const dto = (row: any) => ({
   version: row.version,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  displayNearAmount:row.data.nearYocto||row.data.n0||(row.book==='SIMULATION'&&row.data.usdMicro?funding(row.data.usdMicro,'5000000').n0:null),
 });
 async function newObligation(db: DB) {
   const r = (
@@ -187,6 +188,7 @@ export async function requestBids(db: DB, a: Actor, id: string) {
   ).rows;
   const reference = await agreementPrice(a.book);
   for (const agent of agents) {
+    if(j.data.preferredAgentId&&j.data.preferredAgentId!==agent.id)continue;
     const amount=agentMinimum(agent.data,!!j.data.nearYocto,reference.priceMicro);
     if (!amount || BigInt(amount) > BigInt(j.data.nearYocto || j.data.usdMicro)) continue;
     await db.query(

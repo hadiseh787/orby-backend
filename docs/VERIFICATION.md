@@ -1,4 +1,18 @@
-# Orby 1.1 verification
+# Orby 1.2 verification
+
+Latest workspace release: 7 November 2026. [Full revised request and implementation checklist](WORKSPACE_RELEASE_2026-11-07.fa.md), [Google Sheets setup](GOOGLE_SHEETS_SETUP.md), [security boundaries](../SECURITY.md).
+
+Production Angular and TypeScript builds passed. Node unit/runtime tests: **13**. Isolated PostgreSQL integration tests: **23**, including current inbox state, queue separation, independent milestone terms, program ceilings, all paid-trial payouts, private knowledge snapshots, version-bound approval and uncertain Google append reconciliation. Native Rust financial tests: **3**, with 10,000 conservation cases. All seven migrations applied. A consistent backup restored into a fresh migrated database with file integrity, table row counts and sequences verified.
+
+Full production browser suite: **19/19 passed** on Windows/Chrome, covering both themes, mobile layouts, CSP, signature review/cancellation/recovery and account isolation, account-scoped drafts, validation/focus, resumed login intent, 390×844 job cards, readable source feedback and immutable revisions, templates, program forms, real funding comparisons, uploads and the complete simulation lifecycle. The suite observes API quota headers between tests; it does not disable rate limits. Desktop and mobile screenshots were visually inspected.
+
+The 1.2 source-only startup also passed on Windows x64/Node 22.19.0: an archive without configuration, dependencies, frontend or database fetched frontend `141fde5b7b6b294b82e1604e4a621a639cd6e8d3`, installed both lockfiles, built both applications, created PostgreSQL/configuration and applied seven migrations. A new knowledge-backed job was funded, delivered by the worker and explicitly approved/settled through the resulting API. [Clean-start evidence](orby-clean-start-1.2.json). No application key or wallet was needed.
+
+The [real browser/testnet flow](orby-browser-testnet.json) passed using real development signatures and RPC: **11 user transactions**, including targeted revision, exact revision-1 approval, unused bond release and callback-confirmed withdrawal. The contract upgrade preserved **8 jobs and 8 balances**; see [upgrade evidence](orby-workspace-upgrade.json). Its data layout version remains 2. The new methods require the updated contract code.
+
+Live Google OAuth consent was not exercised: owner-supplied OAuth client configuration is required. Google protocol integration is covered by a declared HTTP fixture. Recurring testnet jobs require wallet signatures for each publication/funding; monthly ceilings are workspace reservations. Mainnet and real credit lending remain disabled. No independent security audit was performed.
+
+## Earlier 1.1 evidence
 
 Latest pass: 7 November 2026. [Current fixes and verification](CHANGES_2026-11-07.fa.md) and [security boundaries](../SECURITY.md) supersede the relevant 6 November findings below. Node tests: 10; isolated PostgreSQL tests: 12 (consecutive clean teardowns); browser tests: 10, including CSP, wallet sandbox RPC and legacy USD submission. Contract code was upgraded without changing the 7 existing jobs or 8 account balances; see [upgrade evidence](orby-upgrade-20261107.json). The real [browser/testnet flow](orby-browser-testnet.json) also passed with enforced CSP, an open bid surviving a price-only update, a five-minute funding preview, settlement and withdrawal.
 

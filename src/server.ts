@@ -29,72 +29,14 @@ import { proposal, reconcile, view, agreementPrice } from "./near.js";
 import {recoverRegistration} from './agent-registration.js';
 import {registerSecurity} from './security.js';
 import { nearUsdQuote } from "./price.js";
+import {workspaceRoutes} from './workspace-routes.js';
+import {latestDelivery,recordDecision,decisionChecks} from './delivery-decisions.js';
+import {deterministicBrief} from './runtime.js';
+import {programRoutes,knowledgeSnapshot} from './programs.js';
+import {googleRoutes} from './google-sheets.js';
 import { uploadAttachment, claimAttachments } from "./attachments.js";
-export const criterionSchema = z.object({
-  id: z.string().min(1).max(80),
-  type: z.enum(["AUTO_CHECK", "CLIENT_APPROVE", "AI_REVIEW"]),
-  required: z.boolean(),
-  description: z.string().min(1).max(500),
-  config: z
-    .object({
-      check: z.enum([
-        "json-required-keys",
-        "item-count",
-        "word-count",
-        "source-ids",
-      ]),
-      keys: z.array(z.string().max(80)).max(30).optional(),
-      field: z.string().max(80).optional(),
-      min: z.number().int().nonnegative().max(10000).optional(),
-      max: z.number().int().nonnegative().max(10000).optional(),
-    })
-    .optional(),
-});
-export const jobSchema = z
-  .object({
-    title: z.string().min(5).max(120),
-    description: z.string().min(10).max(8000),
-    category: z.enum(["writing", "research", "review"]),
-    nearYocto: z.string().regex(/^[1-9]\d{0,26}$/, "Enter a positive budget in NEAR.").refine(v=>BigInt(v)<=100n*Q,"Budget cannot exceed 100 NEAR.").optional(),
-    attachmentIds: z.array(z.uuid()).max(5).default([]),
-    usdMicro: z
-      .string()
-      .regex(/^[1-9]\d{6,8}$/)
-      .refine((v) => BigInt(v) >= 1000000n && BigInt(v) <= 100000000n).optional(),
-    deadlineMinutes: z.number().int().min(1).max(10080),
-    approvalPolicy: z.enum(["MANUAL_APPROVAL", "AUTO_AFTER_CHECKS"]),
-    input: z.object({
-      sources: z
-        .array(
-          z.object({
-            id: z.string().min(1).max(80),
-            text: z.string().min(1).max(80000),
-          }),
-        )
-        .min(1)
-        .max(30),
-    }),
-    criteria: z.array(criterionSchema).min(1).max(20),
-  })
-  .superRefine((j, c) => {
-    if (!!j.nearYocto === !!j.usdMicro) c.addIssue({code:"custom",path:["nearYocto"],message:"Supply a NEAR budget, or a legacy USD budget, not both."});
-    if (new Set(j.attachmentIds).size !== j.attachmentIds.length) c.addIssue({code:"custom",path:["attachmentIds"],message:"Duplicate attachments are not allowed."});
-    if (Buffer.byteLength(JSON.stringify(j.input)) > 262144)
-      c.addIssue({ code: "custom", message: "Input exceeds 256 KiB." });
-    if (
-      new Set(j.input.sources.map((s) => s.id)).size !== j.input.sources.length
-    )
-      c.addIssue({ code: "custom", message: "Source IDs must be unique." });
-    if (
-      j.approvalPolicy === "AUTO_AFTER_CHECKS" &&
-      j.criteria.some((x) => x.required && x.type !== "AUTO_CHECK")
-    )
-      c.addIssue({
-        code: "custom",
-        message:
-          "Automatic approval requires only deterministic required checks.",
-      });
-  });
+import {jobSchema,criterionSchema} from "./job-schema.js";
+export {jobSchema,criterionSchema} from "./job-schema.js";
 const amountSchema = z.string().regex(/^[1-9]\d{0,37}$/);
 const idSchema = z.uuid();
 export async function buildApp() {
@@ -150,6 +92,9 @@ export async function buildApp() {
     if (status >= 500) req.log.error(e);
   });
   await authRoutes(app);
+  await workspaceRoutes(app);
+  await programRoutes(app);
+  await googleRoutes(app);
   if(process.env.LOCAL_SHUTDOWN_TOKEN&&process.send){
     app.post('/api/v1/local/shutdown',{config:{rateLimit:false}},async(req,reply)=>{
       assert(req.headers['x-local-shutdown']===process.env.LOCAL_SHUTDOWN_TOKEN,'FORBIDDEN','Invalid local launcher token.',403);
@@ -210,7 +155,7 @@ export async function buildApp() {
   });
   app.get("/api/v1/health", async () => {
     await pool.query("SELECT 1");
-    return { status: "ok", database: "postgresql", version: "1.1.0" };
+    return { status: "ok", database: "postgresql", version: "1.2.0" };
   });
   app.get("/api/v1/templates", async () => ({
     templates: [
@@ -242,6 +187,8 @@ export async function buildApp() {
         [book],
       )
     ).rows;
+    const reference=rows.some(r=>!r.data.minPriceNear)?await agreementPrice(book).catch(()=>null):null;
+    const counts=(await pool.query("SELECT agent_id,count(*) FILTER(WHERE state='SETTLED')::int AS completed,count(*) FILTER(WHERE state IN ('SETTLED','REFUNDED'))::int AS total FROM jobs WHERE book=$1 AND parent_id IS NULL AND NOT(data ? 'seededExample') GROUP BY agent_id",[book])).rows;
     return rows.map((r) => ({
       ...r.data,
       id: r.id,
@@ -253,6 +200,9 @@ export async function buildApp() {
       version: r.version,
       policy: r.policy,
       policyVersion: r.policy_version,
+      displayMinPriceNear:r.data.minPriceNear||(reference?agentMinimum(r.data,true,reference.priceMicro):null),
+      completed:counts.find(c=>c.agent_id===r.id)?.completed||0,
+      outcomes:counts.find(c=>c.agent_id===r.id)?.total||0,
     }));
   });
   app.get("/api/v1/agents/:id", async (req: any) => {
@@ -264,9 +214,10 @@ export async function buildApp() {
       ])
     ).rows[0];
     assert(r, "NOT_FOUND", "Agent not found.", 404);
+    let viewer:any=null;try{viewer=await actor(req);}catch{}
     const records = (
       await pool.query(
-        "SELECT id,state,data->'settlement' AS settlement,created_at FROM jobs WHERE agent_id=$1 AND book=$2 AND state IN ('SETTLED','REFUNDED') ORDER BY created_at DESC LIMIT 20",
+        "SELECT j.id,j.state,j.data->'settlement' AS settlement,j.created_at,j.data->>'title' AS title,j.data->>'category' AS category,j.client_id FROM jobs j WHERE j.agent_id=$1 AND j.book=$2 AND j.state IN ('SETTLED','REFUNDED') AND NOT(j.data ? 'seededExample') ORDER BY j.created_at DESC LIMIT 20",
         [r.id, book],
       )
     ).rows;
@@ -275,7 +226,10 @@ export async function buildApp() {
       id: r.id,
       ownerId: r.owner_id,
       state: r.state,
-      records,
+      displayMinPriceNear:r.data.minPriceNear||await agreementPrice(book).then(p=>agentMinimum(r.data,true,p.priceMicro)).catch(()=>null),
+      records:records.map(x=>{const allowed=viewer?.book===book&&(viewer.id===x.client_id||viewer.id===r.owner_id||viewer.roles.includes('admin'));return {id:x.id,state:x.state,created_at:x.created_at,title:allowed?x.title:'Completed '+(x.category||'agent')+' work',url:allowed?'/client/jobs/'+x.id:null};}),
+      example:{sources:[{id:'sample-a',text:'Proposal A has a clear scope and testing milestones.'},{id:'sample-b',text:'Proposal B has a lower budget but an uncertain support plan.'}]},
+      sampleOutput:deterministicBrief({sources:[{id:'sample-a',text:'Proposal A has a clear scope and testing milestones.'},{id:'sample-b',text:'Proposal B has a lower budget but an uncertain support plan.'}]}),
     };
   });
   mutation("/agents", async (db, a, b) => {
@@ -423,6 +377,9 @@ export async function buildApp() {
   });
   mutation("/jobs", async (db, a, b) => {
     const parsed = jobSchema.parse(b);
+    if(parsed.preferredAgentId)assert((await db.query("SELECT 1 FROM agents WHERE id=$1 AND book=$2 AND state='ACTIVE'",[parsed.preferredAgentId,a.book])).rowCount,'AGENT_UNAVAILABLE','The selected agent is unavailable.');
+    const knowledge=await knowledgeSnapshot(db,a,parsed.knowledgeIds);
+    assert(Buffer.byteLength(JSON.stringify({...parsed.input,knowledge}))<=262144,'INPUT_TOO_LARGE','Combined source material and knowledge exceeds 256 KiB.');
     const attachments=await claimAttachments(db,a,parsed.attachmentIds);
     if (!config.accelerated)
       assert(
@@ -430,7 +387,7 @@ export async function buildApp() {
         "VALIDATION_ERROR",
         "Deadline must be at least one hour.",
       );
-    const j = await createJob(db, a, {...parsed,attachments});
+    const j = await createJob(db, a, {...parsed,input:{...parsed.input,knowledge},attachments});
     if(attachments.length)await db.query("UPDATE job_attachments SET job_id=$1 WHERE id=ANY($2::uuid[])",[j.id,parsed.attachmentIds]);
     return a.book === "TESTNET"
       ? {
@@ -461,6 +418,7 @@ export async function buildApp() {
     assert(j.book===a.book&&j.state==='OPEN'&&j.client_id!==a.id,"INVALID_STATE","Only another account can bid on an open job.");
     const ag=(await db.query("SELECT * FROM agents WHERE id=$1 AND book=$2 AND owner_id=$3 AND state='ACTIVE'",[b.agentId,a.book,a.id])).rows[0];
     assert(ag,"FORBIDDEN","Choose an active agent owned by your account.",403);
+    assert(!j.data.preferredAgentId||j.data.preferredAgentId===ag.id,'ASSIGNED_AGENT','This job is assigned to another agent.');
     const amount=amountSchema.parse(b.amount),native=!!j.data.nearYocto;
     let data=ag.data;
     if(a.book==='TESTNET') {
@@ -484,7 +442,7 @@ export async function buildApp() {
     const a = await actor(req),
       id = idSchema.parse(req.params.id),
       j = await loadJob(pool, id, a);
-    const [bids, deliveries, events, children, d] = await Promise.all([
+    const [bids, deliveries, events, children, d,decisions] = await Promise.all([
       pool.query(
         "SELECT b.*,ag.name,ag.owner_id,ag.data AS agent_data FROM bids b JOIN agents ag ON ag.id=b.agent_id AND ag.book=b.book WHERE b.job_id=$1 ORDER BY b.amount::numeric,b.id",
         [id],
@@ -498,6 +456,7 @@ export async function buildApp() {
         id,
       ]),
       pool.query("SELECT * FROM disputes WHERE job_id=$1", [id]),
+      pool.query('SELECT * FROM delivery_decisions WHERE job_id=$1 ORDER BY created_at',[id]),
     ]);
     return {
       ...dto(j),
@@ -510,7 +469,8 @@ export async function buildApp() {
         amount: b.amount,
         expiresAt: b.expires_at,
       })),
-      deliveries: deliveries.rows,
+      deliveries: deliveries.rows.map(d=>({...d,checks:decisionChecks(d,decisions.rows,terminal(j.state))})),
+      decisions:decisions.rows,
       events: events.rows,
       children: children.rows.map(dto),
       dispute: d.rows[0] || null,
@@ -561,15 +521,17 @@ export async function buildApp() {
       "INVALID_STATE",
       "Only the client can approve a delivery ready for review.",
     );
-    return a.book === "TESTNET"
-      ? proposal(db, a.id, "approve_job", { job_id: j.id }, "0", j.id)
-      : settleJob(db, j, a.id);
+    const delivery=await latestDelivery(db,j,b.revision,b.deliveryHash);
+    assert(delivery.checks.every((c:any)=>!c.required||c.type!=='AUTO_CHECK'||c.result==='PASS'),'CHECKS_FAILED','Required checks have not passed. Request a revision or open a dispute.');
+    if(a.book==='TESTNET')return proposal(db,a.id,'approve_delivery',{job_id:j.id,revision:delivery.revision,delivery_hash:delivery.hash},'0',j.id);
+    await recordDecision(db,j,a.id,'APPROVE',delivery);
+    return settleJob(db,j,a.id);
   });
   mutation("/jobs/:id/disputes", async (db, a, b, p) => {
     const reason = z.string().min(10).max(2000).parse(b.reason),
       j = await loadJob(db, idSchema.parse(p.id), a, true);
-    if (a.book === "TESTNET")
-      return proposal(
+    if (a.book === "TESTNET"){
+      const result=await proposal(
         db,
         a.id,
         "open_dispute",
@@ -577,6 +539,8 @@ export async function buildApp() {
         "0",
         j.id,
       );
+    await db.query('UPDATE chain_operations SET context=$2 WHERE id=$1',[result.operation.operationId,{reason}]);return result;
+    }
     return dispute(db, a, j, reason);
   });
   mutation("/jobs/:id/cancel", async (db, a, b, p) => {
@@ -807,6 +771,7 @@ export async function buildApp() {
       message: "Simulation recorded. No token transfer was sent.",
     };
   });
+  mutation('/balances/release-bond',async(db,a,b)=>{const amount=amountSchema.parse(b.amount);if(a.book==='TESTNET')return proposal(db,a.id,'release_unused_bond',{amount});await move(db,a.book,a.id,'bond',a.id,'free',amount,'release_unused_bond');return {ok:true};});
   app.get("/api/v1/creator/runs", async (req: any) => {
     const a = await actor(req);
     return (
@@ -818,10 +783,11 @@ export async function buildApp() {
   });
   app.get("/api/v1/operations/:id", async (req: any) => {
     const a = await actor(req);
+    assert(a.book==='TESTNET','FORBIDDEN','Use the matching testnet account for transaction history.',403);
     const op = (
       await pool.query(
-        "SELECT id,state,proposal,tx_hash,updated_at FROM chain_operations WHERE id=$1 AND account_id=$2",
-        [req.params.id, a.id],
+        "SELECT id,state,proposal,tx_hash,candidate_tx_hash,updated_at FROM chain_operations WHERE id=$1 AND account_id=$2 AND proposal->>'receiverId'=$3",
+        [req.params.id, a.id,config.contract],
       )
     ).rows[0];
     assert(op, "NOT_FOUND", "Operation not found.", 404);
@@ -829,17 +795,19 @@ export async function buildApp() {
   });
   app.get("/api/v1/operations",async(req)=>{
     const a=await actor(req);
-    return (await pool.query("SELECT id,state,proposal,tx_hash,updated_at FROM chain_operations WHERE account_id=$1 ORDER BY created_at DESC LIMIT 50",[a.id])).rows;
+    assert(a.book==='TESTNET','FORBIDDEN','Use a testnet session for transaction history.',403);
+    return (await pool.query("SELECT id,state,proposal,tx_hash,candidate_tx_hash,updated_at FROM chain_operations WHERE account_id=$1 AND proposal->>'receiverId'=$2 ORDER BY created_at DESC LIMIT 50",[a.id,config.contract])).rows;
   });
   mutation("/operations/:id/transaction", async (db, a, b, p) => {
     const op = (
       await db.query(
-        "SELECT * FROM chain_operations WHERE id=$1 AND account_id=$2 FOR UPDATE",
-        [p.id, a.id],
+        "SELECT * FROM chain_operations WHERE id=$1 AND account_id=$2 AND proposal->>'receiverId'=$3 FOR UPDATE",
+        [p.id, a.id,config.contract],
       )
     ).rows[0];
     assert(op, "NOT_FOUND", "Operation not found.", 404);
-    return reconcile(db, op, b.txHash || op.tx_hash);
+    assert(a.book==='TESTNET','FORBIDDEN','Use the matching testnet account for this transaction.',403);
+    return reconcile(db, op, b.txHash || op.tx_hash || op.candidate_tx_hash);
   });
   const admin = async (req: any) => {
     const a = await actor(req);
@@ -887,10 +855,10 @@ export async function buildApp() {
   mutation('/admin/reconcile',async(db,a,b)=>{
     assert(a.roles.includes('admin'),'FORBIDDEN','An administrator session is required.',403);
     if(a.book!=='TESTNET')return {checked:0,confirmed:0,failed:0,unresolved:0};
-    const op=(await db.query("SELECT * FROM chain_operations WHERE state IN ('UNKNOWN','SUBMITTED') AND ($1::uuid IS NULL OR id=$1) ORDER BY updated_at LIMIT 1 FOR UPDATE SKIP LOCKED",[b.operationId?idSchema.parse(b.operationId):null])).rows[0];
+    const op=(await db.query("SELECT * FROM chain_operations WHERE state IN ('UNKNOWN','SUBMITTED') AND ($1::uuid IS NULL OR id=$1) AND proposal->>'receiverId'=$2 ORDER BY updated_at LIMIT 1 FOR UPDATE SKIP LOCKED",[b.operationId?idSchema.parse(b.operationId):null,config.contract])).rows[0];
     if(!op)return {checked:0,confirmed:0,failed:0,unresolved:0};
     let confirmed=0,failed=0;
-    if(op.tx_hash||b.txHash){const result=await reconcile(db,op,b.txHash||op.tx_hash);confirmed=Number(result.state==='CONFIRMED');failed=Number(result.state==='FAILED');}
+    if(op.tx_hash||op.candidate_tx_hash||b.txHash){const result=await reconcile(db,op,b.txHash||op.tx_hash||op.candidate_tx_hash);confirmed=Number(result.state==='CONFIRMED');failed=Number(result.state==='FAILED');}
     else if(op.account_id===config.serviceAccount){
       const outcome=await view('get_operation',{account_id:op.account_id,request_id:op.request_id});
       if(outcome){await db.query("UPDATE chain_operations SET state='CONFIRMED',receipt=$2,updated_at=now() WHERE id=$1",[op.id,{contractOperation:outcome,finality:'FINAL'}]);confirmed=1;}
@@ -937,8 +905,8 @@ export async function buildApp() {
     ).rows[0];
     assert(d, "INVALID_STATE", "This case has already been decided.");
     const j = await loadJob(db, d.job_id, a, true);
-    if (a.book === "TESTNET")
-      return proposal(
+    if (a.book === "TESTNET"){
+      const result=await proposal(
         db,
         a.id,
         "resolve_dispute",
@@ -951,6 +919,8 @@ export async function buildApp() {
         "0",
         j.id,
       );
+    await db.query('UPDATE chain_operations SET context=$2 WHERE id=$1',[result.operation.operationId,{decision}]);return result;
+    }
     const result = await settleJob(
       db,
       j,
@@ -1048,7 +1018,7 @@ export async function buildApp() {
           : (()=>{
               const pathname=req.url.split('?')[0];
               if(/\.(?:js|css|png|jpe?g|svg|ico|woff2?|json|map)$/.test(pathname))return reply.code(404).send({code:'NOT_FOUND',message:'Asset not found.'});
-              const known=/^\/(?:$|settings$|trust$|explorer$|client\/jobs(?:\/(?:new|[0-9a-f-]{36}))?$|agents\/[a-z0-9-]{3,48}$|creator\/(?:agents|earnings|runs|credit)$|lender\/pool$|admin\/system$)/.test(pathname);
+              const known=/^\/(?:$|settings$|trust$|explorer$|workspace\/tools$|client\/jobs(?:\/(?:new|[0-9a-f-]{36}))?$|agents\/[a-z0-9-]{3,48}$|creator\/(?:agents|earnings|runs|credit)$|lender\/pool$|admin\/system$)/.test(pathname);
               return serveSpa(req,reply,frontend,known?200:404);
             })(),
     );

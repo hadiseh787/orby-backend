@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "network": "testnet",
+  "checkedAt": "2026-11-07T16:23:36.820Z",
+  "preservedJobs": 8,
+  "preservedBalances": 8,
+  "newMethods": [
+    "approve_delivery",
+    "request_revision",
+    "release_unused_bond"
+  ],
+  "stateLayoutChanged": false
+}

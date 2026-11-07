@@ -29,7 +29,7 @@ const { pool } = await import("../src/db.js");
 const { tick,stopWorker } = await import("../src/worker.js");
 const app = await buildApp();
 await app.ready();
-type Session = { cookie: string; csrf: string };
+type Session = { cookie: string; csrf: string;remoteAddress?:string };
 async function login(account: string): Promise<Session> {
   const r = await app.inject({
     method: "POST",
@@ -51,6 +51,7 @@ async function post(
   return app.inject({
     method: "POST",
     url: "/api/v1" + path,
+    remoteAddress:s.remoteAddress,
     headers: {
       cookie: s.cookie,
       "x-csrf-token": s.csrf,
@@ -445,4 +446,150 @@ test("pool rejects deposits during lending and returns exact share assets", asyn
     (await post(client, "/pool/" + epoch.id + "/redeem")).statusCode,
     400,
   );
+});
+
+const workspaceClient={...client,remoteAddress:'198.51.100.101'},workspaceCreator={...creator,remoteAddress:'198.51.100.102'};
+async function nativeJob(session:Session=workspaceClient,extra:any={}){
+  const {usdMicro,...base}=fixture;
+  const r=await post(session,'/jobs',{...base,title:'Workspace workflow '+randomUUID(),category:'review',nearYocto:Q.toString(),...extra});assert.equal(r.statusCode,200,r.body);return r.json();
+}
+async function readyNative(extra:any={}){
+  const j=await nativeJob(workspaceClient,extra);await post(workspaceClient,'/jobs/'+j.id+'/bids/request');
+  const row=(await pool.query("SELECT id FROM bids WHERE job_id=$1 AND agent_id='format-reviewer'",[j.id])).rows[0];
+  const pv=await post(workspaceClient,'/jobs/'+j.id+'/funding-preview',{bidId:row.id});assert.equal(pv.statusCode,200,pv.body);
+  const funded=await post(workspaceClient,'/jobs/'+j.id+'/fund',{previewId:pv.json().id});assert.equal(funded.statusCode,200,funded.body);
+  for(let i=0;i<30;i++){await tick();const detail=(await app.inject({url:'/api/v1/jobs/'+j.id,headers:{cookie:workspaceClient.cookie}})).json();if(detail.state==='REVIEW_OPEN')return detail;}
+  throw Error('The fixture job did not deliver.');
+}
+async function approveNative(j:any){const d=j.deliveries[0];const r=await post(workspaceClient,'/jobs/'+j.id+'/approve',{revision:d.revision,deliveryHash:d.hash});assert.equal(r.statusCode,200,r.body);return r.json();}
+test('client approval is version-bound, visible in checks and separate from settlement',async()=>{
+ const j=await readyNative(),d=j.deliveries[0];assert.equal(d.checks.find((c:any)=>c.type==='CLIENT_APPROVE').result,'PENDING');
+ assert.equal((await post(workspaceClient,'/jobs/'+j.id+'/approve',{revision:99,deliveryHash:d.hash})).statusCode,409);
+ await approveNative(j);const detail=(await app.inject({url:'/api/v1/jobs/'+j.id,headers:{cookie:workspaceClient.cookie}})).json();
+ assert.equal(detail.state,'SETTLED');assert.equal(detail.deliveries[0].checks.find((c:any)=>c.type==='CLIENT_APPROVE').result,'PASS');
+ assert.equal(detail.events.filter((e:any)=>e.type==='client_approved').length,1);assert.equal(detail.decisions[0].delivery_hash,d.hash);
+});
+test('specific evidence feedback creates one revision and an old version cannot approve the new delivery',async()=>{
+ let j=await readyNative(),d=j.deliveries[0];
+ const r=await post(workspaceClient,'/jobs/'+j.id+'/revisions',{revision:d.revision,deliveryHash:d.hash,section:'comparison:0',sourceId:'a',reason:'Explain which supplied claim supports the first comparison.'});assert.equal(r.statusCode,200,r.body);
+ for(let i=0;i<30;i++){await tick();j=(await app.inject({url:'/api/v1/jobs/'+j.id,headers:{cookie:workspaceClient.cookie}})).json();if(j.state==='REVIEW_OPEN')break;}
+ assert.equal(j.deliveries.length,2);assert.equal(j.deliveries[0].revision,1);assert.notEqual(j.deliveries[0].hash,d.hash);assert.ok(j.deliveries[0].content.revisionNote);
+ assert.equal((await post(workspaceClient,'/jobs/'+j.id+'/approve',{revision:d.revision,deliveryHash:d.hash})).statusCode,409);
+ assert.equal(j.decisions.filter((d:any)=>d.kind==='EVIDENCE_FLAG').length,1);await approveNative(j);
+ const final=(await app.inject({url:'/api/v1/jobs/'+j.id,headers:{cookie:workspaceClient.cookie}})).json();
+ assert.equal(final.deliveries[0].checks.find((c:any)=>c.type==='CLIENT_APPROVE').result,'PASS');assert.equal(final.deliveries[1].checks.find((c:any)=>c.type==='CLIENT_APPROVE').result,'NOT_APPROVED');
+});
+test('knowledge is owner-scoped and job snapshots survive edits; templates exclude old sources and files',async()=>{
+ const k=await post(workspaceClient,'/knowledge',{name:'Approved product facts',content:'The approved product name is Orby. Use a direct factual tone.'});assert.equal(k.statusCode,200,k.body);
+ const j=await readyNative({knowledgeIds:[k.json().id]});assert.equal(j.input.knowledge.length,1);const before=j.input.knowledge[0].text;
+ assert.equal((await nativeJob(workspaceClient)).state,'OPEN');
+ const denied=await post(workspaceCreator,'/jobs',{...fixture,knowledgeIds:[k.json().id]});assert.equal(denied.statusCode,403);
+ await post(workspaceClient,'/knowledge',{id:k.json().id,name:'Updated product facts',content:'The approved tone is concise and clear. This is new content.'});
+ const snapshot=(await app.inject({url:'/api/v1/jobs/'+j.id,headers:{cookie:workspaceClient.cookie}})).json();assert.equal(snapshot.input.knowledge[0].text,before);
+ await approveNative(j);const saved=await post(workspaceClient,'/templates/from-job/'+j.id,{name:'Reusable completed job'});assert.equal(saved.statusCode,200,saved.body);
+ assert.ok(saved.json().blueprint.criteria);assert.equal(saved.json().blueprint.input,undefined);assert.equal(saved.json().blueprint.attachmentIds,undefined);assert.equal(saved.json().blueprint.nearYocto,undefined);
+ assert.equal((await post(workspaceCreator,'/templates/from-job/'+j.id)).statusCode,403);
+});
+function programBody(kind:string){const {usdMicro,...base}=fixture;return {name:'Verified '+kind+' program',kind,agentIds:['format-reviewer'],autoFundSimulation:true,monthlyCapYocto:String(11n*Q/10n),timeZone:'UTC',weekday:1,hour:9,minute:0,blueprint:{...base,nearYocto:Q.toString()},stages:[{title:'Gather supplied evidence',budget:Q.toString()},{title:'Deliver final analysis',budget:Q.toString()}]};}
+test('recurring programs enforce monthly reservations and pause failed schedules without spending',async()=>{
+ const created=await post(workspaceClient,'/programs',programBody('RECURRING'));assert.equal(created.statusCode,200,created.body);const id=created.json().id;
+ const first=await post(workspaceClient,'/programs/'+id+'/launch');assert.equal(first.statusCode,200,first.body);assert.equal(first.json().runs.length,1);
+ const second=await post(workspaceClient,'/programs/'+id+'/launch');assert.equal(second.json().code,'MONTHLY_CAP');
+ assert.equal((await post(workspaceCreator,'/programs/'+id+'/state',{state:'PAUSED'})).statusCode,404);
+ await pool.query("UPDATE workspace_programs SET next_run_at=now()-interval '1 minute' WHERE id=$1",[id]);const {tickPrograms}=await import('../src/programs.js');await tickPrograms();
+ const state=(await pool.query('SELECT state FROM workspace_programs WHERE id=$1',[id])).rows[0].state;assert.equal(state,'PAUSED');assert.equal(Number((await pool.query('SELECT count(*) FROM program_runs WHERE program_id=$1',[id])).rows[0].count),1);
+});
+test('milestone projects open the next paid job only after approval and can stop between stages',async()=>{
+ const body=programBody('MILESTONES');body.stages[0]={...body.stages[0],description:'Gather exact supporting evidence for the first milestone.',criteria:[...fixture.criteria,{id:'first-stage-only',type:'AUTO_CHECK',required:true,description:'First milestone recommendation limit',config:{check:'word-count',min:1,max:500}}],approvalPolicy:'MANUAL_APPROVAL'};const created=await post(workspaceClient,'/programs',body),id=created.json().id;assert.equal(created.statusCode,200,created.body);
+ const first=await post(workspaceClient,'/programs/'+id+'/launch');assert.equal(first.statusCode,200,first.body);const jobId=first.json().runs[0].id;const firstTerms=(await pool.query('SELECT data FROM jobs WHERE id=$1',[jobId])).rows[0].data;assert.equal(firstTerms.description,body.stages[0].description);assert.ok(firstTerms.criteria.some((c:any)=>c.id==='first-stage-only'));
+ assert.equal((await post(workspaceClient,'/programs/'+id+'/launch')).json().code,'MILESTONE_WAITING');
+ let job:any;for(let i=0;i<30;i++){await tick();job=(await app.inject({url:'/api/v1/jobs/'+jobId,headers:{cookie:workspaceClient.cookie}})).json();if(job.state==='REVIEW_OPEN')break;}await approveNative(job);
+ await post(workspaceClient,'/programs/'+id+'/state',{state:'PAUSED'});assert.equal((await post(workspaceClient,'/programs/'+id+'/launch')).statusCode,400);
+ await post(workspaceClient,'/programs/'+id+'/state',{state:'ACTIVE'});const next=await post(workspaceClient,'/programs/'+id+'/launch');assert.equal(next.statusCode,200,next.body);assert.notEqual(next.json().runs[0].id,jobId);const secondTerms=(await pool.query('SELECT data FROM jobs WHERE id=$1',[next.json().runs[0].id])).rows[0].data;assert.equal(secondTerms.criteria.some((c:any)=>c.id==='first-stage-only'),false);
+});
+test('paid trials create independent escrows and pay every successful participant',async()=>{
+ const created=await post(workspaceClient,'/programs',{...programBody('TRIALS'),agentIds:['format-reviewer','source-extractor']});assert.equal(created.statusCode,200,created.body);
+ const id=created.json().id,result=await post(workspaceClient,'/programs/'+id+'/launch');assert.equal(result.statusCode,200,result.body);assert.equal(result.json().runs.length,2);
+ for(const run of result.json().runs){let job:any;for(let i=0;i<30;i++){await tick();job=(await app.inject({url:'/api/v1/jobs/'+run.id,headers:{cookie:workspaceClient.cookie}})).json();if(job.state==='REVIEW_OPEN')break;}assert.equal(job.bids.length,1);await approveNative(job);const settled=(await pool.query('SELECT state,data FROM jobs WHERE id=$1',[run.id])).rows[0];assert.equal(settled.state,'SETTLED');assert.ok(BigInt(settled.data.settlement.creatorCredit)>0n);}
+ assert.equal((await post(workspaceClient,'/programs/'+id+'/launch')).json().code,'PROGRAM_COMPLETE');
+});
+test('available bond can be released without touching reserved performance collateral',async()=>{
+ const before=(await pool.query("SELECT bucket,amount::text FROM balances WHERE book='SIMULATION' AND account_id='writer.demo'")).rows;
+ const amount='1000000000000000000000',result=await post(workspaceCreator,'/balances/release-bond',{amount});assert.equal(result.statusCode,200,result.body);
+ const after=(await pool.query("SELECT bucket,amount::text FROM balances WHERE book='SIMULATION' AND account_id='writer.demo'")).rows;
+ assert.equal(BigInt(after.find(r=>r.bucket==='bond').amount),BigInt(before.find(r=>r.bucket==='bond').amount)-BigInt(amount));
+ assert.equal(BigInt(after.find(r=>r.bucket==='free').amount),BigInt(before.find(r=>r.bucket==='free').amount)+BigInt(amount));
+ assert.equal((await post(workspaceCreator,'/balances/release-bond',{amount:String(100n*Q)})).statusCode,400);
+});
+
+test('the action inbox reflects current obligations and removes a settled delivery',async()=>{
+ const j=await nativeJob();
+ const inbox=async(session:Session)=>(await app.inject({url:'/api/v1/notifications',remoteAddress:session.remoteAddress,headers:{cookie:session.cookie}})).json();
+ assert.equal((await inbox(workspaceClient)).some((n:any)=>n.id===j.id),false);
+ await post(workspaceClient,'/jobs/'+j.id+'/bids/request');
+ assert.ok((await inbox(workspaceClient)).some((n:any)=>n.id===j.id&&n.proposals>0));
+ assert.equal((await inbox(stranger)).some((n:any)=>n.id===j.id),false);
+ const bid=(await pool.query("SELECT id FROM bids WHERE job_id=$1 AND agent_id='format-reviewer'",[j.id])).rows[0];
+ const pv=await post(workspaceClient,'/jobs/'+j.id+'/funding-preview',{bidId:bid.id});
+ await post(workspaceClient,'/jobs/'+j.id+'/fund',{previewId:pv.json().id});
+ let detail:any;for(let i=0;i<30;i++){await tick();detail=(await app.inject({url:'/api/v1/jobs/'+j.id,headers:{cookie:workspaceClient.cookie}})).json();if(detail.state==='REVIEW_OPEN')break;}
+ assert.ok((await inbox(workspaceClient)).some((n:any)=>n.id===j.id&&n.state==='REVIEW_OPEN'));
+ await approveNative(detail);assert.equal((await inbox(workspaceClient)).some((n:any)=>n.id===j.id),false);
+});
+
+test('the simulation worker never leases or consumes testnet outbox work',async()=>{
+ const id=randomUUID(),task=randomUUID();
+ await pool.query("INSERT INTO jobs(id,book,client_id,state,data) VALUES($1,'TESTNET','alex.demo','OPEN',$2)",[id,{title:'Separate chain queue'}]);
+ await pool.query("INSERT INTO outbox_jobs(id,job_id,type,next_attempt) VALUES($1,$2,'EXECUTE',now()-interval '1 day')",[task,id]);
+ await tick();
+ const row=(await pool.query('SELECT state,attempts,lease_until FROM outbox_jobs WHERE id=$1',[task])).rows[0];
+ assert.equal(row.state,'QUEUED');assert.equal(row.attempts,0);assert.equal(row.lease_until,null);
+});
+test('an unverified transaction candidate cannot poison recovery with the correct receipt',async()=>{
+ const {config}=await import('../src/config.js'),previous={contract:config.contract,rpc:config.rpc};
+ const token=randomUUID(),csrf=randomUUID(),account='receipt.testnet',operationId=randomUUID(),requestId=randomUUID();
+ await pool.query('INSERT INTO accounts(id) VALUES($1)',[account]);await pool.query("INSERT INTO sessions VALUES($1,$2,'TESTNET',$3,now()+interval '1 hour')",[hash(token),account,csrf]);
+ const owner={cookie:'af_session='+token,csrf,remoteAddress:'198.51.100.109'},proposal={operationId,requestId,network:'testnet',signerId:account,receiverId:'receipt-market.testnet',methodName:'deposit_funds',args:{request_id:requestId},attachedDepositYocto:'1',gas:'150000000000000'};
+ await pool.query("INSERT INTO chain_operations(id,request_id,account_id,state,payload_hash,proposal) VALUES($1,$2,$3,'PREPARED',$4,$5)",[operationId,requestId,account,hash(proposal),proposal]);
+ let mode='missing';const server=createServer(async(req,res)=>{const chunks:Buffer[]=[];for await(const c of req)chunks.push(c);const b=JSON.parse(Buffer.concat(chunks).toString());let payload:any;
+ if(b.method==='tx')payload=mode==='missing'?{error:{message:'unknown hash'}}:{result:{final_execution_status:'FINAL',status:{SuccessValue:''},transaction:{signer_id:mode==='wrong'?'attacker.testnet':account,receiver_id:proposal.receiverId,actions:[{FunctionCall:{method_name:proposal.methodName,deposit:'1',gas:proposal.gas,args:Buffer.from(JSON.stringify(proposal.args)).toString('base64')}}]},receipts_outcome:[]}};
+ else payload={result:{result:[...Buffer.from(JSON.stringify({outcome:'deposited'}))]}};
+ res.setHeader('Content-Type','application/json');res.end(JSON.stringify({jsonrpc:'2.0',id:b.id,...payload}));});
+ await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));config.contract=proposal.receiverId;config.rpc='http://127.0.0.1:'+(server.address() as any).port;
+ try{
+  const unknown=await post(owner,'/operations/'+operationId+'/transaction',{txHash:'A'.repeat(44)});assert.equal(unknown.json().state,'UNKNOWN');
+  let row=(await pool.query('SELECT tx_hash,candidate_tx_hash,state FROM chain_operations WHERE id=$1',[operationId])).rows[0];assert.equal(row.tx_hash,null);assert.equal(row.candidate_tx_hash,'A'.repeat(44));
+  mode='wrong';assert.equal((await post(owner,'/operations/'+operationId+'/transaction',{txHash:'B'.repeat(44)})).statusCode,400);
+  mode='valid';assert.equal((await post(owner,'/operations/'+operationId+'/transaction',{txHash:'B'.repeat(44)})).json().state,'CONFIRMED');
+  row=(await pool.query('SELECT tx_hash FROM chain_operations WHERE id=$1',[operationId])).rows[0];assert.equal(row.tx_hash,'B'.repeat(44));
+ }finally{Object.assign(config,previous);await new Promise<void>(r=>server.close(()=>r()));}
+});
+test('Google OAuth is browser-bound and sheet writes require a preview, preserve rows and reconcile uncertain appends',async()=>{
+ const previous={client:process.env.GOOGLE_CLIENT_ID,secret:process.env.GOOGLE_CLIENT_SECRET,key:process.env.INTEGRATION_ENCRYPTION_KEY},nativeFetch=globalThis.fetch;
+ process.env.GOOGLE_CLIENT_ID='fixture-google-client';process.env.GOOGLE_CLIENT_SECRET='fixture-google-secret';process.env.INTEGRATION_ENCRYPTION_KEY=Buffer.alloc(32,7).toString('base64');
+ let appended=0,failAfterWrite=false,rows:any[][]=[['Existing data','keep this row']];
+ globalThis.fetch=(async(input:any,init:any)=>{
+   const url=String(input);
+   if(url==='https://oauth2.googleapis.com/token')return Response.json({access_token:'fixture-access-token',refresh_token:'fixture-refresh-token',expires_in:3600,scope:'https://www.googleapis.com/auth/spreadsheets'});
+   if(url.startsWith('https://sheets.googleapis.com/')){assert.equal(init.headers.Authorization,'Bearer fixture-access-token');if(init.method==='POST'){appended++;const body=JSON.parse(init.body);rows.push(...body.values);if(failAfterWrite)throw Error('Fixture network dropped after the append');return Response.json({updates:{updatedRange:'Results!A2:G6',updatedRows:body.values.length}});}return Response.json({values:rows});}
+   return nativeFetch(input,init);
+ }) as typeof fetch;
+ try{
+   const auth=await post(workspaceClient,'/integrations/google/connect');assert.equal(auth.statusCode,200,auth.body);
+   const state=new URL(auth.json().url).searchParams.get('state'),binding=auth.headers['set-cookie']!.toString().split(';')[0];
+   assert.equal((await app.inject({url:'/api/v1/integrations/google/callback?state='+state+'&code=fixture'})).statusCode,403);
+   const callback=await app.inject({url:'/api/v1/integrations/google/callback?state='+state+'&code=fixture',headers:{cookie:workspaceClient.cookie+'; '+binding}});assert.equal(callback.statusCode,302,callback.body);
+   assert.equal((await app.inject({url:'/api/v1/integrations/google/callback?state='+state+'&code=fixture',headers:{cookie:workspaceClient.cookie+'; '+binding}})).statusCode,401);
+   const encrypted=(await pool.query("SELECT encrypted_tokens FROM google_connections WHERE owner_id='alex.demo' AND book='SIMULATION'")).rows[0].encrypted_tokens;assert.ok(!encrypted.includes('fixture-access-token'));
+   const read=await post(workspaceClient,'/integrations/google/read',{spreadsheetId:'fixture-sheet-id',range:'Results!A:G'});assert.equal(read.statusCode,200,read.body);assert.equal(read.json().rows[0][1],'keep this row');
+   const job=await readyNative(),d=job.deliveries[0],target={spreadsheetId:'fixture-sheet-id',range:'Results!A:G',revision:d.revision,deliveryHash:d.hash};
+   let prepared=await post(workspaceClient,'/jobs/'+job.id+'/sheets/preview',target);assert.equal(prepared.statusCode,200,prepared.body);assert.equal(appended,0);
+   const id=prepared.json().id;assert.equal((await post(workspaceCreator,'/sheets/exports/'+id+'/commit')).statusCode,404);
+   assert.equal((await post(workspaceClient,'/sheets/exports/'+id+'/commit')).json().state,'CONFIRMED');assert.equal(appended,1);assert.deepEqual(rows[0],['Existing data','keep this row']);
+   assert.equal((await post(workspaceClient,'/sheets/exports/'+id+'/commit')).json().state,'CONFIRMED');assert.equal(appended,1);
+   prepared=await post(workspaceClient,'/jobs/'+job.id+'/sheets/preview',target);const uncertain=prepared.json().id;failAfterWrite=true;
+   assert.equal((await post(workspaceClient,'/sheets/exports/'+uncertain+'/commit')).json().state,'UNKNOWN');assert.equal(appended,2);
+   assert.equal((await post(workspaceClient,'/jobs/'+job.id+'/sheets/preview',target)).json().code,'EXPORT_UNKNOWN');
+   assert.equal((await post(workspaceClient,'/sheets/exports/'+uncertain+'/reconcile')).json().state,'CONFIRMED');assert.equal(appended,2);
+ }finally{globalThis.fetch=nativeFetch;for(const [key,value]of Object.entries({GOOGLE_CLIENT_ID:previous.client,GOOGLE_CLIENT_SECRET:previous.secret,INTEGRATION_ENCRYPTION_KEY:previous.key}))if(value===undefined)delete process.env[key];else process.env[key]=value;}
 });

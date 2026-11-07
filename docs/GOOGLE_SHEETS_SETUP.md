@@ -1,0 +1,19 @@
+# Google Sheets connection
+
+Google Sheets is optional. Local jobs, programs and the simulation work without a Google account or application credentials. Real Google consent and a live spreadsheet write require the setup below; automated tests use an explicit HTTP fixture and do not establish live Google authorization.
+
+1. Create a Google Cloud project and enable the Google Sheets API.
+2. Configure the OAuth consent screen. For a testing application, add the accounts that will connect as test users. A public application may need Google's verification for its requested scope.
+3. Create an OAuth client of type **Web application**. Register the exact callback shown under **Workspace tools → Google Sheets → Connection setup**. With the default local launcher this is `http://127.0.0.1:4200/api/v1/integrations/google/callback`. A different port or hostname requires its own exact registered URI. Production uses your HTTPS `APP_ORIGIN` plus `/api/v1/integrations/google/callback`.
+4. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in the backend's ignored `.env`. Keep them on the server. Restart the launcher. Never enter a Google password in Orby.
+5. Open **Workspace tools → Google Sheets**, select **Connect Google Sheets**, and approve access on Google's own consent page. Permission is `https://www.googleapis.com/auth/spreadsheets`; this permits reading and writing spreadsheets accessible to the consenting account. Orby uses only the sheet ID and range explicitly supplied in its UI.
+
+The source range can contain a header plus at most 100 data rows and 30 columns, for example `Leads!A1:F101`. Select **Read selected rows**, inspect the preview, then **Use rows in a new job**. Add a budget, review acceptance criteria and publish. Imported cells become an immutable input snapshot; execution does not silently reread a changing sheet. The deterministic demo organizes supplied data and flags limitations; it does not independently enrich or verify leads. Optional Ollama configuration changes generation, not payment authority.
+
+For delivered output, expand the Google Sheets section on the job, enter the spreadsheet ID and an open destination range such as `Results!A:G`, then **Preview sheet write**. Create the `Results` tab in the spreadsheet first. Orby shows the destination, delivery version and rows. Only **Confirm append to Google Sheets** performs a write. The implementation uses `RAW` values and `INSERT_ROWS`; existing cells are not overwritten. It adds export ID, job, version, comparison rows and recommendation as a new block.
+
+Each preview expires after five minutes and is bound to the reviewed delivery hash/version. A completed export is idempotent. An uncertain response becomes `UNKNOWN`; use **Check export status**. Reload restores uncertain exports. Orby looks for the complete unique export marker rather than blindly repeating the append. Keep the destination range broad enough to include appended rows and do not remove the marker while reconciling. If a write remains uncertain, inspect the sheet before attempting a new export.
+
+Tokens are encrypted with AES-256-GCM. Set `INTEGRATION_ENCRYPTION_KEY` to 32 random bytes encoded as base64 for managed deployment, or preserve the auto-generated ignored `.data/google-token.key` for local use. A database backup alone cannot decrypt tokens without the same key. Back up the key separately with restricted access; losing it requires reconnecting Google. Never commit the key, OAuth secret, tokens, database or backups. Disconnect removes Orby's local connection; revoke the application's grant in your Google account to remove Google's permission too.
+
+References: [Google web-server OAuth](https://developers.google.com/identity/protocols/oauth2/web-server), [Sheets append API](https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets.values/append).
