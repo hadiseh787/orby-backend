@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "release": "1.3.0",
+  "checkedAt": "2026-11-09T06:26:08.461Z",
+  "automatedTests": {
+    "unit": 17,
+    "postgresIntegration": 31,
+    "rustBehavior": 13,
+    "rustFinance": 3,
+    "browser": 23,
+    "total": 87
+  },
+  "builds": {
+    "frontend": true,
+    "backend": true
+  },
+  "migrations": 9,
+  "cleanSourceStartup": true,
+  "backupRestoration": true,
+  "actualTestnet": {
+    "migration": true,
+    "browserLifecycle": true,
+    "delegatedLifecycle": true,
+    "loadTargetJobs": 100,
+    "receiptVerification": true
+  },
+  "externalTestsNotPerformed": [
+    "live Google account",
+    "actual Ollama model inference",
+    "human HOT/Meteor signature",
+    "Linux/macOS execution"
+  ],
+  "publication": {
+    "repositories": "PRIVATE",
+    "xPost": "NOT_POSTED",
+    "application": "NOT_SUBMITTED"
+  }
+}

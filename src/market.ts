@@ -17,6 +17,8 @@ import {
   startWindowMs,
 } from "./domain.js";
 import { move, balance } from "./ledger.js";
+import {scopedChildInput,childCriteria} from './execution-input.js';
+import {canReadWorkspace} from './workspace-access.js';
 export const dto = (row: any) => ({
   ...row.data,
   id: row.id,
@@ -28,6 +30,7 @@ export const dto = (row: any) => ({
   version: row.version,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  workspaceId:row.workspace_id,
   displayNearAmount:row.data.nearYocto||row.data.n0||(row.book==='SIMULATION'&&row.data.usdMicro?funding(row.data.usdMicro,'5000000').n0:null),
 });
 async function newObligation(db: DB) {
@@ -74,9 +77,9 @@ export async function loadJob(db: DB, id: string, a?: Actor, lock = false) {
   if (a)
     assert(
       j.book === a.book &&
-        (j.client_id === a.id ||
+        ((j.client_id === a.id&&(!a.workspaceId||j.workspace_id===a.workspaceId)) ||
           j.creator_id === a.id ||
-          a.roles.includes("admin")),
+          a.roles.includes("admin") || (a.workspaceId===j.workspace_id&&await canReadWorkspace(db,a,j.workspace_id))),
       "FORBIDDEN",
       "You do not have access to this job.",
       403,
@@ -153,10 +156,11 @@ export async function createJob(db: DB, a: Actor, b: any) {
       }),
     };
   await db.query(
-    "INSERT INTO jobs(id,book,client_id,state,data) VALUES($1,$2,$3,'OPEN',$4)",
-    [id, a.book, a.id, data],
+    "INSERT INTO jobs(id,book,client_id,state,data,workspace_id) VALUES($1,$2,$3,'OPEN',$4,$5)",
+    [id, a.book, a.id, data,a.workspaceId||null],
   );
   await event(db, id, a.id, "job_opened", { termsHash: data.termsHash });
+  for(const k of b.input?.knowledge||[]){await db.query('INSERT INTO knowledge_grants(id,job_id,snapshot_id,recipient,scope) VALUES($1,$2,$3,\'MAIN\',\'MAIN\')',[randomUUID(),id,k.id]);for(const [agent,ids] of Object.entries(b.input.knowledgeAccess?.children||{}))if((ids as string[]).includes(k.id))await db.query('INSERT INTO knowledge_grants(id,job_id,snapshot_id,recipient,scope) VALUES($1,$2,$3,$4,\'CHILD\')',[randomUUID(),id,k.id,agent]);}
   return {
     id,
     ...data,
@@ -192,7 +196,7 @@ export async function requestBids(db: DB, a: Actor, id: string) {
     const amount=agentMinimum(agent.data,!!j.data.nearYocto,reference.priceMicro);
     if (!amount || BigInt(amount) > BigInt(j.data.nearYocto || j.data.usdMicro)) continue;
     await db.query(
-      "INSERT INTO bids(id,job_id,agent_id,book,amount,data,expires_at) VALUES($1,$2,$3,$4,$5,$6,now()+interval '30 minutes') ON CONFLICT(job_id,agent_id) DO UPDATE SET expires_at=EXCLUDED.expires_at",
+      "INSERT INTO bids(id,job_id,agent_id,book,amount,data,expires_at) VALUES($1,$2,$3,$4,$5,$6,now()+interval '30 minutes') ON CONFLICT(job_id,agent_id) WHERE NOT(data ? 'counterofferOf') DO UPDATE SET expires_at=EXCLUDED.expires_at",
       [
         randomUUID(),
         id,
@@ -590,8 +594,8 @@ export async function fundChild(
   const data = {
     title: "Extract source evidence",
     description: "Extract claims from the supplied proposal text.",
-    input: j.data.input,
-    criteria: j.data.criteria.filter((c: any) => c.type === "AUTO_CHECK"),
+    input: scopedChildInput(j.data.input,agentId),
+    criteria: childCriteria(j.data.criteria),
     approvalPolicy: "AUTO_AFTER_CHECKS",
     creatorId: ag.owner_id,
     escrow: amount,

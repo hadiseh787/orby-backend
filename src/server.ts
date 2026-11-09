@@ -29,6 +29,13 @@ import { proposal, reconcile, view, agreementPrice } from "./near.js";
 import {recoverRegistration} from './agent-registration.js';
 import {registerSecurity} from './security.js';
 import { nearUsdQuote } from "./price.js";
+import {qualityRoutes} from './quality.js';
+import {negotiationRoutes} from './negotiations.js';
+import {knowledgeAccessRoutes} from './knowledge-access.js';
+import {evidenceRoutes} from './evidence.js';
+import {rehearsalRoutes} from './rehearsal.js';
+import {workspaceTeamRoutes} from './workspaces.js';
+import {canReadWorkspace,requireWorkspaceRole} from './workspace-access.js';
 import {workspaceRoutes} from './workspace-routes.js';
 import {latestDelivery,recordDecision,decisionChecks} from './delivery-decisions.js';
 import {deterministicBrief} from './runtime.js';
@@ -93,6 +100,12 @@ export async function buildApp() {
   });
   await authRoutes(app);
   await workspaceRoutes(app);
+  await workspaceTeamRoutes(app);
+  await evidenceRoutes(app);
+  await rehearsalRoutes(app);
+  await qualityRoutes(app);
+  await negotiationRoutes(app);
+  await knowledgeAccessRoutes(app);
   await programRoutes(app);
   await googleRoutes(app);
   if(process.env.LOCAL_SHUTDOWN_TOKEN&&process.send){
@@ -112,10 +125,11 @@ export async function buildApp() {
   ) =>
     app.post("/api/v1" + path, async (req: any) => {
       const a = await actor(req);
+      requireWorkspaceRole(a,...(path==='/uploads/:id/remove'?['OWNER','MEMBER']:['OWNER']));
       return mutate(
         a,
         req.headers["idempotency-key"],
-        { path, params: req.params, body: req.body || {} },
+        { path, params: req.params, body: req.body || {}, workspace:a.workspaceId },
         (db) => fn(db, a, req.body || {}, req.params || {}),
       );
     });
@@ -131,31 +145,31 @@ export async function buildApp() {
     books: ["SIMULATION", "TESTNET"],
     priceMode: "NATIVE_NEAR",
     primaryAsset: "NEAR",
-    contractVersionRequired: 2,
+    contractVersionRequired: 3,
     attachmentLimits: {maxFiles:5,maxBytes:2097152,extensions:["pdf","txt","md","json","png","jpg","jpeg"]},
     ipfsAvailable:!!process.env.IPFS_API_URL,
     referenceOnly: true,
   }));
   app.get("/api/v1/price", async () => nearUsdQuote());
   app.post("/api/v1/uploads", {bodyLimit:3000000}, async(req:any)=> {
-    const a=await actor(req);
+    const a=await actor(req);requireWorkspaceRole(a,'OWNER','MEMBER');
     return mutate(a,req.headers["idempotency-key"],{path:"/uploads",body:req.body},db=>uploadAttachment(db,a,req.body||{}));
   });
   mutation("/uploads/:id/remove",async(db,a,b,p)=>{
-    const result=await db.query("DELETE FROM job_attachments WHERE id=$1 AND owner_id=$2 AND book=$3 AND job_id IS NULL RETURNING id",[idSchema.parse(p.id),a.id,a.book]);
+    const result=await db.query("DELETE FROM job_attachments WHERE id=$1 AND (owner_id=$2 OR $5::boolean) AND book=$3 AND workspace_id=$4 AND job_id IS NULL RETURNING id",[idSchema.parse(p.id),a.id,a.book,a.workspaceId,a.workspaceRole==='OWNER']);
     assert(result.rowCount,"NOT_FOUND","Unused attachment not found.",404);return {ok:true};
   });
   app.get("/api/v1/uploads/:id",async(req:any,reply)=>{
     const a=await actor(req), id=idSchema.parse(req.params.id);
     const f=(await pool.query("SELECT * FROM job_attachments WHERE id=$1",[id])).rows[0];
     assert(f&&f.book===a.book,"NOT_FOUND","Attachment not found.",404);
-    if(f.owner_id!==a.id){assert(f.job_id,"FORBIDDEN","Attachment is private.",403);await loadJob(pool,f.job_id,a);}
+    if(f.workspace_id===a.workspaceId){assert(await canReadWorkspace(pool,a,f.workspace_id),"FORBIDDEN","Workspace membership is required.",403);}else{assert(f.job_id,"FORBIDDEN","Attachment is private.",403);await loadJob(pool,f.job_id,a);}
     reply.header("Content-Disposition",`attachment; filename*=UTF-8''${encodeURIComponent(f.name)}`).header("Cache-Control","private, no-store").header("X-Content-Type-Options","nosniff");
     return reply.type(f.media_type).send(Buffer.from(f.content_base64,"base64"));
   });
   app.get("/api/v1/health", async () => {
     await pool.query("SELECT 1");
-    return { status: "ok", database: "postgresql", version: "1.2.0" };
+    return { status: "ok", database: "postgresql", version: "1.3.0" };
   });
   app.get("/api/v1/templates", async () => ({
     templates: [
@@ -369,14 +383,15 @@ export async function buildApp() {
     const a = await actor(req);
     const rows = (
       await pool.query(
-        "SELECT j.* FROM jobs j LEFT JOIN agents ag ON ag.id=j.agent_id AND ag.book=j.book WHERE j.book=$1 AND (j.client_id=$2 OR ag.owner_id=$2 OR $3) AND j.parent_id IS NULL ORDER BY j.created_at DESC LIMIT 50",
-        [a.book, a.id, a.roles.includes("admin")],
+        "SELECT j.* FROM jobs j LEFT JOIN agents ag ON ag.id=j.agent_id AND ag.book=j.book WHERE j.book=$1 AND (j.workspace_id=$4 OR ag.owner_id=$2 OR $3) AND j.parent_id IS NULL ORDER BY j.created_at DESC LIMIT 50",
+        [a.book, a.id, a.roles.includes("admin"),a.workspaceId],
       )
     ).rows;
     return rows.map(dto);
   });
   mutation("/jobs", async (db, a, b) => {
     const parsed = jobSchema.parse(b);
+    if(b.workspaceDraftId){const draft=(await db.query('SELECT * FROM workspace_drafts WHERE id=$1 AND workspace_id=$2 FOR UPDATE',[z.uuid().parse(b.workspaceDraftId),a.workspaceId])).rows[0];assert(draft&&!draft.published_job_id&&draft.revision===b.expectedDraftRevision&&hash(jobSchema.parse(draft.data))===hash(parsed),'DRAFT_CHANGED','The team draft changed or was published. Review its current version.',409);}
     if(parsed.preferredAgentId)assert((await db.query("SELECT 1 FROM agents WHERE id=$1 AND book=$2 AND state='ACTIVE'",[parsed.preferredAgentId,a.book])).rowCount,'AGENT_UNAVAILABLE','The selected agent is unavailable.');
     const knowledge=await knowledgeSnapshot(db,a,parsed.knowledgeIds);
     assert(Buffer.byteLength(JSON.stringify({...parsed.input,knowledge}))<=262144,'INPUT_TOO_LARGE','Combined source material and knowledge exceeds 256 KiB.');
@@ -387,7 +402,8 @@ export async function buildApp() {
         "VALIDATION_ERROR",
         "Deadline must be at least one hour.",
       );
-    const j = await createJob(db, a, {...parsed,input:{...parsed.input,knowledge},attachments});
+    const j = await createJob(db, a, {...parsed,input:{...parsed.input,knowledge,knowledgeAccess:{main:parsed.knowledgeIds,children:parsed.knowledgeChildGrants}},attachments});
+    if(b.workspaceDraftId)await db.query('UPDATE workspace_drafts SET published_job_id=$2 WHERE id=$1',[b.workspaceDraftId,j.id]);
     if(attachments.length)await db.query("UPDATE job_attachments SET job_id=$1 WHERE id=ANY($2::uuid[])",[j.id,parsed.attachmentIds]);
     return a.book === "TESTNET"
       ? {
@@ -467,6 +483,7 @@ export async function buildApp() {
         agentName: b.name,
         ownerId: b.owner_id,
         amount: b.amount,
+        counterofferOf:b.data.counterofferOf||null,
         expiresAt: b.expires_at,
       })),
       deliveries: deliveries.rows.map(d=>({...d,checks:decisionChecks(d,decisions.rows,terminal(j.state))})),
@@ -521,7 +538,7 @@ export async function buildApp() {
       "INVALID_STATE",
       "Only the client can approve a delivery ready for review.",
     );
-    const delivery=await latestDelivery(db,j,b.revision,b.deliveryHash);
+    const delivery=await latestDelivery(db,j,z.number().int().nonnegative().parse(b.revision),z.string().regex(/^[a-f0-9]{64}$/).parse(b.deliveryHash));
     assert(delivery.checks.every((c:any)=>!c.required||c.type!=='AUTO_CHECK'||c.result==='PASS'),'CHECKS_FAILED','Required checks have not passed. Request a revision or open a dispute.');
     if(a.book==='TESTNET')return proposal(db,a.id,'approve_delivery',{job_id:j.id,revision:delivery.revision,delivery_hash:delivery.hash},'0',j.id);
     await recordDecision(db,j,a.id,'APPROVE',delivery);

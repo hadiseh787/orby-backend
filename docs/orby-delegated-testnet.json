@@ -1,0 +1,38 @@
+{
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "jobId": "ae5ad67e-a1b6-4d47-9299-86c4caecddc8",
+  "passed": true,
+  "checkedAt": "2026-11-09T06:21:01.956Z",
+  "checks": [
+    "NEP-413 login",
+    "owner transaction verification",
+    "executor bids",
+    "capped escrow",
+    "bounded child funding",
+    "child delivery and settlement",
+    "root delivery and settlement",
+    "withdrawal callback",
+    "forged callback rejected",
+    "exact escrow conservation",
+    "native legacy approval rejected without changing reviewed state"
+  ],
+  "receipts": [
+    {
+      "method": "open_near_job",
+      "hash": "3ReVVv4LuSLMVaZ74So1q3SGohbUno4pM9EzyrStFv9h"
+    },
+    {
+      "method": "award_and_fund",
+      "hash": "6PHfRp8WR7eHE6tPcSgiiZP7yUZRJz3aUcu3PMDiZ9iz"
+    },
+    {
+      "method": "approve_delivery",
+      "hash": "Rn7VAw6cayQQdsXBRRvfB9nSaYXK2FNDS4He2hdhF6Q"
+    },
+    {
+      "method": "withdraw",
+      "hash": "CfNKPn3pQdwz6VyJvMPUJkGa5J3zdpvCM83EmvBqN6Pf"
+    }
+  ]
+}

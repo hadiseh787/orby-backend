@@ -40,12 +40,12 @@ export async function uploadAttachment(db: DB, a: Actor, body: any) {
     assert(/^b[a-z2-7]{30,150}$/.test(result.Hash||''),"STORAGE_UNAVAILABLE","IPFS returned an invalid content identifier.",503);cid=result.Hash;
   }
   const file = { id: randomUUID(), name: body.name, mediaType: attachmentTypes[ext][0], bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex"),cid };
-  await db.query("INSERT INTO job_attachments(id,owner_id,book,name,media_type,bytes,sha256,content_base64,ipfs_cid) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)", [file.id,a.id,a.book,file.name,file.mediaType,file.bytes,file.sha256,bytes.toString("base64"),cid]);
+  await db.query("INSERT INTO job_attachments(id,owner_id,book,name,media_type,bytes,sha256,content_base64,ipfs_cid,workspace_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)", [file.id,a.id,a.book,file.name,file.mediaType,file.bytes,file.sha256,bytes.toString("base64"),cid,a.workspaceId||null]);
   return file;
 }
 export async function claimAttachments(db: DB, a: Actor, ids: string[]) {
   if (!ids.length) return [];
-  const rows = (await db.query("SELECT id,name,media_type,bytes,sha256,ipfs_cid FROM job_attachments WHERE id=ANY($1::uuid[]) AND owner_id=$2 AND book=$3 AND job_id IS NULL ORDER BY id FOR UPDATE", [ids,a.id,a.book])).rows;
+  const rows = (await db.query("SELECT id,name,media_type,bytes,sha256,ipfs_cid FROM job_attachments WHERE id=ANY($1::uuid[]) AND workspace_id=$2 AND book=$3 AND job_id IS NULL ORDER BY id FOR UPDATE", [ids,a.workspaceId,a.book])).rows;
   assert(rows.length === ids.length, "INVALID_FILE", "An attachment is missing, belongs to another account, or is already attached to another job.");
   return rows.map(r=>({id:r.id,name:r.name,mediaType:r.media_type,bytes:r.bytes,sha256:r.sha256,cid:r.ipfs_cid}));
 }

@@ -142,6 +142,10 @@ if ((await contract.state()).code_hash !== expectedCodeHash) {
     throw Error("Deployed contract hash does not match the verified WASM.");
   console.log("Main contract deployed and code hash verified.");
 }
+if(process.argv.includes('--migrate-v2')){
+  let current=0;try{current=await contract.viewFunction({contractId:contract.accountId,methodName:'get_version',args:{}})}catch{}
+  if(current!==3){await contract.functionCall({contractId:contract.accountId,methodName:'migrate_v2',args:{},gas:280000000000000n});console.log('V2 state migrated to indexed V3 storage.');}
+}
 if(upgradeOnly){
   const record={network:'testnet',contractId:contract.accountId,wasmBytes:wasm.length,version:await contract.viewFunction({contractId:contract.accountId,methodName:'get_version',args:{}}),codeHash:expectedCodeHash,wasmSha256:createHash('sha256').update(wasm).digest('hex'),source:'contracts/orby-market',verifiedAt:new Date().toISOString(),upgradeOnly:true};
   await writeFile('docs/orby-deployment.json',JSON.stringify(record,null,2)+'\n');
@@ -175,7 +179,7 @@ let initialized = false;
 if(process.argv.includes('--migrate-v1')) {
   let currentVersion=1;
   try{currentVersion=await contract.viewFunction({contractId:contract.accountId,methodName:'get_version',args:{}})}catch{}
-  if(currentVersion!==2){
+  if(currentVersion!==3){
     await contract.functionCall({contractId:contract.accountId,methodName:'migrate_v1',args:{},gas:150000000000000n});
     console.log('V1 state migrated; existing balances and jobs preserved.');
   }

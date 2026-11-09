@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-09T06:23:40.137Z",
+  "platform": "win32",
+  "architecture": "x64",
+  "node": "v22.19.0",
+  "applicationVersion": "1.3.0",
+  "migrationsApplied": 9,
+  "frontendRevision": "29c9b639e3de1c9d47f2157175b77d89c3c8569a",
+  "automaticFrontendFetch": true,
+  "createdConfiguration": true,
+  "createdDatabase": true,
+  "preexistingDependencies": false,
+  "preexistingDatabase": false,
+  "preexistingFrontend": false,
+  "browserTestsPassed": 23,
+  "origin": "http://127.0.0.1:4314",
+  "health": {
+    "status": "ok",
+    "database": "postgresql",
+    "version": "1.3.0"
+  },
+  "backupRestoredIntoFreshDatabase": true,
+  "backupIncludedNewProductTables": true
+}

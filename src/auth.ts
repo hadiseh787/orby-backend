@@ -4,11 +4,17 @@ import bs58 from "bs58";
 import { pool, transaction } from "./db.js";
 import { config } from "./config.js";
 import { assert, hash } from "./domain.js";
+import {resolveWorkspace} from './workspace-access.js';
 export type Actor = {
   id: string;
   roles: string[];
   book: "SIMULATION" | "TESTNET";
   csrf: string;
+  workspaceId?:string;
+  workspaceRole?:'OWNER'|'MEMBER'|'REVIEWER';
+  workspaceName?:string;
+  workspaceKind?:string;
+  paymentAccount?:string;
 };
 export async function actor(request: any): Promise<Actor> {
   const token = request.cookies.af_session;
@@ -32,12 +38,12 @@ export async function actor(request: any): Promise<Actor> {
       "Invalid request token.",
       403,
     );
-  return {
+  return resolveWorkspace({
     id: row.account_id,
     roles: row.roles,
     book: row.book,
     csrf: row.csrf,
-  };
+  },request.headers['x-orby-workspace']||(request.method==='GET'?request.query?.workspace:undefined));
 }
 async function session(reply: any, id: string, book: string) {
   const token = randomBytes(32).toString("base64url"),
@@ -55,7 +61,7 @@ async function session(reply: any, id: string, book: string) {
   });
   const account = (await pool.query("SELECT * FROM accounts WHERE id=$1", [id]))
     .rows[0];
-  return { id, roles: account.roles, book, csrf };
+  return resolveWorkspace({ id, roles: account.roles, book:book as Actor['book'], csrf });
 }
 export function messageDigest(
   message: string,

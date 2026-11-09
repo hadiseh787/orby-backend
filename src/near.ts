@@ -7,6 +7,7 @@ import { pool, transaction } from "./db.js";
 import { runModel } from "./runtime.js";
 import { evaluate } from "./domain.js";
 import {transactionResult} from './transaction-result.js';
+import {executionInput,scopedChildInput,childCriteria,recordInputManifest} from './execution-input.js';
 import {loadJob} from './market.js';
 import {latestDelivery,recordDecision} from './delivery-decisions.js';
 export async function rpc(method: string, params: any) {
@@ -161,12 +162,14 @@ export async function reconcile(db: DB, op: any, txHash: string) {
     if(p.methodName==='record_bid'){
       const bid=await view('get_bid',{bid_id:p.args.bid_id});
       assert(bid,"RECONCILIATION_REQUIRED","Confirmed bid could not yet be read from the contract.");
-      await db.query("INSERT INTO bids(id,job_id,agent_id,book,amount,data,expires_at) VALUES($1,$2,$3,'TESTNET',$4,$5,$6) ON CONFLICT DO NOTHING",[p.args.bid_id,bid.job_id,bid.agent_id,bid.price,{etaMinutes:Number(bid.eta_ms)/60000,manifestVersion:bid.manifest_version},new Date(Number(bid.expires_at))]);
+      const counter=(await db.query('SELECT original_bid_id FROM negotiation_rounds WHERE final_bid_id=$1',[p.args.bid_id])).rows[0];
+      await db.query("INSERT INTO bids(id,job_id,agent_id,book,amount,data,expires_at) VALUES($1,$2,$3,'TESTNET',$4,$5,$6) ON CONFLICT DO NOTHING",[p.args.bid_id,bid.job_id,bid.agent_id,bid.price,{etaMinutes:Number(bid.eta_ms)/60000,manifestVersion:bid.manifest_version,...(counter?{counterofferOf:counter.original_bid_id}:{})},new Date(Number(bid.expires_at))]);
+      if(counter)await db.query("UPDATE negotiation_rounds SET state='RECORDED',updated_at=now() WHERE final_bid_id=$1",[p.args.bid_id]);
     }
     if(p.methodName==='set_execution_policy'){
       const policy=await view('get_policy',{agent_id:p.args.agent_id});
       await db.query("UPDATE agents SET data=data||'{\"chainPolicyReady\":true}'::jsonb WHERE id=$1 AND book='TESTNET'",[p.args.agent_id]);
-      await db.query("UPDATE execution_policies SET data=$2,version=$3 WHERE agent_id=$1 AND book='TESTNET'",[p.args.agent_id,{maxSpendYocto:policy.max_spend,maxBondYocto:policy.max_bond,allowedAgentIds:policy.allowed,expiresAt:Number(policy.expires_at),paused:policy.paused},policy.version]);
+      await db.query("UPDATE execution_policies SET data=$2,version=$3 WHERE agent_id=$1 AND book='TESTNET'",[p.args.agent_id,{maxSpendYocto:policy.max_spend,maxBondYocto:policy.max_bond,allowedAgentIds:policy.allowed,expiresAt:Number(policy.expires_at),paused:policy.paused,executor:policy.executor},policy.version]);
     }
     if (op.job_id) {
       const chainJob = await view("get_job", { job_id: op.job_id });
@@ -472,10 +475,12 @@ export async function tickNear() {
               {
                 ...row.data,
                 title: "Extract source evidence",
+                description:"Extract claims from the supplied proposal text.",
+                termsHash:child.terms_hash,
+                deadline:Number(child.deadline_ms),
                 creatorId: child.creator,
-                criteria: row.data.criteria.filter(
-                  (c: any) => c.type === "AUTO_CHECK",
-                ),
+                criteria: childCriteria(row.data.criteria),
+                input:scopedChildInput(row.data.input,child.agent_id),
                 approvalPolicy: "AUTO_AFTER_CHECKS",
                 onchain: child,
               },
@@ -493,6 +498,9 @@ export async function tickNear() {
         if (!delivery) {
           let input = row.data.input;
           if (j.children.length) {
+            const childStates=await Promise.all(j.children.map((child_id:string)=>view('get_job',{job_id:child_id})));
+            if(childStates.some(child=>!child||!['SETTLED','REFUNDED','CANCELLED'].includes(child.state)))continue;
+            if(childStates.some(child=>child.state!=='SETTLED'||!child.checks_pass)){await pool.query('UPDATE jobs SET data=data||$2::jsonb WHERE id=$1',[row.id,{needsClientAction:true,executionIssue:'A child did not pass acceptance. Review the child outcome before continuing.'}]);continue;}
             const childDelivery = (
               await pool.query(
                 "SELECT d.* FROM deliveries d JOIN jobs child ON child.id=d.job_id WHERE child.parent_id=$1 ORDER BY d.revision DESC LIMIT 1",
@@ -500,7 +508,7 @@ export async function tickNear() {
               )
             ).rows[0];
             if (!childDelivery) continue;
-            input = {
+            input = {...input,
               sources: childDelivery.content.comparison.map((r: any) => ({
                 id: r.sources[0],
                 text: r.evidence||r.strengths+' '+r.limits,
@@ -509,12 +517,14 @@ export async function tickNear() {
             };
           }
           const currentData=(await pool.query('SELECT data FROM jobs WHERE id=$1',[row.id])).rows[0].data;
-          const result = await runModel({...input,brief:row.data.description,criteria:row.data.criteria,revisionFeedback:currentData.revisionFeedback}),
+          const runtimeInput=executionInput({...row,data:currentData},input);await recordInputManifest(pool,row,runtimeInput,row.id+':revision:'+revision);
+          const result = await runModel(runtimeInput),
             checks = evaluate(
               result.content,
               row.data.criteria,
               row.data.input.sources,
             );
+          await pool.query('UPDATE run_input_manifests SET manifest=manifest||$3::jsonb WHERE job_id=$1 AND run_key=$2',[row.id,row.id+':revision:'+revision,{runtimeAccepted:true,executionMode:result.mode}]);
           const h = hash(result.content);
           await pool.query(
             "INSERT INTO deliveries(id,job_id,revision,content,hash,checks) VALUES($1,$2,$3,$4,$5,$6)",

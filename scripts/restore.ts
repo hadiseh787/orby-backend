@@ -26,6 +26,9 @@ await transaction(async (db) => {
   // Dependency order is explicit; table names never come from backup input.
   const order = [
     "accounts",
+    "workspaces",
+    "workspace_members",
+    "workspace_invites",
     "auth_nonces",
     "sessions",
     "agents",
@@ -46,6 +49,15 @@ await transaction(async (db) => {
     "deliveries",
     "delivery_decisions",
     "job_templates",
+    "workspace_drafts",
+    "workspace_reviews",
+    "knowledge_grants",
+    "run_input_manifests",
+    "work_receipts",
+    "rehearsal_runs",
+    "benchmark_suites",
+    "benchmark_runs",
+    "negotiation_rounds",
     "job_events",
     "disputes",
     "runs",
@@ -91,6 +103,7 @@ await transaction(async (db) => {
     const count = (
       await db.query('SELECT count(*)::int AS count FROM "' + table + '"')
     ).rows[0].count;
+    if(!backup.records.workspaces&&["workspaces","workspace_members"].includes(table))continue;
     assert(
       count === (backup.records[table] || []).length,
       "RESTORE_MISMATCH",

@@ -1,11 +1,9 @@
-# Orby 1.2 verification
+# Orby 1.3 verification
 
-[Complete workspace implementation and remaining configuration](backend/docs/WORKSPACE_RELEASE_2026-11-07.fa.md)
+[All six review fixes and all six roadmap features](backend/docs/REVIEW_V2_RELEASE.fa.md)
 
-[Google Sheets setup](backend/docs/GOOGLE_SHEETS_SETUP.md)
+[Fresh tests and boundaries](backend/docs/VERIFICATION.md)
 
-[Latest document fixes and verification — 7 November](backend/docs/CHANGES_2026-11-07.fa.md)
+[One-command local startup](backend/QUICKSTART.fa.md)
 
-[Verification and public evidence](backend/docs/VERIFICATION.md)
-
-[گزارش کامل تغییرات و موارد باقی‌مانده](backend/docs/ORBY_RELEASE.fa.md)
+[Submission artifacts and pending publication](backend/docs/SUBMISSION.md)

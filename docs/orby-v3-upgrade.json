@@ -1,0 +1,46 @@
+{
+  "passed": true,
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "checkedAt": "2026-11-09T06:01:38.740Z",
+  "sourceVersion": 2,
+  "targetVersion": 3,
+  "allDeployedV2MapsDecoded": true,
+  "preserved": {
+    "agents": 9,
+    "policies": 9,
+    "jobs": 10,
+    "bids": 12,
+    "balances": 5,
+    "operations": 104,
+    "withdrawals": 4,
+    "native_jobs": 6,
+    "native_agents": 9
+  },
+  "userLiabilities": "17420000000000000000000000",
+  "protectedExitReserve": "500000000000000000000000",
+  "storageStatus": {
+    "version": 3,
+    "user_liabilities": "17420000000000000000000000",
+    "storage_budget": "4775397145853196400000004",
+    "protected_exit_reserve": "500000000000000000000000",
+    "live_balances": 5,
+    "open_escrows": 0,
+    "counts": {
+      "agents": 9,
+      "policies": 9,
+      "jobs": 10,
+      "bids": 12,
+      "balances": 5,
+      "operations": 104,
+      "withdrawals": 4,
+      "native_jobs": 6,
+      "native_agents": 9
+    },
+    "storage_bytes": 478594,
+    "available_sponsor": "5050030087099495200000004",
+    "callback_gas_tgas": 50,
+    "history_policy": "Permanent bounded idempotency tombstones; growth is sponsor-funded. No replay-enabling pruning."
+  },
+  "notice": "All entries in every decoded V2 map were compared with final V3 public views. No operation or withdrawal tombstone was pruned."
+}

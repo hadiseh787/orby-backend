@@ -8,6 +8,7 @@ import {config} from './config.js';
 import {assert,hash} from './domain.js';
 import {loadJob,mutate} from './market.js';
 import {latestDelivery} from './delivery-decisions.js';
+import {requireWorkspaceRole} from './workspace-access.js';
 
 const scope='https://www.googleapis.com/auth/spreadsheets';
 export const googleReady=()=>!!(process.env.GOOGLE_CLIENT_ID&&process.env.GOOGLE_CLIENT_SECRET);
@@ -41,11 +42,35 @@ async function googleValues(db:DB,a:Actor,target:any,rows?:string[][]){
   const value=await response.json() as any;
   assert(Buffer.byteLength(JSON.stringify(value))<=1048576,'SHEET_TOO_LARGE','Select a smaller sheet range.');return value;
 }
+export function sheetExportTarget(range:string){
+ const match=/^(?:(.+)!)?([A-Za-z]+)\d*(?::([A-Za-z]+)\d*)?$/.exec(range);
+ assert(match,'INVALID_RANGE','Use an explicit destination tab and A1 columns, for example Results!A:G.');
+ const toNumber=(s:string)=>[...s.toUpperCase()].reduce((n,c)=>n*26+c.charCodeAt(0)-64,0);
+ const letters=(n:number)=>{let s='';while(n){n--;s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26);}return s;};
+ const start=toNumber(match[2]),end=match[3]?toNumber(match[3]):start+6;
+ assert(end-start>=6&&end<=18278,'INVALID_RANGE','The destination must have room for seven output columns.');
+ return {prefix:match[1]?match[1]+'!':'',first:letters(start),last:letters(start+6)};
+}
+async function reconcileExport(db:DB,a:Actor,row:any){
+ const target=sheetExportTarget(row.data.range),expected=new Map<string,number>();
+ const rowHash=(r:any[])=>hash(Array.from({length:7},(_,i)=>String(r[i]??'')));
+ for(const wanted of row.data.rows.slice(1)){const h=rowHash(wanted);expected.set(h,(expected.get(h)||0)+1);}
+ const found:Record<string,string>={...(row.data.scanFound||{})};let cursor=Number(row.data.scanCursor||1),exhausted=false;
+ for(let page=0;page<20;page++){
+  const range=target.prefix+target.first+cursor+':'+target.last+(cursor+499),value=await googleValues(db,a,{...row.data,range}),values=value.values||[];
+  for(let i=0;i<values.length;i++)if(values[i][0]===row.id){const h=rowHash(values[i]);if(expected.has(h))found[String(cursor+i)]=h;}
+  const counts=new Map<string,number>();for(const h of Object.values(found))counts.set(h,(counts.get(h)||0)+1);
+  if([...expected].every(([h,count])=>(counts.get(h)||0)>=count)){await db.query("UPDATE sheet_exports SET state='CONFIRMED',data=data||$2::jsonb WHERE id=$1",[row.id,JSON.stringify({reconciled:true,scanFound:found})]);return {state:'CONFIRMED',reconciled:true};}
+  cursor+=500;if(values.length<500){exhausted=true;break;}
+ }
+ await db.query('UPDATE sheet_exports SET data=data||$2::jsonb WHERE id=$1',[row.id,JSON.stringify({scanFound:found,scanCursor:exhausted?1:cursor})]);
+ return {state:row.state,nextScanRow:exhausted?1:cursor,message:exhausted?'The complete export marker is not visible yet. No second append was submitted. Check the sheet and reconcile again.':'The bounded scan will continue from row '+cursor+'. No second write was submitted.'};
+}
 export async function googleRoutes(app:FastifyInstance){
-  const post=(path:string,fn:any)=>app.post('/api/v1'+path,async(req:any)=>{const a=await actor(req);return mutate(a,req.headers['idempotency-key'],{path,params:req.params,body:req.body||{}},db=>fn(db,a,req.body||{},req.params));});
+  const post=(path:string,fn:any)=>app.post('/api/v1'+path,async(req:any)=>{const a=await actor(req);requireWorkspaceRole(a,'OWNER');return mutate(a,req.headers['idempotency-key'],{path,params:req.params,body:req.body||{},workspace:a.workspaceId},db=>fn(db,a,req.body||{},req.params));});
   app.get('/api/v1/integrations/google',async req=>{const a=await actor(req);return {configured:googleReady(),connected:!!(await pool.query('SELECT 1 FROM google_connections WHERE owner_id=$1 AND book=$2',[a.id,a.book])).rowCount,redirectUri:config.origin+'/api/v1/integrations/google/callback'};});
   app.post('/api/v1/integrations/google/connect',async(req,reply)=>{
-    const a=await actor(req);assert(googleReady(),'GOOGLE_NOT_CONFIGURED','Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the server.',503);
+    const a=await actor(req);requireWorkspaceRole(a,'OWNER');assert(googleReady(),'GOOGLE_NOT_CONFIGURED','Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the server.',503);
     const state=randomBytes(32).toString('base64url'),verifier=randomBytes(32).toString('base64url');
     await pool.query("INSERT INTO google_oauth_states VALUES($1,$2,$3,$4,now()+interval '10 minutes')",[hash(state),a.id,a.book,verifier]);
     reply.setCookie('orby_google_state',hash(state),{path:'/api/v1/integrations/google/callback',httpOnly:true,sameSite:'lax',secure:config.secure,maxAge:600});
@@ -66,24 +91,33 @@ export async function googleRoutes(app:FastifyInstance){
   post('/integrations/google/read',async(db:DB,a:Actor,b:any)=>{const target=targetSchema.parse(b),value=await googleValues(db,a,target),rows=(value.values||[]).map((r:any[])=>r.map(v=>String(v??''))) as string[][];assert(rows.length<=101&&rows.every(r=>r.length<=30),'SHEET_TOO_LARGE','Select up to 100 data rows plus a header, and 30 columns.');assert(Buffer.byteLength(JSON.stringify(rows))<=200000,'SHEET_TOO_LARGE','Select less source text.');return {target,rows};});
   post('/jobs/:id/sheets/preview',async(db:DB,a:Actor,b:any,p:any)=>{
     const job=await loadJob(db,z.uuid().parse(p.id),a);assert(job.client_id===a.id,'FORBIDDEN','Only the client can export this job.',403);
-    const d=await latestDelivery(db,job,b.revision,b.deliveryHash),target=targetSchema.parse(b),id=randomUUID();
+    const d=await latestDelivery(db,job,b.revision,b.deliveryHash),target=targetSchema.parse(b),id=randomUUID();sheetExportTarget(target.range);
     assert(!(await db.query("SELECT 1 FROM sheet_exports WHERE owner_id=$1 AND job_id=$2 AND state='UNKNOWN'",[a.id,job.id])).rowCount,'EXPORT_UNKNOWN','Reconcile the previous uncertain export before preparing another.');
     const rows=[['Orby export ID','Job','Version','Option','Strengths','Limitations','Sources'],...d.content.comparison.map((r:any)=>[id,job.data.title,String(d.revision),r.option,r.strengths,r.limits,(r.sources||[]).join(', ')]),[id,job.data.title,String(d.revision),'Recommendation',d.content.recommendation,'','']];
     const existing=await googleValues(db,a,target),data={...target,rows,revision:d.revision,deliveryHash:d.hash,previousRows:(existing.values||[]).length};
     await db.query("INSERT INTO sheet_exports(id,owner_id,book,job_id,data,expires_at) VALUES($1,$2,$3,$4,$5,now()+interval '5 minutes')",[id,a.id,a.book,job.id,data]);return {id,...data,mode:'APPEND_NEW_ROWS',message:'Review this write. Existing rows will be preserved.'};
   });
   app.get('/api/v1/sheets/exports',async(req:any)=>{const a=await actor(req);return (await pool.query("SELECT id,state,data,expires_at FROM sheet_exports WHERE job_id=$1 AND owner_id=$2 AND book=$3 ORDER BY created_at DESC LIMIT 10",[z.uuid().parse(req.query.jobId),a.id,a.book])).rows;});
-  const exportAction=async(db:DB,a:Actor,b:any,p:any,write:boolean)=>{
-    const row=(await db.query('SELECT * FROM sheet_exports WHERE id=$1 AND owner_id=$2 AND book=$3 FOR UPDATE',[z.uuid().parse(p.id),a.id,a.book])).rows[0];assert(row,'NOT_FOUND','Export not found.',404);
-    if(row.state==='CONFIRMED')return {state:'CONFIRMED',...row.data.result};
-    const existing=await googleValues(db,a,row.data),marker=row.data.rows.slice(1).every((wanted:string[]) => (existing.values||[]).some((r:any[])=>r[0]===row.id&&wanted.every((value,i)=>String(r[i]??'')===value)));
-    if(marker){await db.query("UPDATE sheet_exports SET state='CONFIRMED' WHERE id=$1",[row.id]);return {state:'CONFIRMED',reconciled:true};}
-    if(!write||row.state==='UNKNOWN')return {state:row.state,message:'No matching export marker was found yet. No second write was submitted.'};
-    assert(row.state==='PREVIEW'&&new Date(row.expires_at).getTime()>Date.now(),'EXPORT_EXPIRED','Preview this export again before writing.');
-    const job=await loadJob(db,row.job_id,a);await latestDelivery(db,job,row.data.revision,row.data.deliveryHash);
-    try{const result=await googleValues(db,a,row.data,row.data.rows);assert(typeof result.updates?.updatedRange==='string'&&result.updates.updatedRows===row.data.rows.length,'EXPORT_UNVERIFIED','Google did not confirm the complete row write.');await db.query("UPDATE sheet_exports SET state='CONFIRMED',data=data||$2::jsonb WHERE id=$1",[row.id,JSON.stringify({result:{updatedRange:result.updates.updatedRange}})]);return {state:'CONFIRMED',updatedRange:result.updates.updatedRange};}
-    catch{await db.query("UPDATE sheet_exports SET state='UNKNOWN' WHERE id=$1",[row.id]);return {state:'UNKNOWN',message:'Google did not return a reliable result. Reconcile this export before writing again.'};}
-  };
-  post('/sheets/exports/:id/commit',(db:DB,a:Actor,b:any,p:any)=>exportAction(db,a,b,p,true));
-  post('/sheets/exports/:id/reconcile',(db:DB,a:Actor,b:any,p:any)=>exportAction(db,a,b,p,false));
+  const ownedExport=async(db:DB,a:Actor,id:string)=>{const row=(await db.query('SELECT * FROM sheet_exports WHERE id=$1 AND owner_id=$2 AND book=$3 FOR UPDATE',[z.uuid().parse(id),a.id,a.book])).rows[0];assert(row,'NOT_FOUND','Export not found.',404);await loadJob(db,row.job_id,a);return row;};
+  post('/sheets/exports/:id/reconcile',async(db:DB,a:Actor,b:any,p:any)=>{const row=await ownedExport(db,a,p.id);return row.state==='CONFIRMED'?{state:'CONFIRMED',...row.data.result}:reconcileExport(db,a,row);});
+  // Commit the write intent before contacting Google. A crash cannot return it to PREVIEW.
+  app.post('/api/v1/sheets/exports/:id/commit',async(req:any)=>{
+    const a=await actor(req);requireWorkspaceRole(a,'OWNER');z.string().min(8).max(128).parse(req.headers['idempotency-key']);
+    const claim=await transaction(async db=>{
+      await db.query('SELECT pg_advisory_xact_lock(hashtext($1))',['sheet-write:'+a.book+':'+a.id]);
+      const row=await ownedExport(db,a,req.params.id);
+      if(row.state==='CONFIRMED')return {row,write:false};
+      if(row.state==='UNKNOWN')return {row,write:false};
+      assert(!(await db.query("SELECT 1 FROM sheet_exports WHERE owner_id=$1 AND job_id=$2 AND state='UNKNOWN' AND id<>$3",[a.id,row.job_id,row.id])).rowCount,'EXPORT_UNKNOWN','Reconcile the other uncertain export before confirming this one.');
+      assert(row.state==='PREVIEW'&&new Date(row.expires_at).getTime()>Date.now(),'EXPORT_EXPIRED','Preview this export again before writing.');
+      const job=await loadJob(db,row.job_id,a);await latestDelivery(db,job,row.data.revision,row.data.deliveryHash);
+      await db.query("UPDATE sheet_exports SET state='UNKNOWN',data=data||$2::jsonb WHERE id=$1",[row.id,JSON.stringify({writeStartedAt:new Date().toISOString()})]);return {row,write:true};
+    });
+    if(!claim.write)return claim.row.state==='CONFIRMED'?{state:'CONFIRMED',...claim.row.data.result}:{state:'UNKNOWN',message:'A write was already started. Reconcile this export; no second append was submitted.'};
+    try{
+      const result=await transaction(db=>googleValues(db,a,claim.row.data,claim.row.data.rows));
+      assert(typeof result.updates?.updatedRange==='string'&&result.updates.updatedRows===claim.row.data.rows.length,'EXPORT_UNVERIFIED','Google did not confirm the complete row write.');
+      await pool.query("UPDATE sheet_exports SET state='CONFIRMED',data=data||$2::jsonb WHERE id=$1",[claim.row.id,JSON.stringify({result:{updatedRange:result.updates.updatedRange}})]);return {state:'CONFIRMED',updatedRange:result.updates.updatedRange};
+    }catch{return {state:'UNKNOWN',message:'Google did not return a reliable result. The durable intent was preserved. Reconcile before writing again.'};}
+  });
 }

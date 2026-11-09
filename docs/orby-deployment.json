@@ -1,11 +1,11 @@
 {
   "network": "testnet",
   "contractId": "af-contract-1793954330698.testnet",
-  "wasmBytes": 385065,
-  "version": 2,
-  "codeHash": "F5cucxhb4dMJVQqJKUyQi7Sjcx5dEVqoKjvL37ySVyPs",
-  "wasmSha256": "d1328a6835a6fe68aec13d9ba549cde188753decc911b37ce75834f14fd86a7e",
+  "wasmBytes": 422738,
+  "version": 3,
+  "codeHash": "7xYJk1AzN3NQqrFt3R5vSrqDKLAuXVbxMPud2CARSa2x",
+  "wasmSha256": "676076b76abaf05c69a029b009534c56f43b35951dd7cff6ec75a6f1a59fdf5d",
   "source": "contracts/orby-market",
-  "verifiedAt": "2026-11-07T16:03:08.859Z",
+  "verifiedAt": "2026-11-09T05:59:56.908Z",
   "upgradeOnly": true
 }

@@ -20,4 +20,7 @@ overflow-checks = true
 
 [workspace]
 members = ["financial"]
-default-members = ["financial"]
+default-members = [".", "financial"]
+
+[dev-dependencies]
+near-sdk = { version = "=5.30.1", features = ["legacy", "unit-testing"] }

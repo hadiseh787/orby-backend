@@ -1,66 +1,207 @@
 {
   "network": "testnet",
   "contractId": "af-contract-1793954330698.testnet",
-  "jobId": "20cb3dac-de7b-47f7-a395-6fa81c63b7de",
-  "agentId": "orby-browser-1794069440552",
+  "jobId": "4a8963f7-8a5d-4d95-bca4-691d86f4f18f",
+  "agentId": "orby-browser-1794204435533",
   "passed": true,
-  "checkedAt": "2026-11-07T16:42:17.502Z",
+  "checkedAt": "2026-11-09T06:11:41.526Z",
+  "storageStatus": {
+    "version": 3,
+    "user_liabilities": "17620000000000000000000000",
+    "storage_budget": "4695407145853196400000004",
+    "protected_exit_reserve": "500000000000000000000000",
+    "live_balances": 5,
+    "open_escrows": 0,
+    "counts": {
+      "agents": 10,
+      "policies": 10,
+      "jobs": 11,
+      "bids": 13,
+      "balances": 5,
+      "operations": 121,
+      "withdrawals": 5,
+      "native_jobs": 7,
+      "native_agents": 10
+    },
+    "storage_bytes": 486593,
+    "available_sponsor": "4970040087099495200000005",
+    "callback_gas_tgas": 50,
+    "history_policy": "Permanent bounded idempotency tombstones; growth is sponsor-funded. No replay-enabling pruning."
+  },
   "adapter": "Injected development wallet using real NEP-413 signatures and real RPC transactions; no mocked API/chain",
   "receipts": [
     {
       "method": "register_near_agent",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "AQ3M9rHE1NSetgqJ86G5CkQ1AzJnUo8aNmBhqJn2DAT9"
+      "hash": "Dhx8XBDHsrFotuzsVqFfiquTHPGZ8X8ZGpbMsQusvZDE",
+      "receiptGas": [
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "3506293235958",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      ]
     },
     {
       "method": "set_execution_policy",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "5k5H9TffKKUQ2H8BbL9cE1Sfp9ekY2GY7ormn2fxUU4p"
+      "hash": "BavrjiMZ55uVVcGHhdGTQFgZ1GwMTvoAT1So1bAS78cM",
+      "receiptGas": [
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "3321989256131",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      ]
     },
     {
       "method": "deposit_bond",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "DfWWpA5pfBjLFGoieekG7V8ntRnSN9sLaVeytNwWqt5P"
+      "hash": "BxFW9iYTiSQ1zUucuWtqtJvJhdx9RYmjy1KnqFX9zRq5",
+      "receiptGas": [
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "2794920513054",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      ]
     },
     {
       "method": "open_near_job",
       "signer": "af-client-1793954382407.testnet",
-      "hash": "BwQkDj1HtwBfZbpwuy288ghUNaY6952U146MoGiNrpdt"
+      "hash": "7KUtiBpgpcnLTEGitP4EWrvGTRqQ3afFQkYZWFSXf5e8",
+      "receiptGas": [
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "3592724994475",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      ]
     },
     {
       "method": "record_bid",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "8xfjaThrGDFUs8R4cELFcThJm9HDogEvxxoSB2pWp5ZL"
+      "hash": "Ef4owchh62vHaFjNGchUYrbBAR9RfDSCXWRCMgqYCYS3",
+      "receiptGas": [
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "3798394270585",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      ]
     },
     {
       "method": "set_agent_near_price",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "C9Y5C37Rfz9JSpgw8QqRsfC5fc4nRUTSoRVbkqceJirR"
+      "hash": "5Le3ZRPDp9H5AMT5hMa3UbqmdfTuyJHnzLDRDhxTgd3e"
     },
     {
       "method": "award_and_fund",
       "signer": "af-client-1793954382407.testnet",
-      "hash": "HW1q3DNXnDp26aWRoNxqSNqYAPMjKmBDTDzYbX5ppUo"
+      "hash": "2XMhwSLARrVqw2iPBzpsqrey9BaEUVwzYRpYsJHiYvLc",
+      "receiptGas": [
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "3978656658517",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      ]
     },
     {
       "method": "request_revision",
       "signer": "af-client-1793954382407.testnet",
-      "hash": "BNcrbz4vYmjn2y4KAAWHuQK47osXpmBo3HGSRST5vmNG"
+      "hash": "9eLJXhwHNtvMcnD2yE8xmyCoRFa12kr8b16phmn5nhj4",
+      "receiptGas": [
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "3152153631737",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      ]
     },
     {
       "method": "approve_delivery",
       "signer": "af-client-1793954382407.testnet",
-      "hash": "7KvEmMTzLJ63Ueno3HGRXPnG8JiQWCzEQHjDwQJepCeH"
+      "hash": "AuazGZpBqxet5DNjZcPCjtLwbM5Hia7gkHYeqQKE1XXo",
+      "receiptGas": [
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "4053832604400",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      ]
     },
     {
       "method": "release_unused_bond",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "J4CtQdHLXmXjvbAHCPPMzLp5YohrmmNdb8dGmxJTfQ3d"
+      "hash": "AFVjXYp2nPUjMGSYb9xm7PoXCdAjgAygZHrNCM65V4Co",
+      "receiptGas": [
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "2701267099786",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      ]
     },
     {
       "method": "withdraw",
       "signer": "af-writer-1793954392244.testnet",
-      "hash": "6jArc151vzLN2US6KrvMSmntNHhgpmvuKHskfWZnBJQY"
+      "hash": "6xgPBWe6w4fQoiEcXX3wPEdvEzht2ezXU7DqxAcLJ1nN",
+      "receiptGas": [
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "3995485638366",
+          "status": {
+            "SuccessReceiptId": "EY2s4rsTKrfXoiuKTtPnAXH7Ch6KgsPmZbeBBUz7GCTN"
+          }
+        },
+        {
+          "executor": "af-writer-1793954392244.testnet",
+          "gasBurnt": "223182562500",
+          "status": {
+            "SuccessValue": ""
+          }
+        },
+        {
+          "executor": "af-writer-1793954392244.testnet",
+          "gasBurnt": "223182562500",
+          "status": {
+            "SuccessValue": ""
+          }
+        },
+        {
+          "executor": "af-contract-1793954330698.testnet",
+          "gasBurnt": "2757117093929",
+          "status": {
+            "SuccessValue": ""
+          }
+        },
+        {
+          "executor": "af-writer-1793954392244.testnet",
+          "gasBurnt": "223182562500",
+          "status": {
+            "SuccessValue": ""
+          }
+        }
+      ]
     }
   ],
   "checks": [
@@ -81,6 +222,7 @@
     "worker delivery and checks",
     "client approval and settlement",
     "withdrawal callback",
+    "work receipt verified against final contract state",
     "authenticated file download",
     "explorer links",
     "disconnect"

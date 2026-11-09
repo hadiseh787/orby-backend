@@ -1,0 +1,11 @@
+{
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "wasmBytes": 385065,
+  "version": 2,
+  "codeHash": "F5cucxhb4dMJVQqJKUyQi7Sjcx5dEVqoKjvL37ySVyPs",
+  "wasmSha256": "d1328a6835a6fe68aec13d9ba549cde188753decc911b37ce75834f14fd86a7e",
+  "source": "contracts/orby-market",
+  "verifiedAt": "2026-11-07T16:03:08.859Z",
+  "upgradeOnly": true
+}

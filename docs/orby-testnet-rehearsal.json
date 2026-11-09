@@ -1,0 +1,118 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-09T06:22:59.575Z",
+  "jobId": "ae5ad67e-a1b6-4d47-9299-86c4caecddc8",
+  "observedTerminalState": "SETTLED",
+  "fundingBlocked": true,
+  "financialOperationsUnchanged": true,
+  "checks": [
+    {
+      "id": "final-chain-terms",
+      "result": "FAIL",
+      "detail": "Final contract observations must match the recorded agent, policy, proposal and open agreement.",
+      "source": "FINAL_TESTNET_VIEW"
+    },
+    {
+      "id": "job-open",
+      "result": "FAIL",
+      "detail": "Funding is available only for an open job.",
+      "source": "RULES"
+    },
+    {
+      "id": "bid-live",
+      "result": "PASS",
+      "detail": "Proposal expiry is checked again before real funding.",
+      "source": "RULES"
+    },
+    {
+      "id": "agent-version",
+      "result": "PASS",
+      "detail": "The proposal must match the current active manifest.",
+      "source": "RULES"
+    },
+    {
+      "id": "policy",
+      "result": "PASS",
+      "detail": "Execution policy must be active and unexpired.",
+      "source": "RULES"
+    },
+    {
+      "id": "deadline",
+      "result": "PASS",
+      "detail": "The publication-based deadline must allow execution.",
+      "source": "RULES"
+    },
+    {
+      "id": "price-floor",
+      "result": "PASS",
+      "detail": "The offer must meet the registered agent price floor.",
+      "source": "RULES"
+    },
+    {
+      "id": "budget",
+      "result": "PASS",
+      "detail": "The agreed price cannot exceed the job budget.",
+      "source": "RULES"
+    },
+    {
+      "id": "criterion:keys",
+      "result": "PASS",
+      "detail": "Acceptance criterion: Required comparison fields",
+      "source": "RULES"
+    },
+    {
+      "id": "criterion:client",
+      "result": "PASS",
+      "detail": "Acceptance criterion: The recommendation addresses the brief.",
+      "source": "RULES"
+    },
+    {
+      "id": "client-funds",
+      "result": "FAIL",
+      "detail": "Available client funds must cover escrow; the testnet estimate also reserves 0.01 NEAR for gas.",
+      "source": "FINAL_TESTNET_VIEW"
+    },
+    {
+      "id": "creator-bond",
+      "result": "PASS",
+      "detail": "Available creator performance bond must cover this job.",
+      "source": "FINAL_TESTNET_VIEW"
+    },
+    {
+      "id": "contract-storage-sponsorship",
+      "result": "PASS",
+      "detail": "The contract must preserve exit reserves and sponsor storage for the new obligation.",
+      "source": "FINAL_TESTNET_VIEW"
+    },
+    {
+      "id": "delegation-permission",
+      "result": "PASS",
+      "detail": "The creator authorizes a source-extractor child within its spending ceiling.",
+      "source": "RULES"
+    },
+    {
+      "id": "creator-free-funds",
+      "result": "PASS",
+      "detail": "The child is paid from the creator free balance, independently of client escrow.",
+      "source": "FINAL_TESTNET_VIEW"
+    },
+    {
+      "id": "child-bond",
+      "result": "PASS",
+      "detail": "The specialist needs its own available performance collateral.",
+      "source": "FINAL_TESTNET_VIEW"
+    },
+    {
+      "id": "child-policy",
+      "result": "PASS",
+      "detail": "The specialist and its execution policy must be active.",
+      "source": "RULES"
+    },
+    {
+      "id": "knowledge-access",
+      "result": "PASS",
+      "detail": "All selected execution grants must remain active. Revocation stops future execution.",
+      "source": "RULES"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-09T06:19:43.252Z",
+  "network": "testnet",
+  "temporaryContract": "load-1794204494704.af-admin-1793954341293.testnet",
+  "wasmSha256": "676076b76abaf05c69a029b009534c56f43b35951dd7cff6ec75a6f1a59fdf5d",
+  "targetJobs": 100,
+  "callbackGasBurnt": "2741725803397",
+  "callbackGasLimit": "50000000000000",
+  "callbackMarginPercent": 94.51,
+  "stateHeaderBytes": 518,
+  "storageStatus": {
+    "version": 3,
+    "user_liabilities": "0",
+    "storage_budget": "1443283828426035900000000",
+    "protected_exit_reserve": "0",
+    "live_balances": 0,
+    "open_escrows": 0,
+    "counts": {
+      "agents": 0,
+      "policies": 0,
+      "jobs": 100,
+      "bids": 0,
+      "balances": 1,
+      "operations": 104,
+      "withdrawals": 2,
+      "native_jobs": 100,
+      "native_agents": 0
+    },
+    "storage_bytes": 519815,
+    "available_sponsor": "1695550597017396200000002",
+    "callback_gas_tgas": 50,
+    "history_policy": "Permanent bounded idempotency tombstones; growth is sponsor-funded. No replay-enabling pruning."
+  },
+  "withdrawal": {
+    "owner": "af-admin-1793954341293.testnet",
+    "amount": "200000000000000000000000",
+    "done": true
+  },
+  "transactionHash": "CLarEy8sFoa4caoJ6uafdP4Hhv4xR8LZsGEwHYQRVYXv",
+  "notice": "Actual WASM/RPC at 100 indexed jobs; separate native mock-host suite covers 500 jobs. This is a bounded load target, not an unlimited-scale claim.",
+  "fixtureDeletedAfterZeroLiabilities": true
+}

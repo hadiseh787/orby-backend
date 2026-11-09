@@ -5,6 +5,9 @@ import { hash, evaluate, terminal } from "./domain.js";
 import { runModel, deterministicBrief } from "./runtime.js";
 import { config } from "./config.js";
 import { tickNear } from "./near.js";
+import {executionInput,recordInputManifest} from './execution-input.js';
+import {tickBenchmarks} from './quality.js';
+import {tickNegotiations} from './negotiations.js';
 import {tickPrograms} from './programs.js';
 let stopping = false;
 const activeTicks=new Set<Promise<void>>();
@@ -64,48 +67,23 @@ async function tickOnce() {
         "source-extractor",
         String(10n ** 24n),
       );
-      const content = deterministicBrief(child.data.input),
-        checks = evaluate(
-          content,
-          child.data.criteria,
-          child.data.input.sources,
-        );
-      await db.query(
-        "INSERT INTO deliveries(id,job_id,revision,content,hash,checks) VALUES($1,$2,0,$3,$4,$5)",
-        [
-          randomUUID(),
-          child.id,
-          content,
-          hash(content),
-          JSON.stringify(checks),
-        ],
-      );
-      await updateJob(db, child, "REVIEW_OPEN", {
-        executionMode: "DETERMINISTIC",
-      });
-      await settleJob(
-        db,
-        child,
-        j.data.creatorId,
-        10000,
-        0,
-        "deterministic child checks passed",
-      );
-      j.data.runtimeInput = {
-        sources: content.comparison.map((row: any) => ({
-          id: row.sources[0],
-          text: row.evidence||row.strengths+' '+row.limits,
-        })),
-        delegatedEvidenceHash: hash(content),
-      };
+      await db.query("INSERT INTO outbox_jobs(id,job_id,type) VALUES($1,$2,'EXECUTE') ON CONFLICT DO NOTHING",[randomUUID(),child.id]);
+    }
+    if(!j.parent_id&&j.data.childrenCreated>0){
+      const children=(await db.query('SELECT * FROM jobs WHERE parent_id=$1 ORDER BY created_at',[j.id])).rows;
+      if(children.some(child=>!terminal(child.state))){await db.query("UPDATE outbox_jobs SET state='QUEUED',next_attempt=now(),lease_until=null WHERE id=$1",[t.id]);return null;}
+      if(children.some(child=>child.state!=='SETTLED')){await updateJob(db,j,'DISPUTED');await db.query("UPDATE outbox_jobs SET state='DONE' WHERE id=$1",[t.id]);return null;}
+      const deliveries=(await db.query('SELECT DISTINCT ON(d.job_id) d.* FROM deliveries d JOIN jobs child ON child.id=d.job_id WHERE child.parent_id=$1 ORDER BY d.job_id,d.revision DESC',[j.id])).rows;
+      if(deliveries.length!==children.length||deliveries.some(d=>d.checks.some((c:any)=>c.required&&c.result!=='PASS'))){await updateJob(db,j,'DISPUTED');await db.query("UPDATE outbox_jobs SET state='DONE' WHERE id=$1",[t.id]);return null;}
+      j.data.runtimeInput=executionInput(j,{sources:deliveries.flatMap(d=>d.content.comparison.map((row:any)=>({id:row.sources[0],text:row.evidence||row.strengths+' '+row.limits}))),delegatedEvidenceHashes:deliveries.map(d=>d.hash)});
     }
     return { ...t, job: j, runId };
   });
   if (task) {
     try {
-      const result = await runModel(
-        {...(task.job.data.runtimeInput || task.job.data.input),brief:task.job.data.description,criteria:task.job.data.criteria,revisionFeedback:task.job.data.revisionFeedback},
-      );
+      const input=executionInput(task.job,task.job.data.runtimeInput);await recordInputManifest(pool,task.job,input,task.runId);
+      const result=await runModel(input);
+      await pool.query('UPDATE run_input_manifests SET manifest=manifest||$3::jsonb WHERE job_id=$1 AND run_key=$2',[task.job.id,task.runId,{runtimeAccepted:true,executionMode:result.mode}]);
       await transaction(async (db) => {
         const j = await loadJob(db, task.job_id, undefined, true);
         if (j.state !== "RUNNING" && j.state !== "REVISION_REQUIRED") {
@@ -121,6 +99,7 @@ async function tickOnce() {
           );
           return;
         }
+        const deliveredRevision=j.data.revision;
         const checks = evaluate(
             result.content,
             j.data.criteria,
@@ -151,13 +130,16 @@ async function tickOnce() {
           deliveryHash: hash(result.content),
           reviewDeadline: Date.now() + (config.accelerated ? 90000 : 86400000),
           revisionDeadline: Math.min(j.data.deadline, Date.now() + 43200000),
+          ...(state==='REVISION_REQUIRED'&&j.parent_id?{revision:1}:{}),
         });
         await event(db, j.id, j.data.creatorId, "delivery_recorded", {
           hash: hash(result.content),
           mode: result.mode,
-          revision: j.data.revision,
+          revision: deliveredRevision,
         });
         await event(db, j.id, "evaluator", "checks_recorded", { failed });
+        if(j.parent_id&&state==='REVIEW_OPEN'){await settleJob(db,j,'evaluator',10000,0,'Required child acceptance checks passed');}
+        if(state==='REVISION_REQUIRED'&&j.parent_id){await db.query("UPDATE outbox_jobs SET state='QUEUED',attempts=0,next_attempt=now(),lease_until=null WHERE id=$1",[task.id]);}
         if (state === "DISPUTED")
           await db.query(
             "INSERT INTO disputes(id,job_id,actor,reason,evidence_hash,deadline) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(job_id) DO NOTHING",
@@ -178,6 +160,7 @@ async function tickOnce() {
           "UPDATE outbox_jobs SET state='DONE',lease_until=null WHERE id=$1",
           [task.id],
         );
+        if(state==='REVISION_REQUIRED'&&j.parent_id)await db.query("UPDATE outbox_jobs SET state='QUEUED',next_attempt=now() WHERE id=$1",[task.id]);
       });
     } catch (e: any) {
       await pool.query(
@@ -234,6 +217,10 @@ if (process.argv[1]?.replaceAll("\\", "/").match(/worker\.(ts|js)$/)) {
       await tickPrograms();
       if(stopping)break;
       await tickNear();
+      if(stopping)break;
+      await tickBenchmarks();
+      if(stopping)break;
+      await tickNegotiations();
     } catch (e: any) {
       console.error("Worker:", e.message);
     }

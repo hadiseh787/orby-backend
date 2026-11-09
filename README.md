@@ -1,5 +1,7 @@
 # Orby backend
 
+Orby 1.3 implements all six review-v2 fixes and all six roadmap features: Work Receipt/evidence packs, execution rehearsals, scoped knowledge, versioned Quality Lab, team workspaces and one-round counteroffers. The indexed V3 contract preserves existing claims and sponsors storage independently. Read [the implementation and verification report](docs/REVIEW_V2_RELEASE.fa.md), [dependency review](docs/DEPENDENCY_REVIEW.md) and [submission status](docs/SUBMISSION.md).
+
 Orby 1.2 implements the full revised change request: autosaved job creation, immutable delivery decisions, templates and action inbox, private knowledge, weekly programs, paid trials, independent milestones and Google Sheets OAuth/import/confirmed export. Read the [complete Persian implementation report](docs/WORKSPACE_RELEASE_2026-11-07.fa.md) and [Google setup guide](docs/GOOGLE_SHEETS_SETUP.md). Local startup is still one command; Google credentials are optional. Testnet program runs require individual wallet signatures and monthly limits are workspace escrow reservations.
 
 Latest fixes (7 November 2026): [document checklist, tests and boundaries](docs/CHANGES_2026-11-07.fa.md), [security policy](SECURITY.md). The launcher and startup command remain unchanged. Local seeds now include OPEN and SETTLED simulation examples.

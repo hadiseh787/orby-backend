@@ -7,13 +7,14 @@ import {mutate,loadJob,updateJob} from './market.js';
 import {assert,hash} from './domain.js';
 import {latestDelivery,recordDecision} from './delivery-decisions.js';
 import {proposal} from './near.js';
+import {requireWorkspaceRole} from './workspace-access.js';
 import {config} from './config.js';
 
 export async function workspaceRoutes(app:FastifyInstance) {
   const post=(path:string,handler:(db:any,a:any,b:any,p:any)=>Promise<any>)=>app.post('/api/v1'+path,async(req:any)=>{
-    const a=await actor(req);return mutate(a,req.headers['idempotency-key'],{path,params:req.params,body:req.body||{}},db=>handler(db,a,req.body||{},req.params));
+    const a=await actor(req);requireWorkspaceRole(a,'OWNER');return mutate(a,req.headers['idempotency-key'],{path,params:req.params,body:req.body||{},workspace:a.workspaceId},db=>handler(db,a,req.body||{},req.params));
   });
-  app.get('/api/v1/templates/personal',async req=>{const a=await actor(req);return (await pool.query('SELECT * FROM job_templates WHERE owner_id=$1 AND book=$2 ORDER BY created_at DESC LIMIT 50',[a.id,a.book])).rows;});
+  app.get('/api/v1/templates/personal',async req=>{const a=await actor(req);return (await pool.query('SELECT * FROM job_templates WHERE workspace_id=$1 AND book=$2 ORDER BY created_at DESC LIMIT 50',[a.workspaceId,a.book])).rows;});
   post('/templates/from-job/:id',async(db,a,b,p)=>{
     const j=await loadJob(db,z.uuid().parse(p.id),a);
     assert(j.client_id===a.id&&j.state==='SETTLED','INVALID_STATE','Create a personal template from your own completed job.');
@@ -22,9 +23,9 @@ export async function workspaceRoutes(app:FastifyInstance) {
     assert(count<50,'TEMPLATE_LIMIT','Keep up to 50 personal templates.');
     const id=randomUUID(),name=z.string().trim().min(3).max(120).parse(b.name||j.data.title);
     const blueprint={title:j.data.title,description:j.data.description,category:j.data.category,deadlineDays:Math.max(1,Math.ceil(j.data.deadlineMinutes/1440)),approvalPolicy:j.data.approvalPolicy,criteria:j.data.criteria};
-    await db.query('INSERT INTO job_templates(id,owner_id,book,name,blueprint) VALUES($1,$2,$3,$4,$5)',[id,a.id,a.book,name,blueprint]);return {id,name,blueprint};
+    await db.query('INSERT INTO job_templates(id,owner_id,book,name,blueprint,workspace_id) VALUES($1,$2,$3,$4,$5,$6)',[id,a.id,a.book,name,blueprint,a.workspaceId]);return {id,name,blueprint};
   });
-  post('/templates/:id/remove',async(db,a,b,p)=>{const r=await db.query('DELETE FROM job_templates WHERE id=$1 AND owner_id=$2 AND book=$3 RETURNING id',[z.uuid().parse(p.id),a.id,a.book]);assert(r.rowCount,'NOT_FOUND','Template not found.',404);return {ok:true};});
+  post('/templates/:id/remove',async(db,a,b,p)=>{const r=await db.query('DELETE FROM job_templates WHERE id=$1 AND workspace_id=$2 AND book=$3 RETURNING id',[z.uuid().parse(p.id),a.workspaceId,a.book]);assert(r.rowCount,'NOT_FOUND','Template not found.',404);return {ok:true};});
   post('/jobs/:id/revisions',async(db,a,b,p)=>{
     const j=await loadJob(db,z.uuid().parse(p.id),a,true);
     assert(j.client_id===a.id&&j.state==='REVIEW_OPEN'&&j.data.revision===0,'INVALID_STATE','One revision can be requested while the first delivery is awaiting your review.');
@@ -55,7 +56,7 @@ export async function workspaceRoutes(app:FastifyInstance) {
       (SELECT count(*)::int FROM bids b WHERE b.job_id=j.id AND b.expires_at>now()) AS proposals,j.data->>'revision' AS revision,
       (SELECT jsonb_build_object('id',o.id,'proposal',o.proposal) FROM chain_operations o WHERE o.job_id=j.id AND o.account_id=$2 AND o.state='PREPARED' AND o.proposal->>'receiverId'=$3 ORDER BY o.created_at DESC LIMIT 1) AS pending_operation
       FROM jobs j LEFT JOIN agents ag ON ag.id=j.agent_id AND ag.book=j.book WHERE j.book=$1 AND j.parent_id IS NULL
-      AND ((j.client_id=$2 AND j.state IN ('OPEN','REVIEW_OPEN','DISPUTED','FUNDED','RUNNING')) OR (ag.owner_id=$2 AND j.state='REVISION_REQUIRED')) ORDER BY j.updated_at DESC LIMIT 50`,[a.book,a.id,config.contract])).rows;
+      AND ((j.workspace_id=$4 AND j.state IN ('OPEN','REVIEW_OPEN','DISPUTED','FUNDED','RUNNING')) OR (ag.owner_id=$2 AND j.state='REVISION_REQUIRED')) ORDER BY j.updated_at DESC LIMIT 50`,[a.book,a.id,config.contract,a.workspaceId])).rows;
     return rows.filter(r=>r.pending_operation||(r.state==='OPEN'?r.proposals>0:['FUNDED','RUNNING'].includes(r.state)?r.needs_action==='true'||Number(r.deadline)-Date.now()<86400000:true)).map(r=>({...r,key:r.id+':'+r.state+':'+r.revision+':'+r.proposals,url:'/client/jobs/'+r.id}));
   });
 }

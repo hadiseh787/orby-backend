@@ -28,6 +28,7 @@ export const jobSchema = z
     nearYocto: z.string().regex(/^[1-9]\d{0,26}$/, "Enter a positive budget in NEAR.").refine(v=>BigInt(v)<=100n*Q,"Budget cannot exceed 100 NEAR.").optional(),
     attachmentIds: z.array(z.uuid()).max(5).default([]),
     knowledgeIds:z.array(z.uuid()).max(5).default([]),
+    knowledgeChildGrants:z.record(z.string().regex(/^[a-z0-9-]{3,48}$/),z.array(z.uuid()).max(5)).default({}),
     preferredAgentId:z.string().regex(/^[a-z0-9-]{3,48}$/).optional(),
     usdMicro: z
       .string()
@@ -51,6 +52,8 @@ export const jobSchema = z
     criteria: z.array(criterionSchema).min(1).max(20),
   })
   .superRefine((j, c) => {
+    for(const ids of Object.values(j.knowledgeChildGrants))if(ids.some(id=>!j.knowledgeIds.includes(id)))c.addIssue({code:'custom',path:['knowledgeChildGrants'],message:'Child grants must refer to selected knowledge snapshots.'});
+    for(const criterion of j.criteria){if(criterion.config?.min!==undefined&&criterion.config?.max!==undefined&&criterion.config.min>criterion.config.max)c.addIssue({code:'custom',path:['criteria'],message:'A criterion minimum cannot exceed its maximum.'});}
     if (!!j.nearYocto === !!j.usdMicro) c.addIssue({code:"custom",path:["nearYocto"],message:"Supply a NEAR budget, or a legacy USD budget, not both."});
     if (new Set(j.attachmentIds).size !== j.attachmentIds.length) c.addIssue({code:"custom",path:["attachmentIds"],message:"Duplicate attachments are not allowed."});
     if (Buffer.byteLength(JSON.stringify(j.input)) > 262144)

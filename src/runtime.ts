@@ -71,10 +71,14 @@ export function deterministicBrief(input: any) {
       if(feedback.sourceId)row.limits+=' The client flagged this evidence as insufficient. Verify the claim before accepting it.';
     }
   }
+  let recommendation=`${preferred?.option||'The first proposal'} ranks first under the deterministic evidence rule: explicit testing, milestones, maintenance and clarity increase the score; missing plans, uncertainty and complexity reduce it. Compare its stated commitments with your brief, budget and deadline before approving. This ordering uses only the supplied claims, does not independently verify them and is not an LLM judgment.`+(input?.revisionFeedback?.section==='recommendation'?' Revision clarification: '+String(preferred?.evidence||'').slice(0,250):'');
+  const lengthRule=input?.criteria?.find((c:any)=>c.config?.check==='word-count'&&(!c.config.field||c.config.field==='recommendation'))?.config;
+  if(lengthRule){const words=(v:string)=>v.trim().split(/\s+/).filter(Boolean);if(words(recommendation).length>(lengthRule.max??300))recommendation='Source-only, unverified: '+(preferred?.option||'no supported preference')+'. Review the cited evidence before approving.';if(words(recommendation).length<(lengthRule.min||1))recommendation+=' '+comparison.map((r:any)=>r.option+': '+r.strengths+' '+r.limits).join(' ')+' The information above is a report of supplied statements. Independent verification, commercial suitability and the accuracy of the source material remain outside this deterministic execution. Confirm outstanding assumptions before accepting the output.';recommendation=words(recommendation).slice(0,lengthRule.max??300).join(' ');}
   return {
     comparison,
-    recommendation: `${preferred?.option||'The first proposal'} ranks first under the deterministic evidence rule: explicit testing, milestones, maintenance and clarity increase the score; missing plans, uncertainty and complexity reduce it. Compare its stated commitments with your brief, budget and deadline before approving. This ordering uses only the supplied claims, does not independently verify them and is not an LLM judgment.`+(input?.revisionFeedback?.section==='recommendation'?' Revision clarification: '+String(preferred?.evidence||'').slice(0,250):''),
+    recommendation,
     sources: sources.map((s: any) => s.id),
+    knowledgeNotes:(input?.knowledge||[]).map((k:any)=>({id:k.id,name:k.name,sha256:k.sha256,text:String(k.text).slice(0,1000),basis:'Customer-provided guidance included in this deterministic report; not independently verified.'})),
     ...(input?.revisionFeedback?{revisionNote:input.revisionFeedback.reason}:{}),
   };
 }

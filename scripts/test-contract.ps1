@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+$env:AWS_LC_SYS_PREBUILT_NASM = '1'
 $backendRoot = Split-Path -Parent $PSScriptRoot
 $compiler = Get-ChildItem -LiteralPath (Join-Path $backendRoot '.tools') -Directory -Filter 'llvm-mingw-*' -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($compiler) {

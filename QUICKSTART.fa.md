@@ -1,5 +1,7 @@
 # اجرای محلی
 
+Version 1.3: the startup command is unchanged. Run `npm run local` from the backend folder. It starts PostgreSQL, API, worker and Angular together. New tools are in Workspace tools; receipts are in each job. Full review-v2 report: `docs/REVIEW_V2_RELEASE.fa.md`.
+
 پیش‌نیاز: Git و Node.js نسخهٔ 24 همراه npm. نصب جداگانهٔ Angular، PostgreSQL، Docker، Rust یا Ollama برای اجرای محلی لازم نیست.
 
 هر دو ریپو خصوصی‌اند؛ اکانت GitHub اجراکننده باید به هر دو دسترسی داشته باشد و Git با همان اکانت وارد شده باشد. نصب اول اینترنت می‌خواهد.

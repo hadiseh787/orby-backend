@@ -2,6 +2,9 @@ use orby_financial::{muldiv, Q};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::{assert_one_yocto, env, near, AccountId, Gas, NearToken, Promise, PromiseOrValue};
 use std::collections::BTreeMap;
+use near_sdk::store::IterableMap;
+#[cfg(test)]
+mod behavior;
 #[near(serializers=[borsh,json])]
 #[derive(Clone)]
 pub struct Agent {
@@ -99,6 +102,35 @@ pub struct Market {
     admin: AccountId,
     evaluator: AccountId,
     updater: AccountId,
+    agents: IterableMap<String, Agent>,
+    policies: IterableMap<String, Policy>,
+    jobs: IterableMap<String, Job>,
+    bids: IterableMap<String, Bid>,
+    balances: IterableMap<AccountId, Balance>,
+    operations: IterableMap<String, Operation>,
+    withdrawals: IterableMap<String, Withdrawal>,
+    price: U128,
+    price_time: U64,
+    price_mode: String,
+    quarantined: bool,
+    paused: bool,
+    accelerated: bool,
+    native_jobs: IterableMap<String, U128>,
+    native_agents: IterableMap<String, U128>,
+    user_liabilities: U128,
+    storage_budget: U128,
+    live_balances: u64,
+    open_escrows: u64,
+    #[borsh(skip)]
+    storage_start: Option<u64>,
+    #[borsh(skip)]
+    protect_exit_reserve: bool,
+}
+#[near(serializers=[borsh])]
+pub struct LegacyMarketV2 {
+    admin: AccountId,
+    evaluator: AccountId,
+    updater: AccountId,
     agents: BTreeMap<String, Agent>,
     policies: BTreeMap<String, Policy>,
     jobs: BTreeMap<String, Job>,
@@ -139,46 +171,66 @@ impl Market {
         updater: AccountId,
         accelerated: bool,
     ) -> Self {
-        Self {
+        let mut market=Self {
             admin,
             evaluator,
             updater,
-            agents: BTreeMap::new(),
-            policies: BTreeMap::new(),
-            jobs: BTreeMap::new(),
-            bids: BTreeMap::new(),
-            balances: BTreeMap::new(),
-            operations: BTreeMap::new(),
-            withdrawals: BTreeMap::new(),
+            agents: IterableMap::new(b"v3:agents".as_slice()),
+            policies: IterableMap::new(b"v3:policies".as_slice()),
+            jobs: IterableMap::new(b"v3:jobs".as_slice()),
+            bids: IterableMap::new(b"v3:bids".as_slice()),
+            balances: IterableMap::new(b"v3:balances".as_slice()),
+            operations: IterableMap::new(b"v3:operations".as_slice()),
+            withdrawals: IterableMap::new(b"v3:withdrawals".as_slice()),
             price: U128(5_000_000),
             price_time: U64(env::block_timestamp_ms()),
             price_mode: "FIXTURE".into(),
             quarantined: false,
             paused: false,
             accelerated,
-            native_jobs: BTreeMap::new(),
-            native_agents: BTreeMap::new(),
-        }
+            native_jobs: IterableMap::new(b"v3:native_jobs".as_slice()),
+            native_agents: IterableMap::new(b"v3:native_agents".as_slice()),
+            user_liabilities: U128(0),
+            storage_budget: U128(0),
+            live_balances: 0,
+            open_escrows: 0,
+            storage_start: Some(env::storage_usage()),
+            protect_exit_reserve: false,
+        };
+        market.storage_budget=U128(market.available_sponsor());
+        market.finish_storage();
+        market
     }
     #[private]
     #[init(ignore_state)]
     pub fn migrate_v1() -> Self {
         let old: LegacyMarket = env::state_read().expect("V1_STATE_REQUIRED");
-        Self {
-            admin: old.admin, evaluator: old.evaluator, updater: old.updater,
-            agents: old.agents, policies: old.policies, jobs: old.jobs, bids: old.bids,
-            balances: old.balances, operations: old.operations, withdrawals: old.withdrawals,
-            price: old.price, price_time: old.price_time, price_mode: old.price_mode,
-            quarantined: old.quarantined, paused: old.paused, accelerated: old.accelerated,
-            native_jobs: BTreeMap::new(), native_agents: BTreeMap::new(),
-        }
+        Self::from_legacy(LegacyMarketV2 {
+            admin:old.admin,evaluator:old.evaluator,updater:old.updater,agents:old.agents,policies:old.policies,jobs:old.jobs,bids:old.bids,balances:old.balances,operations:old.operations,withdrawals:old.withdrawals,price:old.price,price_time:old.price_time,price_mode:old.price_mode,quarantined:old.quarantined,paused:old.paused,accelerated:old.accelerated,native_jobs:BTreeMap::new(),native_agents:BTreeMap::new(),
+        })
     }
+    #[private]
+    #[init(ignore_state)]
+    pub fn migrate_v2() -> Self {
+        let old:LegacyMarketV2=env::state_read().expect("V2_STATE_REQUIRED");
+        Self::from_legacy(old)
+    }
+    #[payable]
+    pub fn sponsor_storage(&mut self) {
+        self.begin_storage();
+        let amount=env::attached_deposit().as_yoctonear();assert!(amount>0,"INVALID_AMOUNT");
+        self.storage_budget=U128(self.storage_budget.0.checked_add(amount).expect("OVERFLOW"));self.finish_storage();
+    }
+    pub fn get_storage_status(&self)->near_sdk::serde_json::Value {
+        near_sdk::serde_json::json!({"version":3,"user_liabilities":self.user_liabilities,"storage_budget":self.storage_budget,"protected_exit_reserve":U128(self.required_exit_reserve()),"live_balances":self.live_balances,"open_escrows":self.open_escrows,"counts":{"agents":self.agents.len(),"policies":self.policies.len(),"jobs":self.jobs.len(),"bids":self.bids.len(),"balances":self.balances.len(),"operations":self.operations.len(),"withdrawals":self.withdrawals.len(),"native_jobs":self.native_jobs.len(),"native_agents":self.native_agents.len()},"storage_bytes":env::storage_usage(),"available_sponsor":U128(self.available_sponsor()),"callback_gas_tgas":50,"history_policy":"Permanent bounded idempotency tombstones; growth is sponsor-funded. No replay-enabling pruning."})
+    }
+    pub fn get_withdrawal(&self,withdrawal_id:String)->Option<Withdrawal>{self.withdrawals.get(&withdrawal_id).cloned()}
     pub fn get_near_budget(&self, job_id: String) -> Option<U128> { self.native_jobs.get(&job_id).cloned() }
     pub fn get_near_price(&self, agent_id: String) -> Option<U128> { self.native_agents.get(&agent_id).cloned() }
-    pub fn get_version(&self) -> u32 { 2 }
+    pub fn get_version(&self) -> u32 { 3 }
     pub fn register_near_agent(&mut self, request_id: String, agent_id: String, manifest_hash: String, min_price: U128) {
         let args = near_sdk::serde_json::json!([agent_id,manifest_hash,min_price]);
-        if self.once(&request_id,&args) { return; }
+        if self.once_named("register_near_agent",&request_id,&args) { return; }
         self.new_allowed();
         assert!(!self.agents.contains_key(&agent_id), "AGENT_EXISTS");
         assert!(agent_id.len()>=3 && agent_id.len()<=48 && agent_id.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b==b'-') && manifest_hash.len()==64 && min_price.0>0 && min_price.0<=100*Q,"INVALID_MANIFEST");
@@ -189,8 +241,9 @@ impl Market {
         self.done(request_id,"registered in NEAR");
     }
     pub fn set_agent_near_price(&mut self, request_id: String, agent_id: String, min_price: U128) {
+        self.new_allowed();
         let args=near_sdk::serde_json::json!([agent_id,min_price]);
-        if self.once(&request_id,&args) { return; }
+        if self.once_named("set_agent_near_price",&request_id,&args) { return; }
         let agent=self.agent(&agent_id);
         assert_eq!(agent.owner,env::predecessor_account_id(),"FORBIDDEN");
         assert!(min_price.0>0 && min_price.0<=100*Q,"INVALID_AMOUNT");
@@ -199,12 +252,13 @@ impl Market {
     }
     pub fn open_near_job(&mut self, request_id: String, job_id: String, terms_hash: String, budget: U128, deadline_ms: U64, manual: bool) {
         let args=near_sdk::serde_json::json!([job_id,terms_hash,budget,deadline_ms,manual]);
-        if self.once(&request_id,&args) { return; }
+        if self.once_named("open_near_job",&request_id,&args) { return; }
         self.new_allowed();
+        Self::valid_id(&job_id,80);
         assert!(!self.jobs.contains_key(&job_id),"JOB_EXISTS");
         assert!(terms_hash.len()==64 && budget.0>0 && budget.0<=100*Q && deadline_ms.0>self.now(),"INVALID_TERMS");
         self.native_jobs.insert(job_id.clone(),budget);
-        self.jobs.insert(job_id.clone(), Job {
+        self.put_job(job_id.clone(), Job {
             client:env::predecessor_account_id(),agent_id:None,creator:None,terms_hash,
             usd_micro:U128(0),deadline_ms,manual,state:"OPEN".into(),version:1,
             escrow:U128(0),bond:U128(0),n0:U128(0),funding_price:U128(0),child_cap:U128(0),child_spent:U128(0),
@@ -253,7 +307,7 @@ impl Market {
         min_price: U128,
     ) {
         let args = near_sdk::serde_json::json!([agent_id, manifest_hash, min_price]);
-        if self.once(&request_id, &args) {
+        if self.once_named("register_agent",&request_id,&args) {
             return;
         }
         self.new_allowed();
@@ -279,8 +333,9 @@ impl Market {
         self.done(request_id, "registered");
     }
     pub fn update_agent(&mut self, request_id: String, agent_id: String, manifest_hash: String) {
+        self.new_allowed();
         let args = near_sdk::serde_json::json!([agent_id, manifest_hash]);
-        if self.once(&request_id, &args) {
+        if self.once_named("update_agent",&request_id,&args) {
             return;
         }
         let mut a = self.agent(&agent_id);
@@ -302,10 +357,11 @@ impl Market {
         expires_at: U64,
         paused: bool,
     ) {
+        self.new_allowed();
         let args = near_sdk::serde_json::json!([
             agent_id, executor, max_spend, max_bond, allowed, expires_at, paused
         ]);
-        if self.once(&request_id, &args) {
+        if self.once_named("set_execution_policy",&request_id,&args) {
             return;
         }
         assert_eq!(
@@ -317,6 +373,7 @@ impl Market {
             allowed.len() <= 10 && expires_at.0 > self.now(),
             "INVALID_POLICY"
         );
+        for id in &allowed {Self::valid_id(id,48);}
         let version = self.policies.get(&agent_id).map_or(1, |p| p.version + 1);
         self.policies.insert(
             agent_id.clone(),
@@ -342,10 +399,10 @@ impl Market {
         self.deposit(request_id, true)
     }
     pub fn release_unused_bond(&mut self,request_id:String,amount:U128){
-        let args=near_sdk::serde_json::json!([amount]);if self.once(&request_id,&args){return;}
-        assert!(amount.0>0,"INVALID_AMOUNT");let owner=env::predecessor_account_id();let mut b=self.get_balance(owner.clone());
+        let args=near_sdk::serde_json::json!([amount]);if self.once_named("release_unused_bond",&request_id,&args){return;}
+        assert!(amount.0>0,"INVALID_AMOUNT");let owner=env::predecessor_account_id();let mut b=self.get_balance(owner.clone());self.protect_exit_reserve=amount.0!=b.bond.0;
         b.bond=U128(b.bond.0.checked_sub(amount.0).expect("INSUFFICIENT_AVAILABLE_BOND"));
-        b.free=U128(b.free.0.checked_add(amount.0).expect("OVERFLOW"));self.balances.insert(owner,b);
+        b.free=U128(b.free.0.checked_add(amount.0).expect("OVERFLOW"));self.put_balance(owner,b);
         self.done(request_id,"unused bond released");
     }
     pub fn open_job(
@@ -359,10 +416,11 @@ impl Market {
     ) {
         let args =
             near_sdk::serde_json::json!([job_id, terms_hash, usd_micro, deadline_ms, manual]);
-        if self.once(&request_id, &args) {
+        if self.once_named("open_job",&request_id,&args) {
             return;
         }
         self.new_allowed();
+        Self::valid_id(&job_id,80);
         assert!(!self.jobs.contains_key(&job_id), "JOB_EXISTS");
         assert!(
             terms_hash.len() == 64
@@ -398,13 +456,14 @@ impl Market {
             no_delivery: false,
             settlement: None,
         };
-        self.jobs.insert(job_id.clone(), j);
+        self.put_job(job_id.clone(), j);
         self.emit("job_opened", &job_id, args);
         self.done(request_id, "opened");
     }
     pub fn cancel_job(&mut self, request_id: String, job_id: String) {
+        self.protect_exit_reserve=true;
         let args = near_sdk::serde_json::json!([job_id]);
-        if self.once(&request_id, &args) {
+        if self.once_named("cancel_job",&request_id,&args) {
             return;
         }
         let mut j = self.job(&job_id);
@@ -412,7 +471,7 @@ impl Market {
         assert_eq!(j.state, "OPEN", "INVALID_STATE");
         j.state = "CANCELLED".into();
         j.version += 1;
-        self.jobs.insert(job_id, j);
+        self.put_job(job_id, j);
         self.done(request_id, "cancelled");
     }
     pub fn record_bid(
@@ -427,7 +486,7 @@ impl Market {
     ) {
         let args =
             near_sdk::serde_json::json!([bid_id, job_id, agent_id, price, eta_ms, expires_at]);
-        if self.once(&request_id, &args) {
+        if self.once_named("record_bid",&request_id,&args) {
             return;
         }
         self.new_allowed();
@@ -442,6 +501,7 @@ impl Market {
             price.0 >= minimum && price.0 <= budget && expires_at.0 > self.now() && j.deadline_ms.0>self.now(),
             "INVALID_BID"
         );
+        Self::valid_id(&bid_id,80);Self::valid_id(&agent_id,48);
         assert!(!self.bids.contains_key(&bid_id), "BID_EXISTS");
         self.bids.insert(
             bid_id.clone(),
@@ -475,7 +535,7 @@ impl Market {
             preview_expires_at,
             U128(deposit)
         ]);
-        if self.once_payable(&request_id, &args) {
+        if self.once_named_payable("award_and_fund",&request_id,&args) {
             return;
         }
         self.new_allowed();
@@ -518,7 +578,7 @@ impl Market {
         j.start_deadline = U64(self.now() + if self.accelerated { 300000 } else { 600000 });
         j.state = "FUNDED".into();
         j.version += 1;
-        self.jobs.insert(job_id.clone(), j);
+        self.put_job(job_id.clone(), j);
         self.emit(
             "job_funded",
             &job_id,
@@ -528,7 +588,7 @@ impl Market {
     }
     pub fn start_job(&mut self, request_id: String, job_id: String) {
         let args = near_sdk::serde_json::json!([job_id]);
-        if self.once(&request_id, &args) {
+        if self.once_named("start_job",&request_id,&args) {
             return;
         }
         let mut j = self.job(&job_id);
@@ -537,7 +597,7 @@ impl Market {
         assert!(self.now() <= j.start_deadline.0, "START_DEADLINE");
         j.state = "RUNNING".into();
         j.version += 1;
-        self.jobs.insert(job_id, j);
+        self.put_job(job_id, j);
         self.done(request_id, "started");
     }
     pub fn fund_child(
@@ -558,7 +618,7 @@ impl Market {
             terms_hash,
             deadline_ms
         ]);
-        if self.once(&request_id, &args) {
+        if self.once_named("fund_child",&request_id,&args) {
             return;
         }
         self.new_allowed();
@@ -590,6 +650,7 @@ impl Market {
             deadline_ms.0 > self.now() && deadline_ms.0 + gap <= root.deadline_ms.0,
             "INVALID_DEADLINE"
         );
+        Self::valid_id(&child_id,80);assert_eq!(terms_hash.len(),64,"INVALID_HASH");
         assert!(!self.jobs.contains_key(&child_id), "JOB_EXISTS");
         let owner = root.creator.clone().unwrap();
         self.debit(&owner, amount.0);
@@ -625,8 +686,8 @@ impl Market {
         root.child_spent = U128(root.child_spent.0 + amount.0);
         root.children.push(child_id.clone());
         root.version += 1;
-        self.jobs.insert(job_id.clone(), root);
-        self.jobs.insert(child_id, child);
+        self.put_job(job_id.clone(), root);
+        self.put_job(child_id, child);
         self.emit("child_funded", &job_id, args);
         self.done(request_id, "child funded");
     }
@@ -638,7 +699,7 @@ impl Market {
         revision: u8,
     ) {
         let args = near_sdk::serde_json::json!([job_id, delivery_hash, revision]);
-        if self.once(&request_id, &args) {
+        if self.once_named("submit_delivery",&request_id,&args) {
             return;
         }
         let mut j = self.job(&job_id);
@@ -654,7 +715,7 @@ impl Market {
         j.delivery_hash = delivery_hash;
         j.state = "DELIVERED".into();
         j.version += 1;
-        self.jobs.insert(job_id.clone(), j);
+        self.put_job(job_id.clone(), j);
         self.emit("delivery_recorded", &job_id, args);
         self.done(request_id, "delivered");
     }
@@ -667,7 +728,7 @@ impl Market {
         report_hash: String,
     ) {
         let args = near_sdk::serde_json::json!([job_id, delivery_hash, passed, report_hash]);
-        if self.once(&request_id, &args) {
+        if self.once_named("record_checks",&request_id,&args) {
             return;
         }
         assert_eq!(env::predecessor_account_id(), self.evaluator, "FORBIDDEN");
@@ -690,41 +751,35 @@ impl Market {
                 U64(self.now() + if self.accelerated { 180000 } else { 172800000 });
         }
         j.version += 1;
-        self.jobs.insert(job_id.clone(), j);
+        self.put_job(job_id.clone(), j);
         self.emit("checks_recorded", &job_id, args);
         self.done(request_id, "checks recorded");
     }
-    pub fn approve_delivery(&mut self, request_id: String, job_id: String, revision: u8, delivery_hash: String) {
-        let j=self.job(&job_id);
-        assert_eq!(j.revision,revision,"DELIVERY_CHANGED");
-        assert_eq!(j.delivery_hash,delivery_hash,"DELIVERY_CHANGED");
-        self.approve_job(request_id,job_id);
+    pub fn approve_delivery(&mut self,request_id:String,job_id:String,revision:u8,delivery_hash:String){
+        let args=near_sdk::serde_json::json!(["approve_delivery",job_id,revision,delivery_hash]);if self.once_named("approve_delivery",&request_id,&args){return;}
+        let j=self.job(&job_id);assert_eq!(j.revision,revision,"DELIVERY_CHANGED");assert_eq!(j.delivery_hash,delivery_hash,"DELIVERY_CHANGED");
+        self.approve_internal(&job_id);self.done(request_id,"version-bound delivery approved");
     }
     pub fn request_revision(&mut self, request_id:String,job_id:String,revision:u8,delivery_hash:String,feedback_hash:String) {
         let args=near_sdk::serde_json::json!([job_id,revision,delivery_hash,feedback_hash]);
-        if self.once(&request_id,&args){return;}
+        if self.once_named("request_revision",&request_id,&args){return;}
         let mut j=self.job(&job_id);
         assert_eq!(j.client,env::predecessor_account_id(),"FORBIDDEN");
         assert_eq!(j.state,"REVIEW_OPEN","INVALID_STATE");
         assert!(j.revision==0 && revision==j.revision && j.delivery_hash==delivery_hash,"DELIVERY_CHANGED");
         assert!(self.now()<j.deadline_ms.0 && feedback_hash.len()==64,"INVALID_REVISION");
         j.revision=1;j.state="REVISION_REQUIRED".into();j.version+=1;
-        self.jobs.insert(job_id.clone(),j);self.emit("revision_requested",&job_id,args);self.done(request_id,"revision requested");
+        self.put_job(job_id.clone(),j);self.emit("revision_requested",&job_id,args);self.done(request_id,"revision requested");
     }
     pub fn approve_job(&mut self, request_id: String, job_id: String) {
-        let args = near_sdk::serde_json::json!([job_id]);
-        if self.once(&request_id, &args) {
-            return;
-        }
-        let j = self.job(&job_id);
-        assert_eq!(j.client, env::predecessor_account_id(), "FORBIDDEN");
-        assert_eq!(j.state, "REVIEW_OPEN", "INVALID_STATE");
-        self.settle(&job_id, 10000, 0, false);
-        self.done(request_id, "settled");
+        let args = near_sdk::serde_json::json!(["approve_job",job_id]);
+        if self.once_named("approve_job",&request_id,&args) { return; }
+        assert!(!self.native_jobs.contains_key(&job_id),"VERSION_BOUND_APPROVAL_REQUIRED");
+        self.approve_internal(&job_id);self.done(request_id,"legacy delivery approved");
     }
     pub fn open_dispute(&mut self, request_id: String, job_id: String, reason_hash: String) {
         let args = near_sdk::serde_json::json!([job_id, reason_hash]);
-        if self.once(&request_id, &args) {
+        if self.once_named("open_dispute",&request_id,&args) {
             return;
         }
         let mut j = self.job(&job_id);
@@ -744,7 +799,7 @@ impl Market {
         j.state = "DISPUTED".into();
         j.dispute_deadline = U64(self.now() + if self.accelerated { 180000 } else { 172800000 });
         j.version += 1;
-        self.jobs.insert(job_id.clone(), j);
+        self.put_job(job_id.clone(), j);
         self.emit("dispute_opened", &job_id, args);
         self.done(request_id, "disputed");
     }
@@ -757,7 +812,7 @@ impl Market {
         reason_hash: String,
     ) {
         let args = near_sdk::serde_json::json!([job_id, award_bps, penalty_bps, reason_hash]);
-        if self.once(&request_id, &args) {
+        if self.once_named("resolve_dispute",&request_id,&args) {
             return;
         }
         assert_eq!(env::predecessor_account_id(), self.admin, "FORBIDDEN");
@@ -770,7 +825,7 @@ impl Market {
     }
     pub fn claim_due_transition(&mut self, request_id: String, job_id: String) {
         let args = near_sdk::serde_json::json!([job_id]);
-        if self.once(&request_id, &args) {
+        if self.once_named("claim_due_transition",&request_id,&args) {
             return;
         }
         let mut j = self.job(&job_id);
@@ -793,13 +848,13 @@ impl Market {
             j.state = "DISPUTED".into();
             j.dispute_deadline = U64(now + if self.accelerated { 60000 } else { 43200000 });
             j.version += 1;
-            self.jobs.insert(job_id, j);
+            self.put_job(job_id, j);
         } else if j.state == "REVIEW_OPEN" && j.manual && now > j.review_deadline.0 {
             assert_eq!(Some(env::predecessor_account_id()), j.creator, "FORBIDDEN");
             j.state = "DISPUTED".into();
             j.dispute_deadline = U64(now + if self.accelerated { 180000 } else { 172800000 });
             j.version += 1;
-            self.jobs.insert(job_id, j);
+            self.put_job(job_id, j);
         } else {
             env::panic_str("DEADLINE_NOT_REACHED")
         }
@@ -807,7 +862,7 @@ impl Market {
     }
     pub fn settle_with_funding_price(&mut self, request_id: String, job_id: String) {
         let args = near_sdk::serde_json::json!([job_id]);
-        if self.once(&request_id, &args) {
+        if self.once_named("settle_with_funding_price",&request_id,&args) {
             return;
         }
         let j = self.job(&job_id);
@@ -827,15 +882,17 @@ impl Market {
     pub fn withdraw(&mut self, request_id: String, amount: U128) -> PromiseOrValue<bool> {
         assert_one_yocto();
         let args = near_sdk::serde_json::json!([amount]);
-        if self.once(&request_id, &args) {
+        if self.once_named("withdraw",&request_id,&args) {
             return PromiseOrValue::Value(true);
         }
         let owner = env::predecessor_account_id();
+        let existing=self.get_balance(owner.clone());
+        self.protect_exit_reserve=amount.0!=existing.free.0||existing.bond.0!=0||existing.reserved_bond.0!=0||existing.withdrawal_pending.0!=0;
         self.debit(&owner, amount.0);
         assert!(amount.0 > 0, "INVALID_AMOUNT");
         let mut b = self.get_balance(owner.clone());
         b.withdrawal_pending = U128(b.withdrawal_pending.0 + amount.0);
-        self.balances.insert(owner.clone(), b);
+        self.put_balance(owner.clone(), b);
         let id = format!("{}:{}", owner, request_id);
         self.withdrawals.insert(
             id.clone(),
@@ -862,13 +919,14 @@ impl Market {
                         )
                         .unwrap(),
                         NearToken::from_yoctonear(0),
-                        Gas::from_tgas(15),
+                        Gas::from_tgas(50),
                     ),
                 ),
         )
     }
     #[private]
     pub fn on_withdraw_result(&mut self, withdrawal_id: String) {
+        self.begin_storage();
         assert_eq!(env::promise_results_count(), 1, "INVALID_CALLBACK");
         let mut w = self
             .withdrawals
@@ -889,7 +947,7 @@ impl Market {
         if !success {
             b.free = U128(b.free.0 + w.amount.0)
         }
-        self.balances.insert(w.owner.clone(), b);
+        self.put_balance(w.owner.clone(), b);
         w.done = true;
         self.withdrawals.insert(withdrawal_id.clone(), w);
         self.emit(
@@ -897,6 +955,7 @@ impl Market {
             &withdrawal_id,
             near_sdk::serde_json::json!({"success":success}),
         );
+        self.finish_storage();
     }
     pub fn update_reference_price(
         &mut self,
@@ -914,7 +973,7 @@ impl Market {
             accept_jump,
             reason_hash
         ]);
-        if self.once(&request_id, &args) {
+        if self.once_named("update_reference_price",&request_id,&args) {
             return;
         }
         let caller = env::predecessor_account_id();
@@ -943,7 +1002,7 @@ impl Market {
     }
     pub fn pause_new(&mut self, request_id: String, paused: bool) {
         let args = near_sdk::serde_json::json!([paused]);
-        if self.once(&request_id, &args) {
+        if self.once_named("pause_new",&request_id,&args) {
             return;
         }
         assert_eq!(env::predecessor_account_id(), self.admin, "FORBIDDEN");
@@ -952,7 +1011,7 @@ impl Market {
     }
     pub fn set_agent_active(&mut self, request_id: String, agent_id: String, active: bool) {
         let args = near_sdk::serde_json::json!([agent_id, active]);
-        if self.once(&request_id, &args) {
+        if self.once_named("set_agent_active",&request_id,&args) {
             return;
         }
         assert_eq!(env::predecessor_account_id(), self.admin, "FORBIDDEN");
@@ -964,17 +1023,52 @@ impl Market {
     }
 }
 impl Market {
+
+    fn from_legacy(old:LegacyMarketV2)->Self {
+        let mut m=Self::new(old.admin,old.evaluator,old.updater,old.accelerated);
+        m.price=old.price;m.price_time=old.price_time;m.price_mode=old.price_mode;m.quarantined=old.quarantined;m.paused=old.paused;
+        for(k,v) in old.agents {m.agents.insert(k,v);}for(k,v) in old.policies {m.policies.insert(k,v);}
+        for(k,v) in old.balances {m.put_balance(k,v);}for(k,v) in old.jobs {m.put_job(k,v);}
+        for(k,v) in old.bids {m.bids.insert(k,v);}for(k,v) in old.operations {m.operations.insert(k,v);}
+        for(k,v) in old.withdrawals {m.withdrawals.insert(k,v);}for(k,v) in old.native_jobs {m.native_jobs.insert(k,v);}for(k,v) in old.native_agents {m.native_agents.insert(k,v);}
+        // Migrations may grow storage; only unencumbered contract funds back it.
+        m.storage_budget=U128(m.available_sponsor());m.protect_exit_reserve=true;m.finish_storage();m
+    }
+    fn balance_liability(b:&Balance)->u128 {b.free.0.checked_add(b.bond.0).and_then(|x|x.checked_add(b.reserved_bond.0)).and_then(|x|x.checked_add(b.withdrawal_pending.0)).expect("OVERFLOW")}
+    fn escrow_liability(j:&Job)->u128 {if ["SETTLED","REFUNDED","CANCELLED"].contains(&j.state.as_str()){0}else{j.escrow.0}}
+    fn put_balance(&mut self,id:AccountId,b:Balance){let old=self.balances.get(&id).map_or(0,Self::balance_liability);let next=Self::balance_liability(&b);if old==0&&next>0{self.live_balances+=1;}else if old>0&&next==0{self.live_balances-=1;}self.user_liabilities=U128(self.user_liabilities.0.checked_sub(old).and_then(|x|x.checked_add(next)).expect("LIABILITY_INVARIANT"));self.balances.insert(id,b);}
+    fn put_job(&mut self,id:String,j:Job){let old=self.jobs.get(&id).map_or(0,Self::escrow_liability);let next=Self::escrow_liability(&j);if old==0&&next>0{self.open_escrows+=1;}else if old>0&&next==0{self.open_escrows-=1;}self.user_liabilities=U128(self.user_liabilities.0.checked_sub(old).and_then(|x|x.checked_add(next)).expect("LIABILITY_INVARIANT"));self.jobs.insert(id,j);}
+    fn flush_maps(&mut self){self.agents.flush();self.policies.flush();self.jobs.flush();self.bids.flush();self.balances.flush();self.operations.flush();self.withdrawals.flush();self.native_jobs.flush();self.native_agents.flush();}
+    fn projected_storage(&self)->u64 {
+        let old=env::storage_read(b"STATE").map_or(0,|x|x.len() as u64);let new=borsh::to_vec(self).expect("SERIALIZE_STATE").len() as u64;
+        env::storage_usage().checked_add(new).and_then(|x|x.checked_sub(old)).expect("STORAGE_INVARIANT")
+    }
+    fn available_sponsor(&self)->u128 {let cost=u128::from(self.projected_storage())*env::storage_byte_cost().as_yoctonear();env::account_balance().as_yoctonear().saturating_sub(self.user_liabilities.0).saturating_sub(cost).saturating_sub(Q/20)}
+    fn required_exit_reserve(&self)->u128 {u128::from(self.live_balances)*Q/10+u128::from(self.open_escrows)*3*Q/10}
+    fn begin_storage(&mut self){if self.storage_start.is_none(){self.storage_start=Some(self.projected_storage());}}
+    fn finish_storage(&mut self){
+        self.begin_storage();let baseline=self.storage_start.unwrap();self.flush_maps();let projected=self.projected_storage();
+        let growth=u128::from(projected.saturating_sub(baseline))*env::storage_byte_cost().as_yoctonear();
+        self.storage_budget=U128(self.storage_budget.0.checked_sub(growth).expect("SPONSOR_STORAGE_BUDGET_EXHAUSTED"));
+        let cost=u128::from(projected)*env::storage_byte_cost().as_yoctonear();
+        assert!(env::account_balance().as_yoctonear()>=self.user_liabilities.0.checked_add(cost).and_then(|x|x.checked_add(Q/20)).expect("OVERFLOW"),"USER_BACKING_RESERVED");
+        self.storage_budget=U128(self.storage_budget.0.min(self.available_sponsor()));
+        if self.protect_exit_reserve{assert!(self.storage_budget.0>=self.required_exit_reserve(),"EXIT_STORAGE_RESERVE_PROTECTED");}
+        self.storage_start=Some(projected);
+        self.protect_exit_reserve=false;
+    }
+    fn valid_id(id:&str,max:usize){assert!(!id.is_empty()&&id.len()<=max&&id.bytes().all(|b|b.is_ascii_alphanumeric()||b"-_:./".contains(&b)),"INVALID_IDENTIFIER");}
+    fn validate_args(&self,args:&near_sdk::serde_json::Value){
+        fn bounded(v:&near_sdk::serde_json::Value){match v {near_sdk::serde_json::Value::String(s)=>assert!(s.len()<=128,"INPUT_TOO_LONG"),near_sdk::serde_json::Value::Array(a)=>{assert!(a.len()<=16,"INPUT_TOO_LONG");for x in a{bounded(x)}},near_sdk::serde_json::Value::Object(o)=>{assert!(o.len()<=16,"INPUT_TOO_LONG");for x in o.values(){bounded(x)}},_=>{}}}
+        bounded(args);assert!(near_sdk::serde_json::to_vec(args).unwrap().len()<=4096,"INPUT_TOO_LONG");
+    }
+    fn approve_internal(&mut self,id:&str){let j=self.job(id);assert_eq!(j.client,env::predecessor_account_id(),"FORBIDDEN");assert!(j.state=="REVIEW_OPEN"&&j.checks_pass,"INVALID_STATE");self.settle(id,10000,0,false);}
+
     fn now(&self) -> u64 {
         env::block_timestamp_ms()
     }
-    fn new_allowed(&self) {
-        assert!(!self.paused, "SYSTEM_PAUSED");
-        assert!(
-            env::account_balance().as_yoctonear()
-                > env::storage_byte_cost().as_yoctonear() * u128::from(env::storage_usage())
-                    + Q / 10,
-            "STORAGE_RESERVE_LOW"
-        );
+    fn new_allowed(&mut self) {
+        assert!(!self.paused,"SYSTEM_PAUSED");self.protect_exit_reserve=true;assert!(self.storage_budget.0>self.required_exit_reserve()&&self.available_sponsor()>self.required_exit_reserve(),"STORAGE_RESERVE_LOW");
     }
     fn valid_price(&self) {
         assert!(!self.quarantined, "PRICE_QUARANTINED");
@@ -1012,12 +1106,12 @@ impl Market {
     fn debit(&mut self, owner: &AccountId, value: u128) {
         let mut b = self.get_balance(owner.clone());
         b.free = U128(b.free.0.checked_sub(value).expect("INSUFFICIENT_BALANCE"));
-        self.balances.insert(owner.clone(), b);
+        self.put_balance(owner.clone(), b);
     }
     fn credit(&mut self, owner: &AccountId, value: u128) {
         let mut b = self.get_balance(owner.clone());
         b.free = U128(b.free.0.checked_add(value).expect("OVERFLOW"));
-        self.balances.insert(owner.clone(), b);
+        self.put_balance(owner.clone(), b);
     }
     fn reserve_bond(&mut self, owner: &AccountId, value: u128, ceiling: u128) {
         let mut b = self.get_balance(owner.clone());
@@ -1027,12 +1121,13 @@ impl Market {
         );
         b.bond = U128(b.bond.0.checked_sub(value).expect("INSUFFICIENT_BOND"));
         b.reserved_bond = U128(b.reserved_bond.0 + value);
-        self.balances.insert(owner.clone(), b);
+        self.put_balance(owner.clone(), b);
     }
     fn deposit(&mut self, request_id: String, bond: bool) {
+        self.new_allowed();
         let amount = env::attached_deposit().as_yoctonear();
         let args = near_sdk::serde_json::json!([U128(amount), bond]);
-        if self.once_payable(&request_id, &args) {
+        if self.once_named_payable(if bond {"deposit_bond"}else{"deposit_funds"},&request_id,&args) {
             return;
         }
         assert!(amount > 0, "INVALID_AMOUNT");
@@ -1043,12 +1138,14 @@ impl Market {
         } else {
             b.free = U128(b.free.0.checked_add(amount).expect("OVERFLOW"))
         }
-        self.balances.insert(owner, b);
+        self.put_balance(owner, b);
         self.done(request_id, "deposited");
     }
     fn once(&mut self, id: &str, args: &near_sdk::serde_json::Value) -> bool {
+        self.begin_storage();
         assert!(id.len() >= 8 && id.len() <= 128, "INVALID_REQUEST_ID");
         let key = format!("{}:{}", env::predecessor_account_id(), id);
+        self.validate_args(args);
         let payload = env::sha256(near_sdk::serde_json::to_string(args).unwrap().as_bytes());
         let h = near_sdk::serde_json::to_string(&payload).unwrap();
         if let Some(prior) = self.operations.get(&key) {
@@ -1064,12 +1161,14 @@ impl Market {
         );
         false
     }
+    fn once_named(&mut self,method:&str,id:&str,args:&near_sdk::serde_json::Value)->bool {self.once(id,&near_sdk::serde_json::json!([method,args]))}
+    fn once_named_payable(&mut self,method:&str,id:&str,args:&near_sdk::serde_json::Value)->bool {self.once_payable(id,&near_sdk::serde_json::json!([method,args]))}
     fn once_payable(&mut self, id: &str, args: &near_sdk::serde_json::Value) -> bool {
         let repeated = self.once(id, args);
         if repeated {
             let value = env::attached_deposit().as_yoctonear();
             if value > 0 {
-                self.credit(&env::predecessor_account_id(), value)
+                self.credit(&env::predecessor_account_id(), value);self.finish_storage();
             }
         }
         repeated
@@ -1077,6 +1176,7 @@ impl Market {
     fn done(&mut self, id: String, outcome: &str) {
         let key = format!("{}:{}", env::predecessor_account_id(), id);
         self.operations.get_mut(&key).unwrap().outcome = outcome.into();
+        self.finish_storage();
     }
     fn emit(&self, event: &str, id: &str, data: near_sdk::serde_json::Value) {
         env::log_str(&format!(
@@ -1133,7 +1233,7 @@ impl Market {
                 .expect("BOND_INVARIANT"),
         );
         b.bond = U128(b.bond.0 + j.bond.0 - penalty);
-        self.balances.insert(owner, b);
+        self.put_balance(owner, b);
         j.state = if award_bps == 0 {
             "REFUNDED"
         } else {
@@ -1154,7 +1254,7 @@ impl Market {
             if refund > 0 {
                 let mut root = self.job(parent);
                 root.child_spent = U128(root.child_spent.0 - refund);
-                self.jobs.insert(parent.clone(), root);
+                self.put_job(parent.clone(), root);
             }
         }
         self.emit(
@@ -1162,6 +1262,6 @@ impl Market {
             id,
             near_sdk::serde_json::to_value(&j.settlement).unwrap(),
         );
-        self.jobs.insert(id.into(), j);
+        self.put_job(id.into(), j);
     }
 }

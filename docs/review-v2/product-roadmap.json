@@ -1,0 +1,114 @@
+{
+  "documentRevision": 2,
+  "reviewedAppVersion": "1.2.0",
+  "reviewScoreUnchanged": 85,
+  "newSoftwareReviewRun": false,
+  "features": [
+    {
+      "id": "P01",
+      "title": "Work Receipt",
+      "priority": "high",
+      "hours": [
+        6,
+        10
+      ],
+      "status": "proposed",
+      "change": "extension"
+    },
+    {
+      "id": "P02",
+      "title": "Execution Rehearsal",
+      "priority": "high",
+      "hours": [
+        8,
+        12
+      ],
+      "status": "proposed",
+      "change": "new_experience"
+    },
+    {
+      "id": "P03",
+      "title": "Scoped Knowledge",
+      "priority": "high",
+      "hours": [
+        8,
+        14
+      ],
+      "status": "proposed",
+      "change": "extension"
+    },
+    {
+      "id": "P04",
+      "title": "Agent Quality Lab",
+      "priority": "medium",
+      "hours": [
+        8,
+        14
+      ],
+      "status": "proposed",
+      "change": "extension"
+    },
+    {
+      "id": "P05",
+      "title": "Team Workspace",
+      "priority": "medium",
+      "hours": [
+        20,
+        32
+      ],
+      "status": "proposed",
+      "change": "new"
+    },
+    {
+      "id": "P06",
+      "title": "Counteroffer",
+      "priority": "later",
+      "hours": [
+        12,
+        20
+      ],
+      "status": "proposed",
+      "change": "new"
+    }
+  ],
+  "recommendedFirst": [
+    "P01",
+    "P02"
+  ],
+  "estimatePersonHours": {
+    "originalFixes": [
+      26,
+      42
+    ],
+    "firstTwoFeatures": [
+      14,
+      22
+    ],
+    "fixesAndFirstTwo": [
+      40,
+      64
+    ],
+    "allFeaturesOnly": [
+      62,
+      102
+    ]
+  },
+  "pdfPages": 15,
+  "pdfPageTextLengths": [
+    2388,
+    3004,
+    2728,
+    2375,
+    2872,
+    2062,
+    1925,
+    2483,
+    2278,
+    2419,
+    2077,
+    2066,
+    2811,
+    2741,
+    947
+  ]
+}

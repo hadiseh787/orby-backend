@@ -29,7 +29,7 @@ const { pool } = await import("../src/db.js");
 const { tick,stopWorker } = await import("../src/worker.js");
 const app = await buildApp();
 await app.ready();
-type Session = { cookie: string; csrf: string;remoteAddress?:string };
+type Session = { cookie: string; csrf: string;remoteAddress?:string;workspace?:string };
 async function login(account: string): Promise<Session> {
   const r = await app.inject({
     method: "POST",
@@ -54,6 +54,7 @@ async function post(
     remoteAddress:s.remoteAddress,
     headers: {
       cookie: s.cookie,
+      ...(s.workspace?{"x-orby-workspace":s.workspace}:{}),
       "x-csrf-token": s.csrf,
       "idempotency-key": key,
     },
@@ -137,7 +138,7 @@ test("full workflow funds, delegates, delivers, settles and balances the ledger"
     previewId: preview.id,
   });
   assert.equal(r.statusCode, 200, r.body);
-  await tick();
+  for(let attempt=0;attempt<12;attempt++)await tick();
   const detail = (
     await app.inject({
       url: "/api/v1/jobs/" + id,
@@ -148,7 +149,7 @@ test("full workflow funds, delegates, delivers, settles and balances the ledger"
   assert.equal(detail.children.length, 1);
   assert.equal(detail.children[0].state, "SETTLED");
   assert.equal(detail.deliveries.length, 1);
-  const settled = await post(client, "/jobs/" + id + "/approve");
+  const settled = await post(client, "/jobs/" + id + "/approve",{revision:detail.deliveries[0].revision,deliveryHash:detail.deliveries[0].hash});
   assert.equal(settled.statusCode, 200, settled.body);
   assert.equal(settled.json().state, "SETTLED");
   assert.equal(
@@ -328,8 +329,8 @@ test("native NEAR jobs attach private files, normalize agent IDs and settle exac
   assert.equal((await post(client,"/jobs/"+job.id+"/fund",{previewId:pv.id})).statusCode,200);
   const funded=(await pool.query('SELECT data FROM jobs WHERE id=$1',[job.id])).rows[0].data;
   assert.ok(funded.startDeadline-funded.fundedAt>=300000);assert.equal(funded.deadline,job.deadline);
-  await tick();
-  assert.equal((await post(client,"/jobs/"+job.id+"/approve")).statusCode,200);
+  for(let attempt=0;attempt<20;attempt++){await tick();detail=(await app.inject({url:"/api/v1/jobs/"+job.id,headers:{cookie:client.cookie}})).json();if(detail.state==='REVIEW_OPEN')break;}
+  assert.equal((await post(client,"/jobs/"+job.id+"/approve",{revision:detail.deliveries[0].revision,deliveryHash:detail.deliveries[0].hash})).statusCode,200);
   detail=(await app.inject({url:"/api/v1/jobs/"+job.id,headers:{cookie:client.cookie}})).json();
   assert.equal(detail.settlement.award,"1000000000000000000000000");
   assert.equal(detail.settlement.refund,"100000000000000000000000");
