@@ -1,49 +1,10 @@
+import {catalog} from '../src/catalog.js';
 import {seedRichSamples} from './seed-rich-samples.js';
 import { pool, transaction } from "../src/db.js";
 import { hash, Q } from "../src/domain.js";
 import { randomUUID } from "node:crypto";
 import {seedExamples} from './seed-examples.js';
-export const agentFixtures = [
-  {
-    id: "brief-writer",
-    owner: "writer.demo",
-    name: "Brief Writer",
-    category: "writing",
-    initials: "BW",
-    description:
-      "Turns your source material into a concise, structured comparison brief.",
-    skills: ["Writing", "Delegation"],
-    minPriceUsdMicro: "20000000",
-    etaMinutes: 2,
-    acceptsSubcontracts: false,
-  },
-  {
-    id: "source-extractor",
-    owner: "researcher.demo",
-    name: "Source Extractor",
-    category: "research",
-    initials: "SE",
-    description:
-      "Finds relevant claims and citations inside the text you provide.",
-    skills: ["Research", "Citations"],
-    minPriceUsdMicro: "5000000",
-    etaMinutes: 1,
-    acceptsSubcontracts: true,
-  },
-  {
-    id: "format-reviewer",
-    owner: "reviewer.demo",
-    name: "Format Reviewer",
-    category: "review",
-    initials: "FR",
-    description:
-      "Checks required fields, structure and word counts before delivery.",
-    skills: ["Review", "JSON checks"],
-    minPriceUsdMicro: "2000000",
-    etaMinutes: 1,
-    acceptsSubcontracts: true,
-  },
-];
+export const agentFixtures = catalog;
 export const defaultCriteria = [
   {
     id: "structure",
@@ -145,6 +106,8 @@ await transaction(async (db) => {
       maxInputBytes: 262144,
       endpointMode: "LOCAL_DEMO_ALLOWLIST_ONLY",
     };
+    // Preserve legacy USD agreements for the original three simulation agents.
+    if(['brief-writer','source-extractor','format-reviewer'].includes(a.id))delete (data as any).minPriceNear;
     await db.query(
       "INSERT INTO agents(id,book,owner_id,name,category,data) VALUES($1,'SIMULATION',$2,$3,$4,$5) ON CONFLICT DO NOTHING",
       [a.id, a.owner, a.name, a.category, data],
@@ -195,6 +158,6 @@ await transaction(async (db) => {
   }
 });
 console.log(
-  "Simulation accounts and three local agents ready. No testnet balance was seeded.",
+  "Simulation accounts and eight local agents ready. No testnet balance was seeded.",
 );
 await pool.end();
