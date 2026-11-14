@@ -12,7 +12,7 @@ Backend implementation revision: 549767ef67b7655acdf29013c03288abc44a1857. Paire
 |---|---|
 | Backend TypeScript build | Passed |
 | Angular production build | Passed; upstream wallet package CommonJS optimization warning remains |
-| Unit tests | 36 passed, including legacy RPC responses, limited-key permissions, model schema/revision readiness, diagnostic redaction and configuration preservation |
+| Unit tests | 37 passed, including legacy RPC responses, limited-key permissions, model schema/revision readiness, diagnostic redaction and configuration preservation |
 | Integration tests | 36 passed against disposable databases |
 | Browser regressions | 31 passed against a disposable database, including all five new specialist workflows, frozen samples, scenario prefill, empty Quality Lab and 390px layout |
 | Actual model catalog deliveries | Eight passed on isolated Windows PostgreSQL with actual Ollama; all funds explicitly simulated |
@@ -23,7 +23,7 @@ Backend implementation revision: 549767ef67b7655acdf29013c03288abc44a1857. Paire
 
 ## Independent Apple Silicon acceptance
 
-Latest native run: https://github.com/hadiseh787/orby-backend/actions/runs/43634985936 . Acceptance is still in progress; no success is claimed until the mission and persistence/quote/catalog assertions complete.
+Latest native run: https://github.com/hadiseh787/orby-backend/actions/runs/43634985936 . The actual native mission passed: model agreement, approved fixed budget, testnet escrow, controlled specialist failure/single recovery, root Revision 1, stale-approval rejection, settlement and VERIFIED_CONTRACT_STATE. Catalog/restart/quote acceptance is still in progress and is not yet represented as passing.
 
 The workflow asserts darwin/arm64, installs the actual model, generates independent local keys, deploys/initializes V3, installs a limited executor, starts the paired application, repeats setup, runs real testnet escrow/specialist recovery/client revision/settlement and verifies the receipt. The second acceptance script runs eight actual-model deliveries with clearly labeled simulated funds, seeds twice, restarts and verifies the testnet receipt/settings/jobs persist, then obtains a fresh dry quote and checks mobile layout.
 
@@ -56,3 +56,5 @@ No remote access to /Users/hess or that user's original database is claimed. A s
 The browser acceptance wallet adapter signs real NEP-413 messages and testnet transactions with newly generated, ignored development keys. It is not a claim of manual approval in HOT/Meteor. Controlled specialist failure is deliberately selected in the demo, with one bounded recovery. Local inference has zero API billing, but unpriced hardware/electricity/gas prevents a complete profit claim.
 
 RPC, faucet, model downloads and the live quote provider require internet and can fail/rate-limit. Quotes expire and must be refreshed. Mainnet dry mode performs no signature, transfer, executable deposit-address disclosure or balance credit. Eight catalog checks use simulated funds; the separate mission uses actual testnet escrow. Google Sheets remains disabled until OAuth is configured. No mainnet lending/payment, TEE, multisig, production deployment or contest submission is included.
+
+A subsequent launcher correction preserves stale or edited adjacent frontends and chooses the clean pinned revision by default. Explicit developer frontend selection remains supported. This branch selection has dedicated regression coverage; the native workflow starts without any adjacent developer checkout.

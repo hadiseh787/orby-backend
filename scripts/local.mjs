@@ -1,3 +1,4 @@
+import {selectPinnedFrontend} from './frontend-selection.mjs';
 import {findOllama,installationHelp} from './setup-support.mjs';
 import {existsSync,readFileSync,mkdirSync,writeFileSync,rmSync,openSync,closeSync,readdirSync} from 'node:fs';
 import {resolve,dirname,join} from 'node:path';
@@ -97,9 +98,10 @@ try{
   const workspace=JSON.parse(readFileSync('workspace.json','utf8'));
   const zipSiblings=readdirSync(dirname(root),{withFileTypes:true}).filter(d=>d.isDirectory()&&d.name.startsWith('orby-frontend')).slice(0,20).map(d=>resolve('..',d.name));
   const candidates=[arg('--frontend'),process.env.FRONTEND_DIR,resolve('../frontend'),resolve('../orby-frontend'),...zipSiblings,resolve('.workspace/frontend')].filter(Boolean).map(p=>resolve(p));
-  let frontend=candidates.find(p=>{try{return JSON.parse(readFileSync(join(p,'package.json'),'utf8')).name==='orby-frontend'}catch{return false}});
+  let frontend=selectPinnedFrontend({explicit:(arg('--frontend')||process.env.FRONTEND_DIR)?resolve(arg('--frontend')||process.env.FRONTEND_DIR):null,candidates,revision:workspace.frontendRevision,inspect:p=>{try{const data=JSON.parse(readFileSync(join(p,'package.json'),'utf8'));if(data.name!=='orby-frontend')return null;return {name:data.name,revision:existsSync(join(p,'.git'))?gitRead(['rev-parse','HEAD'],p):null,clean:existsSync(join(p,'.git'))&&!gitRead(['status','--porcelain'],p)}}catch{return null}}});
   const managed=resolve('.workspace/frontend');
   if(!frontend&&existsSync(join(managed,'.git')))frontend=managed;
+  if(frontend===managed&&existsSync(join(managed,'.git'))&&gitRead(['status','--porcelain'],managed))throw Error('The managed frontend has local changes. Preserve them and use --frontend with your development checkout.');
   if(frontend===managed&&existsSync(join(managed,'.git'))&&gitRead(['rev-parse','HEAD'],managed)!==workspace.frontendRevision){
     if(gitRead(['status','--porcelain'],managed))throw Error('The managed frontend has local changes. Preserve them and use --frontend with your development checkout.');
     console.log('Updating the managed frontend to the pinned Orby revision…');

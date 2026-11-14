@@ -1,0 +1,1 @@
+export function selectPinnedFrontend({explicit,candidates,revision,inspect}){if(explicit){if(inspect(explicit)?.name!=='orby-frontend')throw Error('The explicitly selected frontend is not an Orby frontend checkout.');return explicit;}return candidates.find(p=>{const found=inspect(p);return found?.name==='orby-frontend'&&found.revision===revision&&found.clean===true})||null;}
