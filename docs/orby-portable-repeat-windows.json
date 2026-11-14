@@ -1,0 +1,12 @@
+{
+  "platform": "win32",
+  "architecture": "x64",
+  "checkedAt": "2026-11-14T19:35:53.944Z",
+  "contractId": "af-contract-1793954330698.testnet",
+  "allExistingJobsPreserved": 231,
+  "modelAndDatabaseSettingsUnchanged": true,
+  "identitiesUnchanged": true,
+  "newTransactionsOnRepeat": 0,
+  "allSetupTransactionsFinal": true,
+  "notice": "Actual platform listed above. All existing jobs/settings preserved across testnet setup repeat."
+}

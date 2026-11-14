@@ -217,6 +217,7 @@ export async function buildApp() {
     const reference=rows.some(r=>!r.data.minPriceNear)?await agreementPrice(book).catch(()=>null):null;
     const counts=(await pool.query("SELECT agent_id,count(*) FILTER(WHERE state='SETTLED')::int AS completed,count(*) FILTER(WHERE state IN ('SETTLED','REFUNDED'))::int AS total FROM jobs WHERE book=$1 AND parent_id IS NULL AND NOT(data ? 'seededExample') GROUP BY agent_id",[book])).rows;
     return rows.map((r) => ({
+      ...(r.data.seeded?{acceptanceHint:catalogAgent(r.id)?.acceptanceHint,limits:catalogAgent(r.id)?.limits}:{}),
       ...r.data,
       id: r.id,
       book: r.book,
@@ -249,6 +250,7 @@ export async function buildApp() {
       )
     ).rows;
     return {
+      ...(r.data.seeded?{acceptanceHint:catalogAgent(r.id)?.acceptanceHint,limits:catalogAgent(r.id)?.limits}:{}),
       ...r.data,
       id: r.id,
       ownerId: r.owner_id,

@@ -1,3 +1,4 @@
+import {nearRpcError} from './rpc-response.js';
 import { randomUUID } from "node:crypto";
 import { config } from "./config.js";
 import { type DB } from "./db.js";
@@ -26,7 +27,7 @@ export async function rpc(method: string, params: any) {
   );
   const data: any = await response.json();
   assert(
-    !data.error,
+    !nearRpcError(data,method,params),
     "RPC_UNAVAILABLE",
     "NEAR RPC could not resolve this request.",
     503,

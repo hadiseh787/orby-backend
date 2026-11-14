@@ -12,3 +12,5 @@ test('readiness distinguishes missing contract, wrong RPC network and deployed c
   assert.equal((await testnetHealth(noCode)).state,'UNAVAILABLE');
  }finally{Object.assign(config,previous);}
 });
+
+test('readiness retries a transient RPC response before reporting actual connectivity',async()=>{const previous={contract:config.contract,serviceAccount:config.serviceAccount,serviceKey:config.serviceKey,rpc:config.rpc,walletRpc:config.walletRpc};try{config.contract='fixture.testnet';config.serviceAccount='';config.serviceKey='';config.walletRpc=config.rpc;let calls=0;const flaky=(async(_url:any,request:any)=>{calls++;if(calls===1)return Response.json({message:'Temporary provider failure'},{status:503});const b=JSON.parse(request.body);return Response.json({result:b.method==='status'?{chain_id:'testnet'}:b.params.request_type==='view_account'?{code_hash:'deployed-code'}:{result:Array.from(Buffer.from('3'))}});}) as typeof fetch;assert.equal((await testnetHealth(flaky)).state,'CONNECTED');assert.equal(calls,4);}finally{Object.assign(config,previous)}});
