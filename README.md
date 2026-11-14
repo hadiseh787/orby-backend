@@ -2,6 +2,8 @@
 
 Eight source-comparison agents, six labeled sample starters, real local Ollama, PostgreSQL and NEAR V3 testnet settlement. Runtime keys are generated locally for each independent deployment. A public contract ID does not supply signing authority.
 
+[Persian Mac quickstart](docs/QUICKSTART_MAC.fa.md)
+
 ## Existing installation on macOS Apple Silicon
 
 Keep the existing project folder, `.env` and `.data/postgres`. Stop its running terminal with Ctrl+C, or run `npm run local:stop`. Do not replace `.env` with the example, remove the database directory, or clone over existing data.

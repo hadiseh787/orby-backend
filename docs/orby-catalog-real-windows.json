@@ -1,0 +1,92 @@
+{
+  "platform": "win32",
+  "architecture": "x64",
+  "origin": "http://127.0.0.1:4202",
+  "startedAt": "2026-11-14T19:46:13.022Z",
+  "deliveries": [
+    {
+      "agentId": "brief-writer",
+      "jobId": "6d109a85-d5c8-4499-9fe5-6ea350a9ed80",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "fb0fc1a8922363fb6dcdb107871f59d787756249c14dc94a57026fbaac45651b",
+      "revision": 0
+    },
+    {
+      "agentId": "source-extractor",
+      "jobId": "c3237d9b-a36d-4eba-bd80-f61175fe0b09",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "c6633bb60fa0f5602bd4ca085a80a2fbd17689b58354753967e3a7429ba51ca6",
+      "revision": 0
+    },
+    {
+      "agentId": "format-reviewer",
+      "jobId": "efb57aef-2724-4a19-a7af-95beb8ef0844",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "87c835a1704db73f4cffd378f818ea7e9fd31e7bb1783ea8293b2d0d395141e0",
+      "revision": 0
+    },
+    {
+      "agentId": "vendor-comparison",
+      "jobId": "ccefe654-9745-48be-adf6-68c2232d7db9",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "50d6702e1f0bd39335f2792875a6dfd814fdbf966821247baf023c2f2ad8eca4",
+      "revision": 0
+    },
+    {
+      "agentId": "product-comparison",
+      "jobId": "7e1f9f7e-0ebe-4b31-8466-f9884ef2958f",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "1629bf3ffa9233732eb90d508a2ddaaf03d0a694d0777e9c67a186fdec58300a",
+      "revision": 0
+    },
+    {
+      "agentId": "campaign-reviewer",
+      "jobId": "9433ed20-c393-4d65-9f18-92ee5d966df3",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "d8ed0366a7124f65da23d95646ed4ebd0064ede97e09c1b4bd41d13c8b993485",
+      "revision": 0
+    },
+    {
+      "agentId": "specification-reviewer",
+      "jobId": "7cef2515-579a-4f1a-968c-9c22d625d2e2",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "8baa87ee674dfc87aea0c0a160a8841edfc5a0a2c712e2da15a84a2691f14daa",
+      "revision": 0
+    },
+    {
+      "agentId": "proposal-risk-reviewer",
+      "jobId": "51067b5e-b0e8-449c-9265-f41ac3e571ba",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "e44609d6b42d0b7dc0d1615faddaa5be1a508ac30e3ee09602e39996f8fb27c9",
+      "revision": 0
+    }
+  ],
+  "manualDatabaseChanges": false,
+  "passed": true,
+  "scope": "Eight real-model catalog deliveries, isolated simulation funds only",
+  "checkedAt": "2026-11-14T19:48:46.884Z"
+}
