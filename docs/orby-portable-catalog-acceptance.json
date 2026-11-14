@@ -1,0 +1,147 @@
+{
+  "platform": "darwin",
+  "architecture": "arm64",
+  "origin": "http://127.0.0.1:4200",
+  "startedAt": "2026-11-14T20:16:21.056Z",
+  "deliveries": [
+    {
+      "agentId": "brief-writer",
+      "jobId": "4fdf0d69-f30a-496b-83de-5f5490ef1b8a",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "f82b5e53a4fa8ac59c039c1a2ce4a46b2411cd0f764ccc9c969998709bc61668",
+      "revision": 0
+    },
+    {
+      "agentId": "source-extractor",
+      "jobId": "13e0bff0-ab3b-4422-b228-2412c40adc6e",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "fae6c6a03f38bd78ef31c0df7ec655fef165a7de85313091a37f29250d01c4e9",
+      "revision": 0
+    },
+    {
+      "agentId": "format-reviewer",
+      "jobId": "69668189-66d9-4564-8a42-8f29c5289004",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "4d1498d7148283a29ddf05cd8af57e19be93328440ec4519f23c69117f8d8c4a",
+      "revision": 0
+    },
+    {
+      "agentId": "vendor-comparison",
+      "jobId": "4a6173a3-fb19-48b0-b82c-65cb9eebc4a1",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "59757b3bbf33aaa15b99f87f864b306d0d999303790e6baebaa8fe113bc2acbc",
+      "revision": 0
+    },
+    {
+      "agentId": "product-comparison",
+      "jobId": "397afc04-2639-46cb-bc85-ad64f4074caa",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "5eef0b78d569b00b87f261138618b6878b8142e5b2c96092a507010863501f8d",
+      "revision": 0
+    },
+    {
+      "agentId": "campaign-reviewer",
+      "jobId": "8f3b4c10-6e3f-40e6-85ae-693c8b01daae",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "dd6d4a54b0e0e923f09c5f4ac7f9e612c2df7a144fb4c9d542d5008d67a7edb3",
+      "revision": 0
+    },
+    {
+      "agentId": "specification-reviewer",
+      "jobId": "723e61f1-5bdf-4c17-8846-5f278dffe6e2",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "6162bb9a1f549b421483ba44ba06cd86c2dc04cda8c0e1b4ca251efb00332b03",
+      "revision": 0
+    },
+    {
+      "agentId": "proposal-risk-reviewer",
+      "jobId": "b6dada55-a09c-4e6b-976e-64eaaae2d60a",
+      "state": "SETTLED",
+      "mode": "OLLAMA",
+      "book": "SIMULATION",
+      "realModel": true,
+      "deliveryHash": "7f0e776cbd334552d70730ce7a2a0c260207535c8b99a68099847af86fe5aa10",
+      "revision": 0
+    }
+  ],
+  "manualDatabaseChanges": false,
+  "repeatSeed": {
+    "runs": 2,
+    "allJobsPreserved": true
+  },
+  "restart": {
+    "settingsUnchanged": true,
+    "allCatalogJobsPreserved": true,
+    "testnetJob": "7d3b7a71-40be-43ec-9522-3db54f0f4274",
+    "receipt": "VERIFIED_CONTRACT_STATE"
+  },
+  "quote": {
+    "input": {
+      "originAsset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+      "destinationAsset": "nep141:wrap.near",
+      "amountDecimal": "100",
+      "recipient": "fce4478a74892f61fb0ec3dea42a9e81e89de2b00cc4291c44ff86bc134eb29e",
+      "refundTo": "0x6b2aad28ab43ff15148e1b415dea6d6f6b78a403"
+    },
+    "result": {
+      "dry": true,
+      "network": "MAINNET_PREVIEW_ONLY",
+      "receivedAt": "2026-11-14T20:24:10.278Z",
+      "expiresAt": "2026-11-14T20:27:09.527Z",
+      "originAsset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+      "destinationAsset": "nep141:wrap.near",
+      "amountIn": "100000000",
+      "amountInFormatted": "100.0",
+      "estimatedReceived": "32775165087383137419000000",
+      "estimatedReceivedFormatted": "32.775165087383137419",
+      "minimumReceived": "32447413436509306044810000",
+      "amountInUsd": "99.960700000000",
+      "amountOutUsd": "99.636501865645",
+      "fees": null,
+      "feeNotice": "Provider has not itemized route fees; do not interpret this as zero fees. Estimated/minimum received amounts are net quote observations.",
+      "platformSurchargeEstimate": {
+        "basis": "PUBLISHED_UNAUTHENTICATED_RATE_ESTIMATE_NOT_TOTAL_FEES",
+        "basisPoints": 25,
+        "amountAtomic": "250000",
+        "assetId": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+        "source": "https://docs.agentsonintents.com/resources/fees",
+        "asOf": "2026-11-14"
+      },
+      "timeEstimate": 45,
+      "balanceEffect": "NONE",
+      "notice": "Safe Mode: no deposit address, signature, transfer, execution or balance credit."
+    },
+    "balancesUnchanged": true,
+    "addresses": "Project-controlled mainnet addresses, with local keys excluded from artifacts."
+  },
+  "mobile": {
+    "width": 390,
+    "unintendedHorizontalOverflow": false,
+    "scenarioPrefill": true,
+    "quoteVisible": true
+  },
+  "passed": true,
+  "checkedAt": "2026-11-14T20:24:13.521Z",
+  "notice": "Actual model catalog deliveries use labeled simulated funds. The separate native Mac acceptance uses actual testnet escrow/settlement. No Windows key/configuration file is used."
+}

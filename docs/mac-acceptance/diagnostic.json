@@ -1,0 +1,11 @@
+{
+  "platform": "darwin",
+  "architecture": "arm64",
+  "checkedAt": "2026-11-14T20:24:18.843Z",
+  "setup": {
+    "phase": "complete",
+    "completedAt": "2026-11-14T20:06:57.009Z"
+  },
+  "error": null,
+  "notice": "Only explicit public fields are exported. Owner credentials, .env and signed transaction checkpoints are excluded."
+}

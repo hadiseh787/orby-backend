@@ -1,0 +1,12 @@
+{
+  "platform": "darwin",
+  "architecture": "arm64",
+  "checkedAt": "2026-11-14T20:06:57.025Z",
+  "contractId": "orby-contract-1794686568767.testnet",
+  "allExistingJobsPreserved": 17,
+  "modelAndDatabaseSettingsUnchanged": true,
+  "identitiesUnchanged": true,
+  "newTransactionsOnRepeat": 0,
+  "allSetupTransactionsFinal": true,
+  "notice": "Actual platform listed above. All existing jobs/settings preserved across testnet setup repeat."
+}

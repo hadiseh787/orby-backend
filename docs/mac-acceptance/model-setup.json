@@ -1,0 +1,57 @@
+{
+  "platform": "darwin",
+  "architecture": "arm64",
+  "model": "orby-qwen2.5:1.5b",
+  "endpoint": "http://127.0.0.1:11434",
+  "executable": "/Users/runner/work/orby-backend/orby-backend/.tools/ollama/ollama",
+  "done": true,
+  "response": "Yes, I can respond.",
+  "checks": [
+    {
+      "id": "rows",
+      "type": "AUTO_CHECK",
+      "required": true,
+      "config": {
+        "check": "item-count",
+        "min": 3,
+        "max": 3
+      },
+      "result": "PASS",
+      "evidence": "Observed 3 items."
+    },
+    {
+      "id": "citations",
+      "type": "AUTO_CHECK",
+      "required": true,
+      "config": {
+        "check": "source-ids"
+      },
+      "result": "PASS",
+      "evidence": "Compared citations with supplied source identifiers."
+    },
+    {
+      "id": "words",
+      "type": "AUTO_CHECK",
+      "required": true,
+      "config": {
+        "check": "word-count",
+        "min": 10,
+        "max": 80
+      },
+      "result": "PASS",
+      "evidence": "Observed 39 words."
+    }
+  ],
+  "revisionApplied": true,
+  "agreement": {
+    "title": "Software Proposal Comparison and Maintenance Terms Agreement",
+    "description": "Compare and evaluate the software proposals provided and negotiate the maintenance terms for the selected solution.",
+    "acceptanceSummary": "Compare software proposals and negotiate maintenance terms for selected solution.",
+    "acceptance": {
+      "minWords": 10,
+      "maxWords": 200,
+      "requireSources": true
+    }
+  },
+  "checkedAt": "2026-11-14T20:02:47.063Z"
+}

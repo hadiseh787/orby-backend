@@ -1,0 +1,252 @@
+{
+  "platform": "darwin",
+  "architecture": "arm64",
+  "contractId": "orby-contract-1794686568767.testnet",
+  "rpcUrl": "https://test.rpc.fastnear.com",
+  "accounts": {
+    "contract": "orby-contract-1794686568767.testnet",
+    "admin": "orby-admin-1794686573026.testnet",
+    "executor": "orby-executor-1794686577276.testnet",
+    "updater": "orby-updater-1794686581283.testnet",
+    "client": "orby-client-1794686585683.testnet",
+    "writer": "orby-writer-1794686589786.testnet",
+    "researcher": "orby-researcher-1794686593672.testnet",
+    "reviewer": "orby-reviewer-1794686597462.testnet"
+  },
+  "readiness": {
+    "network": "testnet",
+    "contractId": "orby-contract-1794686568767.testnet",
+    "executorConfigured": true,
+    "state": "CONNECTED",
+    "message": "Server RPC, wallet RPC and deployed V3 contract verified on testnet.",
+    "action": "Check mission readiness below. Contract connectivity alone does not authorize execution.",
+    "codeHash": "7xYJk1AzN3NQqrFt3R5vSrqDKLAuXVbxMPud2CARSa2x",
+    "executor": {
+      "accountId": "orby-executor-1794686577276.testnet",
+      "publicKey": "ed25519:4sv7KYyicvEEZ2PJC4jZvuFAHs33qLW2rDcTi3y5fsSj",
+      "methods": [
+        "record_bid",
+        "start_job",
+        "fund_child",
+        "submit_delivery",
+        "record_checks",
+        "claim_due_transition"
+      ],
+      "allowance": "500000000000000000000000"
+    },
+    "agents": [
+      {
+        "id": "brief-writer",
+        "state": "READY"
+      },
+      {
+        "id": "source-extractor",
+        "state": "READY"
+      },
+      {
+        "id": "format-reviewer",
+        "state": "READY"
+      },
+      {
+        "id": "vendor-comparison",
+        "state": "READY"
+      },
+      {
+        "id": "product-comparison",
+        "state": "READY"
+      },
+      {
+        "id": "campaign-reviewer",
+        "state": "READY"
+      },
+      {
+        "id": "specification-reviewer",
+        "state": "READY"
+      },
+      {
+        "id": "proposal-risk-reviewer",
+        "state": "READY"
+      }
+    ],
+    "mission": {
+      "state": "READY",
+      "code": "VERIFIED",
+      "action": "Connect a funded testnet client wallet. Review the agreement, approved plan and exact escrow before signing."
+    }
+  },
+  "confirmedTransactions": [
+    {
+      "hash": "3FtFa2rytGscBzaZJ6mYV4xc89RQdhgHte2TB66BDw1N",
+      "final": true
+    },
+    {
+      "hash": "DWu12vAmUfJU3iH6Uq8h815vnx9UDRXYguSjZ78y8LLz",
+      "final": true
+    },
+    {
+      "hash": "CYr5x6CzVSZ9ifsbj5jHLgzLsPaRdPbQbNhpvKhrwZRT",
+      "final": true
+    },
+    {
+      "hash": "EGNkjuUzcRi7joqG5vPRqmRGKz4o6zQQrPuLT81qjUr4",
+      "final": true
+    },
+    {
+      "hash": "2HjE3rPQ3F8B9f51qVmujby1b7eSD1Th9CcYk7b49A59",
+      "final": true
+    },
+    {
+      "hash": "2wEU8cxW9pzsPDtepQFaBcscQQs3iWWFFRcZRXaozzNL",
+      "final": true
+    },
+    {
+      "hash": "Eh8nzeRq9XaddjM9fcHHnAdKwPqkQHkaS1zUm6DExHYa",
+      "final": true
+    },
+    {
+      "hash": "GgAeyUs2PRw2VLBykrUgjdviWMYe1Vo9cvAkKHhuvdna",
+      "final": true
+    },
+    {
+      "hash": "C2Eowg7SYoE4CqjS5M2awfeMmVP6cf6APXHe1QuH9u6f",
+      "final": true
+    },
+    {
+      "hash": "3acxbj42XSmv2xkHFzCtXX92Jws2TLtWCoEPDAZqsSjA",
+      "final": true
+    },
+    {
+      "hash": "3Dtuh3nFZabju9PJL2Awo5LYT8Yxs1uryhwubCgoCdZR",
+      "final": true
+    },
+    {
+      "hash": "DHqhcV9514P3qCCZnbHuCLe3NGi3ZN9yBRZafyQrzwgD",
+      "final": true
+    },
+    {
+      "hash": "7dZfPHpHks1FoUVtX9ag2iT9mBcmiV96h9YZkA4LJcYS",
+      "final": true
+    },
+    {
+      "hash": "2F84HwjRW6Hqco5vnzyGoTnkSRdNAnq2DMiTutswkQxc",
+      "final": true
+    },
+    {
+      "hash": "8aKgLBpqpfwSvifBU4syiqHYib9v4nuqKdea5e62bXDx",
+      "final": true
+    },
+    {
+      "hash": "A36pz4NrdG23h6WYyCiia8MhpZZgLbvJKPAk9UwYGzWi",
+      "final": true
+    },
+    {
+      "hash": "EHdewfZv8w2cDL1SHhDzPzd8vNyhauafh68gZAgmu6x2",
+      "final": true
+    },
+    {
+      "hash": "G7GoT6Q96KdWrmQeNwakcN9kKF5sMVC3fXbYSLipmZM3",
+      "final": true
+    },
+    {
+      "hash": "6mAZRpa3bkVF1vMZxrWMEX1zUvwHPa7EQyYgafghP9kS",
+      "final": true
+    },
+    {
+      "hash": "A9edG9kEMjkm4PxubusNYzBvPr2LoDJPu9xRWPz2e49S",
+      "final": true
+    },
+    {
+      "hash": "83qe6nbZtJ5JQMUuh4HTqHLEmSJc5qfHDZ9XbiLbD1Bg",
+      "final": true
+    },
+    {
+      "hash": "DSKGkhLQtYF57LZzTkkAt9z1LENfHnwkQHFEZKDwohAw",
+      "final": true
+    },
+    {
+      "hash": "Ffp2po73CwbXTm6ueArGX3A42VzF4opxdGVU9mH2n4fH",
+      "final": true
+    },
+    {
+      "hash": "3qNyGGgcXWGxB8w2uRLgJcAQ4972kpMYpJHwSeQVgtVx",
+      "final": true
+    },
+    {
+      "hash": "F8UWnboiHEXrmXJBTrj4iYQLkf1dYZowLPHRCxdF1y7e",
+      "final": true
+    },
+    {
+      "hash": "6FCoNP5KcNabNYecfVdwyWPqzumfwTLw5rFPG9pjVFz8",
+      "final": true
+    },
+    {
+      "hash": "H2MHzThrJs7GHEi7kwUmo9TN38zRDpSrHxDdPLFYdbTq",
+      "final": true
+    },
+    {
+      "hash": "8uGHpi51vrWxQMLQTYbsFr45f828aWkADtWDhuvF4MDi",
+      "final": true
+    },
+    {
+      "hash": "DvfQRWj81dvuAHHdbCDd3X9HVxUJdjHPhGZBQR9MsNG4",
+      "final": true
+    },
+    {
+      "hash": "CeVP9my3tWfjkL4gG9zmivcL8FkchFo9Azaqpn8AfN4T",
+      "final": true
+    },
+    {
+      "hash": "FBmtJyX2AxvCDrEZqxj2Qi3pvVGZMv63izyj1hwYeeoE",
+      "final": true
+    },
+    {
+      "hash": "6EjzRcJSJaikr6JY6RYn5wfSsDMvbxcMcmNJ4N98Zjou",
+      "final": true
+    },
+    {
+      "hash": "4uWJKemkZyvCkEeH7QkWgwjGvMC8EQAEsYEARxL9N3rw",
+      "final": true
+    },
+    {
+      "hash": "DSE7GGiwQseX9G99JKdmKFtMvAM2yurbAdSGVmt2RkeQ",
+      "final": true
+    },
+    {
+      "hash": "GWP1hTbSzTsjFRJg2Cze1e9Mnc5pRT7TmZjZB5MbBtSG",
+      "final": true
+    },
+    {
+      "hash": "2w4dHW2uL3HEdJCbnE4L9V6RMb4BzMmFznr93gBrCitH",
+      "final": true
+    },
+    {
+      "hash": "DX539n6F129FQZb5HqUnNfxqWEWLcaiK6nndyd6DQ8pm",
+      "final": true
+    },
+    {
+      "hash": "2wvKpXeZo4tPSAw1RNmY9cZTmVmRFSMnBYkrDiTxTwr8",
+      "final": true
+    },
+    {
+      "hash": "8JcwRj9yCNNnhL84At3MZ6nG4p68gPL9y5Ei8EuK4npS",
+      "final": true
+    },
+    {
+      "hash": "3oUv4UVs7oYCNFVeCbvhwwuV8hQynSWTNtTg9ENUnqz5",
+      "final": true
+    },
+    {
+      "hash": "5VYA5aFJX4JT1dGX7LLCgKjumKmTDt2RNmxQMhW3dZVz",
+      "final": true
+    },
+    {
+      "hash": "3SZZWDSZe3WL7mYPSzaYr1of7YB9s5ZhDQj87oUR4eKX",
+      "final": true
+    },
+    {
+      "hash": "27BZmaDzuCsHR2jeLtzbaDuAeDeoGk7mewbgF5De4aQ7",
+      "final": true
+    }
+  ],
+  "checkedAt": "2026-11-14T20:06:57.009Z"
+}

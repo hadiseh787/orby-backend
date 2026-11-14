@@ -1,0 +1,12 @@
+{
+  "workflowRun": 43634985936,
+  "workflowUrl": "https://github.com/hadiseh787/orby-backend/actions/runs/43634985936",
+  "conclusion": "success",
+  "artifactId": 14130368930,
+  "backendRevision": "549767ef67b7655acdf29013c03288abc44a1857",
+  "frontendRevision": "16f188ecfd4627dbcfad0835c09c69998fe88bf5",
+  "nativePlatform": "darwin",
+  "architecture": "arm64",
+  "privateWindowsFilesUsed": false,
+  "notice": "Original public artifact copied without private keys, configuration or signed checkpoints."
+}

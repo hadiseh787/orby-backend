@@ -1,0 +1,14 @@
+{
+  "status": 200,
+  "durationMs": 72776,
+  "result": {
+    "state": "READY",
+    "model": "orby-qwen2.5:1.5b",
+    "provider": "OLLAMA",
+    "inferenceVerified": true,
+    "structuredVerified": true,
+    "revisionVerified": true,
+    "compatibilityCheckedAt": "2026-11-14T20:08:18.757Z",
+    "checkedAt": "2026-11-14T20:08:18.757Z"
+  }
+}
