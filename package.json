@@ -1,6 +1,6 @@
 {
   "name": "orby-backend",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -26,7 +26,8 @@
     "contract:test:portable": "cargo test --manifest-path contracts/orby-market/Cargo.toml",
     "test:browser:testnet": "tsx tests/browser-testnet.ts",
     "test:ipfs": "tsx tests/ipfs-smoke.ts",
-    "test:product": "tsx --test tests/product-integration.ts"
+    "test:product": "tsx --test tests/product-integration.ts",
+    "demo:model:setup": "node scripts/setup-demo-model.mjs"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T07:19:01.917Z",
+  "platform": "win32",
+  "architecture": "x64",
+  "node": "v22.19.0",
+  "sourceOnlyBackend": true,
+  "initialEnv": false,
+  "initialNodeModules": false,
+  "initialFrontend": false,
+  "frontendFetched": "8df5fb17e7d71331a0a11a90c9b72363c0551ed0",
+  "health": {
+    "status": "ok",
+    "database": "postgresql",
+    "version": "1.4.0"
+  },
+  "migrations": 10,
+  "browserTests": {
+    "passed": 23,
+    "failed": 0,
+    "duration": "1.8 minutes"
+  },
+  "notice": "Separate fresh PostgreSQL on port 5546 and API on 4314. No owner keys or local model copied. Clean defaults exercise simulation; the separately recorded real-model/testnet mission uses the configured owner installation."
+}

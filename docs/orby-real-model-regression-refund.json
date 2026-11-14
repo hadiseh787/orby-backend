@@ -1,0 +1,20 @@
+{
+  "network": "testnet",
+  "jobId": "c0f85748-6730-48fe-a609-a9ed35c0aa58",
+  "cause": "A real model returned a two-word recommendation. Required word count failed on both versions; execution stopped without approving the main award.",
+  "specialistSettlement": {
+    "award": "1000000000000000000000000",
+    "fee": "0",
+    "refund": "0",
+    "creator_credit": "1000000000000000000000000",
+    "penalty": "0",
+    "shortfall": false,
+    "fallback_used": false
+  },
+  "clientRefund": "4400000000000000000000000",
+  "mainCreatorAward": "0",
+  "adminResolutionTransaction": "HnP6ZbhYaV6o1AViP1dptR1gdZgcxPfRbTZxEZLh9JAm",
+  "clientWithdrawalTransaction": "FzPwzkNwAdBhnM6P8dP7cDMMCL476Qm38xjmnCX14cta",
+  "manualDatabaseEdits": false,
+  "notice": "Owned development fixture only. Normal on-chain dispute resolution and callback-confirmed withdrawal were used; no delivery or acceptance result was rewritten."
+}

@@ -1,3 +1,7 @@
+# Orby 1.4
+
+Run `npm run local` from `backend`. The launcher starts PostgreSQL, API, worker, Angular and a configured local model together. [Real demo guide](backend/docs/DEMO_1_4.fa.md), [verification](backend/docs/VERIFICATION.md), [full continuous video](backend/docs/demo-1.4/). Source-only simulation requires Git and Node.js 24 (22.19 supported). For real local inference, stop the app, run `npm run demo:model:setup` in backend, then restart. Testnet requires deployment-owner configuration; no private keys are distributed.
+
 # Orby
 
 پیاده‌سازی محلی بر اساس بستهٔ تحویل: فرانت **Angular**، بک **Node.js** و دیتابیس **PostgreSQL**. رابط انگلیسی، ریسپانسیو، با حالت روشن، تیره و خودکار.

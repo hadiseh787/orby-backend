@@ -1,3 +1,22 @@
+# Orby 1.4 verification - 14 November 2026
+
+The [actual local-model/testnet mission](orby-real-mission-1.4.json) passed without manual database edits: model-generated editable agreement and approved plan, real child hire, controlled first rejection, exactly one recovery, real main output, client approval and both settlements. The [full recording](demo-1.4/) and [Persian acceptance guide](DEMO_1_4.fa.md) distinguish real execution from fixtures. Model: Qwen2.5-1.5B-Instruct-Q4_K_M, llama.cpp b12375, local CPU. API billing is zero; hardware, electricity and chain gas are unpriced, so the receipt does not call the remainder profit.
+
+
+Final verification: **95 automated tests passed** (22 Node, 34 PostgreSQL, 16 Rust, 23 browser). Both production builds and backup restore passed. The entire browser suite also passed against a [source-only installation](orby-clean-start-1.4.json) with no prior frontend, dependencies, database or owner secrets.
+
+Final counts and results are in [release verification](orby-demo-readiness-1.4.json). Both production builds passed. Ten migrations applied. A consistent backup including model_runs restored to an isolated migrated database with integrity and row counts verified. [Read-only UI verification](orby-ui-readiness-1.4.json) checks the actual balance route, a real dry quote with unchanged balances, 390px layout and zero axe WCAG A/AA violations. [Intents evidence](orby-intents-safe-mode.json) is a time-limited quote observation, never an executable deposit or credited balance.
+
+The browser could not reliably fetch the SDK registry directly in this environment. The application relays live metadata from only the SDK's two existing default endpoints, with bounded timeouts and no storage, custom wallet, executor download or URL rewrite. The SDK still runs its normal wallet sandbox and requests user signatures. Standard injected discovery is also supported. A real development wallet adapter signed actual NEP-413 messages and testnet transactions in the recording; human HOT/Meteor approval is not claimed.
+
+[The original disconnected executor transaction was reconciled](orby-mission-reconciliation-1.4.json) against final RPC without sending another operation. The [final redacted receipt](orby-final-redacted-receipt-1.4.json) contains all 14 confirmed transaction hashes, including the specialist hire, corrections and settlement.
+
+An earlier main-model output failed acceptance and safely stopped instead of paying the main award; [normal on-chain dispute resolution and full client refund](orby-real-model-regression-refund.json) are retained. Word-count schema constraints and correction feedback were fixed before the successful recorded missions.
+
+Google OAuth is unconfigured here and its export controls are visibly disabled. Linux/macOS, public hosting and an independent security audit were not performed. Source remains private; publication and final submission require owner coordination.
+
+## Historical 1.3 verification
+
 # Orby 1.3 verification
 
 Fresh pass: 9 November 2026 on Windows x64 / Node 22.19.0. [Complete review-v2 implementation](REVIEW_V2_RELEASE.fa.md).

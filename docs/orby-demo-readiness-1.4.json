@@ -1,0 +1,59 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T07:01:43.437Z",
+  "health": {
+    "status": "ok",
+    "database": "postgresql",
+    "version": "1.4.0"
+  },
+  "database": "CONNECTED",
+  "rpc": "CONNECTED",
+  "runtime": "READY | Qwen2.5-1.5B-Instruct-Q4_K_M",
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "codeHash": "7xYJk1AzN3NQqrFt3R5vSrqDKLAuXVbxMPud2CARSa2x",
+  "paused": false,
+  "storageStatus": {
+    "version": 3,
+    "user_liabilities": "30720000000000000000000000",
+    "storage_budget": "4353997145853196400000004",
+    "protected_exit_reserve": "500000000000000000000000",
+    "live_balances": 5,
+    "open_escrows": 0,
+    "counts": {
+      "agents": 10,
+      "policies": 10,
+      "jobs": 19,
+      "bids": 26,
+      "balances": 5,
+      "operations": 188,
+      "withdrawals": 7,
+      "native_jobs": 11,
+      "native_agents": 10
+    },
+    "storage_bytes": 520734,
+    "available_sponsor": "4628630087099495200000007",
+    "callback_gas_tgas": 50,
+    "history_policy": "Permanent bounded idempotency tombstones; growth is sponsor-funded. No replay-enabling pruning."
+  },
+  "backupRestore": {
+    "passed": true,
+    "migrations": 10,
+    "includesModelRuns": true
+  },
+  "testCounts": {
+    "node": 22,
+    "postgres": 34,
+    "rust": 16,
+    "browser": 23
+  },
+  "googleSheetsConfigured": false,
+  "publicPublication": false,
+  "notice": "Real testnet fixture signatures; no human HOT/Meteor, mainnet transfer, Linux/macOS or independent audit claim.",
+  "totalAutomatedTests": 95,
+  "cleanStartVerified": true,
+  "realMissionConfirmedTransactions": 14,
+  "finalReceiptVerified": true,
+  "secretPatternScan": "PASSED",
+  "browserRerunNotice": "Earlier runs exposed an obsolete sandbox interception route and an OS ERR_NETWORK_CHANGED. The fixture route was corrected; the final complete clean-install run passed all 23 without retries."
+}

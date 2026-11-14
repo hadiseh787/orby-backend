@@ -18,6 +18,8 @@ export const config = {
   admin: process.env.NEAR_ADMIN_ACCOUNT || "",
   ollama: process.env.OLLAMA_URL || "http://127.0.0.1:11434",
   model: process.env.OLLAMA_MODEL || "",
+  modelProvider: process.env.LLM_PROVIDER || 'OLLAMA',
+  modelUrl: process.env.LLM_URL || 'http://127.0.0.1:11435/v1',
   secure: process.env.COOKIE_SECURE === "true",
 };
 if (process.env.NEAR_NETWORK && process.env.NEAR_NETWORK !== "testnet")

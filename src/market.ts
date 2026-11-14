@@ -134,6 +134,7 @@ export async function createJob(db: DB, a: Actor, b: any) {
   const id = randomUUID(),
     data = {
       ...b,
+      runtimeMode:b.runtimeMode||(a.book==='SIMULATION'?'DETERMINISTIC':'REAL_AI'),
       deadline: Date.now()+b.deadlineMinutes*60000,
       revision: 0,
       termsVersion: 1,
@@ -592,7 +593,9 @@ export async function fundChild(
   const id = randomUUID(),
     bond = String((BigInt(amount) * 2000n) / 10000n);
   const data = {
-    title: "Extract source evidence",
+    runtimeMode:j.data.runtimeMode,
+    missionPlan:j.data.missionPlan?{id:j.data.missionPlan.id,controlledFailure:j.data.missionPlan.controlledFailure}:null,
+    title: "Specialist source review",
     description: "Extract claims from the supplied proposal text.",
     input: scopedChildInput(j.data.input,agentId),
     criteria: childCriteria(j.data.criteria),

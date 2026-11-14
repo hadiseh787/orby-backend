@@ -121,6 +121,15 @@ try{
   const connection=new URL(localEnv.DATABASE_URL||'postgresql://agent:agent_local_only@127.0.0.1:5433/orby');
   if(arg('--db-port')||process.env.LOCAL_DB_PORT)connection.port=String(dbPort);
   const env={...localEnv,HOST:'127.0.0.1',PORT:String(port),APP_ORIGIN:url,FRONTEND_DIST:join(frontend,'dist/orby/browser'),DATABASE_URL:connection.href,LOCAL_SHUTDOWN_TOKEN:randomBytes(32).toString('hex'),NODE_ENV:'development'};
+  if(env.LLM_PROVIDER==='OPENAI_COMPATIBLE'&&env.LLAMA_SERVER_PATH&&env.LLAMA_MODEL_PATH){
+    const modelOrigin=new URL(env.LLM_URL||'http://127.0.0.1:11435/v1').origin;
+    if(!await healthy(modelOrigin+'/health')){
+      if(!existsSync(env.LLAMA_SERVER_PATH)||!existsSync(env.LLAMA_MODEL_PATH))throw Error('Real model files are missing. Run npm run demo:model:setup first.');
+      const modelOut=openSync('.data/model.stdout.log','a'),modelErr=openSync('.data/model.stderr.log','a');
+      const child=spawn(env.LLAMA_SERVER_PATH,['-m',env.LLAMA_MODEL_PATH,'--alias',env.OLLAMA_MODEL,'--host','127.0.0.1','--port',new URL(modelOrigin).port||'11435','-c','8192','--threads','4','--parallel','1'],{cwd:root,env,stdio:['ignore',modelOut,modelErr],windowsHide:true});closeSync(modelOut);closeSync(modelErr);children.push({name:'model',child});child.on('error',error=>console.error('Local model start failed:',error.message));
+      let ready=false;for(let i=0;i<120;i++){if(await healthy(modelOrigin+'/health')){ready=true;break;}await delay(1000);}if(!ready)throw Error('The real model did not become ready. No deterministic fallback was enabled.');
+    }
+  }
   if(!await free(port))throw Error(`Port ${port} is already in use. Use --port with another local port.`);
   console.log('Building backend and frontend…');await npm(['run','build'],root);await npm(['run','build'],frontend);
   if(['127.0.0.1','localhost'].includes(connection.hostname)&&await free(Number(connection.port||5432))){

@@ -24,6 +24,7 @@ for (const file of ["scripts/migrate.ts", "scripts/seed.ts"]) {
   });
   if (r.status !== 0) throw Error(r.stderr);
 }
+process.env.OLLAMA_MODEL='';process.env.LLM_PROVIDER='OLLAMA';
 const { buildApp } = await import("../src/server.js");
 const { pool } = await import("../src/db.js");
 const { tick,stopWorker } = await import("../src/worker.js");

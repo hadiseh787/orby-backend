@@ -1,3 +1,9 @@
+# Orby 1.4 demo submission preparation
+
+Current artifacts: [real-model/testnet recording](demo-1.4/), [transaction proof](orby-real-mission-1.4.json), [reproduction guide](DEMO_1_4.fa.md), [verification](VERIFICATION.md). These supersede the old simulation-only demo for the current submission. The contest-period 1.4 changes are planning, bounded recovery, live activity, real AI, economics, mandatory-dry Intents preview and the requested usability fixes. Existing marketplace/escrow code predates this release; Git history preserves build dates.
+
+Both repositories retain MIT LICENSE and their private visibility. No public publication, X post or final contest submission has been performed. The owner must coordinate those final external steps and recheck current event rules.
+
 # Orby review-v2 submission preparation
 
 The source remains in the two private repositories requested by the owner:

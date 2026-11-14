@@ -8,7 +8,8 @@ import { runModel } from "./runtime.js";
 import { evaluate } from "./domain.js";
 import {transactionResult} from './transaction-result.js';
 import {executionInput,scopedChildInput,childCriteria,recordInputManifest} from './execution-input.js';
-import {loadJob} from './market.js';
+import {loadJob,event} from './market.js';
+import {executeModel,executionChecks} from './model-execution.js';
 import {latestDelivery,recordDecision} from './delivery-decisions.js';
 export async function rpc(method: string, params: any) {
   const response = await fetch(config.rpc, {
@@ -283,6 +284,8 @@ export async function serviceCall(
       args: payload,
       gas: 150000000000000n,
     });
+    // Persist the broadcast hash before a second network request can disconnect.
+    await pool.query("UPDATE chain_operations SET state='SUBMITTED',tx_hash=$2,updated_at=now() WHERE request_id=$1",[requestId,result.transaction.hash]);
     const final=await rpc('tx',{tx_hash:result.transaction.hash,sender_account_id:config.serviceAccount,wait_until:'FINAL'});
     const classified=transactionResult(final,{methodName:method,signerId:config.serviceAccount,receiverId:config.contract,args:payload});
     await pool.query(
@@ -445,6 +448,7 @@ export async function tickNear() {
     for (const row of jobs) {
       let j = await projectJob(row.id);
       if (!j) continue;
+      if(!j.parent&&j.children.length){const known=(await pool.query('SELECT id FROM jobs WHERE parent_id=$1',[row.id])).rows.map(c=>c.id);for(const id of j.children)if(!known.includes(id)){const child=await view('get_job',{job_id:id});await materializeChild(row,child,id);}}
       if (j.state === "FUNDED") {
         if(Number(j.start_deadline)<=Date.now()){
           await pool.query("UPDATE jobs SET data=data||$2::jsonb WHERE id=$1",[row.id,JSON.stringify({needsClientAction:true,executionIssue:'The start window expired. The client must sign Claim due transition to open a non-delivery case.'})]);continue;
@@ -454,38 +458,19 @@ export async function tickNear() {
       }
       if (j.state === "RUNNING" || j.state === "REVISION_REQUIRED") {
         if (!j.parent && j.agent_id === "brief-writer" && !j.children.length) {
+          if(row.data.missionPlanRequired&&!row.data.missionPlan?.approved){await pool.query('UPDATE jobs SET data=data||$2::jsonb WHERE id=$1',[row.id,{needsClientAction:true,executionIssue:'Approve the fixed-budget mission plan before hiring.'}]);continue;}
+          const specialist=row.data.missionPlan?.specialist||{agentId:'source-extractor',amount:'1000000000000000000000000'};
           const id = stableId("child:" + row.id);
           await serviceCall("child:" + row.id, "fund_child", {
             job_id: row.id,
             child_id: id,
-            agent_id: "source-extractor",
-            amount: "1000000000000000000000000",
+            agent_id: specialist.agentId,
+            amount: specialist.amount,
             terms_hash: hash({ root: row.id, child: id }),
             deadline_ms: String(Number(j.deadline_ms) - 15000),
           });
           const child = await view("get_job", { job_id: id });
-          await pool.query(
-            "INSERT INTO jobs(id,book,client_id,parent_id,agent_id,state,data) VALUES($1,'TESTNET',$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING",
-            [
-              id,
-              child.client,
-              row.id,
-              child.agent_id,
-              child.state,
-              {
-                ...row.data,
-                title: "Extract source evidence",
-                description:"Extract claims from the supplied proposal text.",
-                termsHash:child.terms_hash,
-                deadline:Number(child.deadline_ms),
-                creatorId: child.creator,
-                criteria: childCriteria(row.data.criteria),
-                input:scopedChildInput(row.data.input,child.agent_id),
-                approvalPolicy: "AUTO_AFTER_CHECKS",
-                onchain: child,
-              },
-            ],
-          );
+          await materializeChild(row,child,id);
           continue;
         }
         const revision = Number(j.revision);
@@ -517,13 +502,13 @@ export async function tickNear() {
             };
           }
           const currentData=(await pool.query('SELECT data FROM jobs WHERE id=$1',[row.id])).rows[0].data;
-          const runtimeInput=executionInput({...row,data:currentData},input);await recordInputManifest(pool,row,runtimeInput,row.id+':revision:'+revision);
-          const result = await runModel(runtimeInput),
-            checks = evaluate(
+          const runtimeInput=executionInput({...row,data:currentData},input);if(revision>0&&!runtimeInput.revisionFeedback){const previous=(await pool.query('SELECT checks,content FROM deliveries WHERE job_id=$1 AND revision=$2',[row.id,revision-1])).rows[0];runtimeInput.revisionFeedback={section:'all',reason:'Correct all failed acceptance checks; use the exact supplied source IDs and requested row count.',previousChecks:previous?.checks||[],previousOutput:previous?.content||null};}await recordInputManifest(pool,row,runtimeInput,row.id+':revision:'+revision);
+          const result = await executeModel(row,runtimeInput,revision),
+            checks = executionChecks(row,revision,result,evaluate(
               result.content,
               row.data.criteria,
               row.data.input.sources,
-            );
+            ));
           await pool.query('UPDATE run_input_manifests SET manifest=manifest||$3::jsonb WHERE job_id=$1 AND run_key=$2',[row.id,row.id+':revision:'+revision,{runtimeAccepted:true,executionMode:result.mode}]);
           const h = hash(result.content);
           await pool.query(
@@ -539,8 +524,9 @@ export async function tickNear() {
           );
           await pool.query("UPDATE jobs SET data=data||$2::jsonb WHERE id=$1", [
             row.id,
-            JSON.stringify({ executionMode: result.mode }),
+            JSON.stringify({ executionMode: result.mode,modelUsage:result.usage,modelName:result.usage?.model||null,executionIssue:result.forcedFailure?'Model attempt failed or is uncertain; one versioned recovery is permitted.':null }),
           ]);
+          await event(pool,row.parent_id||row.id,'runtime',revision>0&&row.parent_id?'specialist_recovery_completed':'model_attempt_completed',{jobId:row.id,agentId:row.agent_id,revision,mode:result.mode,model:result.usage?.model||null,usage:result.usage,controlledFailure:checks.some((c:any)=>c.id==='demo-controlled-first-attempt'),failed:checks.some((c:any)=>c.required&&c.type==='AUTO_CHECK'&&c.result==='FAIL')});
           delivery = { hash: h, checks };
         }
         await serviceCall(
@@ -596,6 +582,11 @@ export async function tickNear() {
     await lease.query("SELECT pg_advisory_unlock(87911)");
     lease.release();
   }
+}
+export async function materializeChild(root:any,child:any,id:string,db:any=pool){
+ assert(root.book==='TESTNET'&&child&&child.parent===root.id,'CHILD_PROJECTION_MISMATCH','The chain child does not belong to this root.');
+ const data={...root.data,missionPlan:root.data.missionPlan?{id:root.data.missionPlan.id,controlledFailure:root.data.missionPlan.controlledFailure}:null,missionPlanRequired:false,needsClientAction:false,title:'Specialist source review',description:'Extract claims from the supplied proposal text.',termsHash:child.terms_hash,deadline:Number(child.deadline_ms),creatorId:child.creator,nearYocto:child.usd_micro==='0'?child.escrow:undefined,escrow:child.escrow,n0:child.n0,revision:child.revision,criteria:childCriteria(root.data.criteria),input:scopedChildInput(root.data.input,child.agent_id),approvalPolicy:'AUTO_AFTER_CHECKS',onchain:child};
+ return db.query("INSERT INTO jobs(id,book,client_id,parent_id,agent_id,state,data) VALUES($1,'TESTNET',$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING RETURNING id",[id,child.client,root.id,child.agent_id,child.state,data]);
 }
 function stableId(value: string) {
   const h = hash(value);

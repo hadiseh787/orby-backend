@@ -9,6 +9,7 @@ import {executionInput,recordInputManifest} from './execution-input.js';
 import {tickBenchmarks} from './quality.js';
 import {tickNegotiations} from './negotiations.js';
 import {tickPrograms} from './programs.js';
+import {executeModel,executionChecks} from './model-execution.js';
 let stopping = false;
 const activeTicks=new Set<Promise<void>>();
 export async function stopWorker() {
@@ -64,8 +65,8 @@ async function tickOnce() {
       const child = await fundChild(
         db,
         j,
-        "source-extractor",
-        String(10n ** 24n),
+        j.data.missionPlan?.specialist?.agentId||'source-extractor',
+        j.data.missionPlan?.specialist?.amount||String(10n ** 24n),
       );
       await db.query("INSERT INTO outbox_jobs(id,job_id,type) VALUES($1,$2,'EXECUTE') ON CONFLICT DO NOTHING",[randomUUID(),child.id]);
     }
@@ -82,7 +83,7 @@ async function tickOnce() {
   if (task) {
     try {
       const input=executionInput(task.job,task.job.data.runtimeInput);await recordInputManifest(pool,task.job,input,task.runId);
-      const result=await runModel(input);
+      const result=await executeModel(task.job,input,task.job.data.revision);
       await pool.query('UPDATE run_input_manifests SET manifest=manifest||$3::jsonb WHERE job_id=$1 AND run_key=$2',[task.job.id,task.runId,{runtimeAccepted:true,executionMode:result.mode}]);
       await transaction(async (db) => {
         const j = await loadJob(db, task.job_id, undefined, true);
@@ -100,11 +101,11 @@ async function tickOnce() {
           return;
         }
         const deliveredRevision=j.data.revision;
-        const checks = evaluate(
+        const checks = executionChecks(j,deliveredRevision,result,evaluate(
             result.content,
             j.data.criteria,
             j.data.input.sources || [],
-          ),
+          )),
           failed = checks.some(
             (c: any) =>
               c.required && c.type === "AUTO_CHECK" && c.result === "FAIL",
@@ -127,6 +128,7 @@ async function tickOnce() {
           : "REVIEW_OPEN";
         await updateJob(db, j, state, {
           executionMode: result.mode,
+          modelUsage:result.usage,
           deliveryHash: hash(result.content),
           reviewDeadline: Date.now() + (config.accelerated ? 90000 : 86400000),
           revisionDeadline: Math.min(j.data.deadline, Date.now() + 43200000),
@@ -202,6 +204,9 @@ async function tickOnce() {
         await settleJob(db, j, "scheduler");
     });
 }
+export async function runQueues(queues:{name:string;task:()=>Promise<void>;interval:number}[],shouldStop=()=>stopping){
+ await Promise.all(queues.map(async q=>{while(!shouldStop()){try{await q.task();}catch(e:any){console.error(q.name+':',e.message);}if(!shouldStop())await new Promise(r=>setTimeout(r,q.interval));}}));
+}
 if (process.argv[1]?.replaceAll("\\", "/").match(/worker\.(ts|js)$/)) {
   console.log("Worker ready. PostgreSQL leases protect concurrent consumers.");
   process.on("SIGTERM", () => {
@@ -210,21 +215,12 @@ if (process.argv[1]?.replaceAll("\\", "/").match(/worker\.(ts|js)$/)) {
   process.on("SIGINT", () => {
     stopping = true;
   });
-  while (!stopping) {
-    try {
-      await tick();
-      if(stopping)break;
-      await tickPrograms();
-      if(stopping)break;
-      await tickNear();
-      if(stopping)break;
-      await tickBenchmarks();
-      if(stopping)break;
-      await tickNegotiations();
-    } catch (e: any) {
-      console.error("Worker:", e.message);
-    }
-    await new Promise((r) => setTimeout(r, 1000));
-  }
+  // A slow RPC or model suite must not starve the independent simulation queue.
+  await runQueues([
+    {name:'Simulation',task:tick,interval:500},
+    {name:'Testnet',task:async()=>{await tickNear();if(!stopping)await tickNegotiations();},interval:1000},
+    {name:'Programs',task:tickPrograms,interval:2000},
+    {name:'Quality lab',task:tickBenchmarks,interval:2000},
+  ]);
   await pool.end();
 }

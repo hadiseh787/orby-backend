@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T07:20:37.872Z",
+  "exampleAddressesOnly": true,
+  "quote": {
+    "dry": true,
+    "network": "MAINNET_PREVIEW_ONLY",
+    "receivedAt": "2026-11-14T07:20:37.836Z",
+    "expiresAt": "2026-11-14T07:23:37.374Z",
+    "originAsset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+    "destinationAsset": "nep141:wrap.near",
+    "amountIn": "10000000",
+    "amountInFormatted": "10.0",
+    "estimatedReceived": "3007993629029143254240873",
+    "estimatedReceivedFormatted": "3.007993629029143254240873",
+    "minimumReceived": "2977913692738851821698464",
+    "amountInUsd": "9.995930000000",
+    "amountOutUsd": "9.995930000000",
+    "fees": null,
+    "feeNotice": "Provider has not itemized route fees; do not interpret this as zero fees. Estimated/minimum received amounts are net quote observations.",
+    "platformSurchargeEstimate": {
+      "basis": "PUBLISHED_UNAUTHENTICATED_RATE_ESTIMATE_NOT_TOTAL_FEES",
+      "basisPoints": 25,
+      "amountAtomic": "25000",
+      "assetId": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+      "source": "https://docs.agentsonintents.com/resources/fees",
+      "asOf": "2026-11-14"
+    },
+    "timeEstimate": 45,
+    "balanceEffect": "NONE",
+    "notice": "Safe Mode: no deposit address, signature, transfer, swap execution or balance credit. Mainnet preview is independent of testnet and simulation."
+  },
+  "balanceUnchanged": true,
+  "notice": "Historical expiring dry quote observation, not an executable or currently valid swap."
+}

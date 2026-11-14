@@ -1,0 +1,197 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T06:53:16.568Z",
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "jobId": "be469176-2c84-4f26-a7b3-59981756ee32",
+  "childId": "89cad5a3-266b-4904-a820-b658b27d6d6a",
+  "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+  "provider": "OPENAI_COMPATIBLE",
+  "controlledFirstFailure": true,
+  "oneRecovery": true,
+  "manualDatabaseChanges": false,
+  "specialistAmount": "1000000000000000000000000",
+  "rootSettlement": {
+    "award": "4000000000000000000000000",
+    "fee": "400000000000000000000000",
+    "refund": "400000000000000000000000",
+    "creator_credit": "3600000000000000000000000",
+    "penalty": "0",
+    "shortfall": false,
+    "fallback_used": false
+  },
+  "childSettlement": {
+    "award": "1000000000000000000000000",
+    "fee": "0",
+    "refund": "0",
+    "creator_credit": "1000000000000000000000000",
+    "penalty": "0",
+    "shortfall": false,
+    "fallback_used": false
+  },
+  "modelAttempts": [
+    {
+      "runKey": "89cad5a3-266b-4904-a820-b658b27d6d6a:delivery:0",
+      "state": "SUCCEEDED",
+      "mode": "LOCAL_LLM",
+      "usage": {
+        "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "provider": "OPENAI_COMPATIBLE",
+        "billedUsd": "0",
+        "durationMs": 10976,
+        "inputTokens": 330,
+        "costComplete": false,
+        "outputTokens": 226
+      }
+    },
+    {
+      "runKey": "89cad5a3-266b-4904-a820-b658b27d6d6a:delivery:1",
+      "state": "SUCCEEDED",
+      "mode": "LOCAL_LLM",
+      "usage": {
+        "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "provider": "OPENAI_COMPATIBLE",
+        "billedUsd": "0",
+        "durationMs": 9979,
+        "inputTokens": 702,
+        "costComplete": false,
+        "outputTokens": 213
+      }
+    },
+    {
+      "runKey": "be469176-2c84-4f26-a7b3-59981756ee32:delivery:0",
+      "state": "SUCCEEDED",
+      "mode": "LOCAL_LLM",
+      "usage": {
+        "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "provider": "OPENAI_COMPATIBLE",
+        "billedUsd": "0",
+        "durationMs": 16722,
+        "inputTokens": 499,
+        "costComplete": false,
+        "outputTokens": 318
+      }
+    }
+  ],
+  "transactions": [
+    {
+      "method": "open_near_job",
+      "hash": "6zDf96YwQkW2fosgUpuNvy6VKQ1mriu4XvdRnjnUqzSu"
+    },
+    {
+      "method": "award_and_fund",
+      "hash": "8wfgjtBNh2ydzkbYybp9gTkx3pYdtKVgbMpPL9qfgdvA"
+    },
+    {
+      "method": "approve_delivery",
+      "hash": "4UzU3EL7kPEHauSQtJ34p1hTHvoocN8gfydzfhjg6rcX"
+    }
+  ],
+  "chainOperations": [
+    {
+      "job_id": "be469176-2c84-4f26-a7b3-59981756ee32",
+      "method": "open_near_job",
+      "state": "CONFIRMED",
+      "tx_hash": "6zDf96YwQkW2fosgUpuNvy6VKQ1mriu4XvdRnjnUqzSu",
+      "explorer": "https://testnet.nearblocks.io/txns/6zDf96YwQkW2fosgUpuNvy6VKQ1mriu4XvdRnjnUqzSu"
+    },
+    {
+      "job_id": "be469176-2c84-4f26-a7b3-59981756ee32",
+      "method": "record_bid",
+      "state": "CONFIRMED",
+      "tx_hash": "C4cbYf1tSvPDofdeF624cQKxf1iGvyyDKRomYTTHJWRb",
+      "explorer": "https://testnet.nearblocks.io/txns/C4cbYf1tSvPDofdeF624cQKxf1iGvyyDKRomYTTHJWRb"
+    },
+    {
+      "job_id": "be469176-2c84-4f26-a7b3-59981756ee32",
+      "method": "award_and_fund",
+      "state": "CONFIRMED",
+      "tx_hash": "8wfgjtBNh2ydzkbYybp9gTkx3pYdtKVgbMpPL9qfgdvA",
+      "explorer": "https://testnet.nearblocks.io/txns/8wfgjtBNh2ydzkbYybp9gTkx3pYdtKVgbMpPL9qfgdvA"
+    },
+    {
+      "job_id": "be469176-2c84-4f26-a7b3-59981756ee32",
+      "method": "start_job",
+      "state": "CONFIRMED",
+      "tx_hash": "Do4sZ6phPnQC5ozt1wJLv4UPVnr44cRAACzfnuwuKiXK",
+      "explorer": "https://testnet.nearblocks.io/txns/Do4sZ6phPnQC5ozt1wJLv4UPVnr44cRAACzfnuwuKiXK"
+    },
+    {
+      "job_id": "be469176-2c84-4f26-a7b3-59981756ee32",
+      "method": "fund_child",
+      "state": "CONFIRMED",
+      "tx_hash": "4vX4e1GtwA6DMbLrkGGmVxmfiLGWaTWDfYpzh7Zs7vNo",
+      "explorer": "https://testnet.nearblocks.io/txns/4vX4e1GtwA6DMbLrkGGmVxmfiLGWaTWDfYpzh7Zs7vNo"
+    },
+    {
+      "job_id": "89cad5a3-266b-4904-a820-b658b27d6d6a",
+      "method": "start_job",
+      "state": "CONFIRMED",
+      "tx_hash": "8QXvYgyz6Ce5eAMo6Wv77nAfd8Ab9NJHXQHKXhiEGnuT",
+      "explorer": "https://testnet.nearblocks.io/txns/8QXvYgyz6Ce5eAMo6Wv77nAfd8Ab9NJHXQHKXhiEGnuT"
+    },
+    {
+      "job_id": "89cad5a3-266b-4904-a820-b658b27d6d6a",
+      "method": "submit_delivery",
+      "state": "CONFIRMED",
+      "tx_hash": "8hwLLmLKoNq45Qet4R8pH5igk8VRduxwbTS8UbwjLtyN",
+      "explorer": "https://testnet.nearblocks.io/txns/8hwLLmLKoNq45Qet4R8pH5igk8VRduxwbTS8UbwjLtyN"
+    },
+    {
+      "job_id": "89cad5a3-266b-4904-a820-b658b27d6d6a",
+      "method": "record_checks",
+      "state": "CONFIRMED",
+      "tx_hash": "A4k6ux5wFMbLS7GHd7CPtcptXLvZqQiawwwX1fjbsu31",
+      "explorer": "https://testnet.nearblocks.io/txns/A4k6ux5wFMbLS7GHd7CPtcptXLvZqQiawwwX1fjbsu31"
+    },
+    {
+      "job_id": "89cad5a3-266b-4904-a820-b658b27d6d6a",
+      "method": "submit_delivery",
+      "state": "CONFIRMED",
+      "tx_hash": "A7LVrbj2gmJ4KwwKzopCH2gtH7a8kg9TSe6XhdZQxjvN",
+      "explorer": "https://testnet.nearblocks.io/txns/A7LVrbj2gmJ4KwwKzopCH2gtH7a8kg9TSe6XhdZQxjvN"
+    },
+    {
+      "job_id": "89cad5a3-266b-4904-a820-b658b27d6d6a",
+      "method": "record_checks",
+      "state": "CONFIRMED",
+      "tx_hash": "GYf8dbsbTfVrirwcfWvoaBvcmURZhFcULP8ynU5ARcD9",
+      "explorer": "https://testnet.nearblocks.io/txns/GYf8dbsbTfVrirwcfWvoaBvcmURZhFcULP8ynU5ARcD9"
+    },
+    {
+      "job_id": "89cad5a3-266b-4904-a820-b658b27d6d6a",
+      "method": "claim_due_transition",
+      "state": "CONFIRMED",
+      "tx_hash": "HVJqmkPKWXTSGde9qhfpLUx9Tnbrww7VSsgkzMD543nd",
+      "explorer": "https://testnet.nearblocks.io/txns/HVJqmkPKWXTSGde9qhfpLUx9Tnbrww7VSsgkzMD543nd"
+    },
+    {
+      "job_id": "be469176-2c84-4f26-a7b3-59981756ee32",
+      "method": "submit_delivery",
+      "state": "CONFIRMED",
+      "tx_hash": "4TkL7dkJE5dc3EokKRDThsimDMG2jvhNyMP46TrfuYB7",
+      "explorer": "https://testnet.nearblocks.io/txns/4TkL7dkJE5dc3EokKRDThsimDMG2jvhNyMP46TrfuYB7"
+    },
+    {
+      "job_id": "be469176-2c84-4f26-a7b3-59981756ee32",
+      "method": "record_checks",
+      "state": "CONFIRMED",
+      "tx_hash": "3kePh4LiLHHVAYFLtycoZSK4KZ6hPxfQCbus9sY5EZzi",
+      "explorer": "https://testnet.nearblocks.io/txns/3kePh4LiLHHVAYFLtycoZSK4KZ6hPxfQCbus9sY5EZzi"
+    },
+    {
+      "job_id": "be469176-2c84-4f26-a7b3-59981756ee32",
+      "method": "approve_delivery",
+      "state": "CONFIRMED",
+      "tx_hash": "4UzU3EL7kPEHauSQtJ34p1hTHvoocN8gfydzfhjg6rcX",
+      "explorer": "https://testnet.nearblocks.io/txns/4UzU3EL7kPEHauSQtJ34p1hTHvoocN8gfydzfhjg6rcX"
+    }
+  ],
+  "notice": "Real local model and real testnet transactions. Development wallet adapter signs real messages/transactions using ignored fixture keys; no human HOT/Meteor signature is claimed. The first specialist rejection is an explicitly enabled controlled demo fault."
+}

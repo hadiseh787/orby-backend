@@ -1,0 +1,5 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {walletRegistry} from '../src/wallet-registry.js';
+test('wallet metadata relay only requests SDK default allowlisted endpoints and preserves metadata',async()=>{const calls:string[]=[];const manifest={version:'1.0.0',wallets:[{id:'fixture',executor:'https://example.invalid/unchanged'}]};const fetcher=(async(url:any,options:any)=>{calls.push(url);assert.equal(options.redirect,'error');return calls.length===1?new Response('unavailable',{status:503}):Response.json(manifest);}) as typeof fetch;assert.deepEqual(await walletRegistry(fetcher),manifest);assert.deepEqual(calls,['https://raw.githubusercontent.com/hot-dao/near-selector/refs/heads/main/repository/manifest.json','https://cdn.jsdelivr.net/gh/azbang/hot-connector/repository/manifest.json']);});
+test('wallet relay fails closed on unavailable or invalid upstream metadata',async()=>{await assert.rejects(walletRegistry((async()=>Response.json({wallets:[]})) as typeof fetch),/unavailable/);});

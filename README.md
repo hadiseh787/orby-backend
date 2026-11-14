@@ -1,5 +1,40 @@
 # Orby backend
 
+Orby 1.4 turns a client brief into an approved, budget-capped agent mission. The main agent selects an existing specialist, funds its subcontract from the creator balance, performs at most one specialist recovery, delivers real local-model output, and settles on NEAR testnet only after the client approves the exact delivery version.
+
+[Complete Persian demo guide and acceptance checklist](docs/DEMO_1_4.fa.md) | [actual model/testnet proof](docs/orby-real-mission-1.4.json) | [full recorded demo](docs/demo-1.4/real-mission-be469176-2c84-4f26-a7b3-59981756ee32.webm) | [safe Intents quote proof](docs/orby-intents-safe-mode.json)
+
+
+Final verification: **95 automated tests passed** (22 Node, 34 PostgreSQL, 16 Rust, 23 browser). Both production builds and backup restore passed. The entire browser suite also passed against a [source-only installation](docs/orby-clean-start-1.4.json) with no prior frontend, dependencies, database or owner secrets.
+
+## Run the complete application
+
+Install Git and Node.js 24 with npm (22.19 also supported). From this backend folder:
+
+```powershell
+npm run local
+```
+
+The launcher obtains the pinned frontend and starts PostgreSQL, migrations, API, worker and Angular at http://127.0.0.1:4200. No global Angular CLI or separate PostgreSQL service is required. Windows: double-click start-local.cmd. Stop with Ctrl+C or npm run local:stop. Source-only simulation requires no application secrets; both private repositories need clone access.
+
+For the tested real local model on Windows x64, stop the launcher, run npm run demo:model:setup once, then npm run local again. Setup downloads approximately 1.12 GB of model data, verifies pinned SHA-256 values and configures the CPU server. The same launcher starts it; no second terminal or paid API is needed. Other systems may configure Ollama using .env.example.
+
+| Mode | Execution and funds |
+|---|---|
+| SIMULATION | simNEAR ledger; the composer defaults to deterministic execution. No real assets. |
+| TESTNET + REAL_AI | Real local model, server-verified NEP-413 session, owner-signed escrow/approval and actual NEAR testnet settlement. Requires the deployment owner's private local executor configuration or an independent deployment. No keys are distributed. |
+| MAINNET_PREVIEW_ONLY | Actual 1Click quote with backend-enforced dry:true. No signature, transfer, executable deposit address or balance credit. |
+
+The passing recording uses a development wallet adapter that signs actual testnet transactions. It does not claim a human HOT/Meteor signature. A controlled first specialist rejection is explicitly enabled in the video. The client confirms a 4.4 testNEAR maximum escrow for a 4 testNEAR award; the 1 testNEAR specialist cost comes from the creator, with no second payment for its revision. The receipt distinguishes settled, committed, unknown and unpriced costs; remaining funds are not labelled profit.
+
+Ten migrations and independent worker queues keep slow RPCs from blocking simulation. Real jobs cache model results by immutable execution key and never blindly repeat an uncertain result. The final confirmation shows settlement amounts before signing. Source, record and test commands are detailed in the demo guide.
+
+Code: MIT LICENSE. The model is downloaded from Qwen/Qwen2.5-1.5B-Instruct-GGUF and the runtime from the official ggml-org/llama.cpp release; their upstream licenses apply. Neither binary nor private credentials are shipped in Git.
+
+Work dated 14 November 2026 adds real-model setup, bounded model planning, durable inference/recovery, live collaboration, agreement assistance, economics, Safe Mode Intents and focused UI fixes on top of the 9 November 1.3 baseline. The V3 contract code/hash is unchanged in this release. Public release, X posting and contest submission remain owner-coordinated; repository visibility has not been changed.
+
+## Prior releases and reference setup
+
 Orby 1.3 implements all six review-v2 fixes and all six roadmap features: Work Receipt/evidence packs, execution rehearsals, scoped knowledge, versioned Quality Lab, team workspaces and one-round counteroffers. The indexed V3 contract preserves existing claims and sponsors storage independently. Read [the implementation and verification report](docs/REVIEW_V2_RELEASE.fa.md), [dependency review](docs/DEPENDENCY_REVIEW.md) and [submission status](docs/SUBMISSION.md).
 
 Orby 1.2 implements the full revised change request: autosaved job creation, immutable delivery decisions, templates and action inbox, private knowledge, weekly programs, paid trials, independent milestones and Google Sheets OAuth/import/confirmed export. Read the [complete Persian implementation report](docs/WORKSPACE_RELEASE_2026-11-07.fa.md) and [Google setup guide](docs/GOOGLE_SHEETS_SETUP.md). Local startup is still one command; Google credentials are optional. Testnet program runs require individual wallet signatures and monthly limits are workspace escrow reservations.

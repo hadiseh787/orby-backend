@@ -35,6 +35,7 @@ await transaction(async (db) => {
     "agent_versions",
     "execution_policies",
     "jobs",
+    "model_runs",
     "knowledge_collections",
     "workspace_programs",
     "program_runs",

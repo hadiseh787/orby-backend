@@ -38,7 +38,10 @@ import {workspaceTeamRoutes} from './workspaces.js';
 import {canReadWorkspace,requireWorkspaceRole} from './workspace-access.js';
 import {workspaceRoutes} from './workspace-routes.js';
 import {latestDelivery,recordDecision,decisionChecks} from './delivery-decisions.js';
-import {deterministicBrief} from './runtime.js';
+import {deterministicBrief,modelStatus} from './runtime.js';
+import {missionRoutes,requireMissionApproval} from './mission.js';
+import {intentsRoutes} from './intents.js';
+import {walletRegistry} from './wallet-registry.js';
 import {programRoutes,knowledgeSnapshot} from './programs.js';
 import {googleRoutes} from './google-sheets.js';
 import { uploadAttachment, claimAttachments } from "./attachments.js";
@@ -53,6 +56,7 @@ export async function buildApp() {
     requestTimeout: 30000,
   });
   await app.register(cookie);
+  app.get('/api/v1/wallet-registry',async(_req,reply)=>{reply.header('cache-control','no-store');try{return await walletRegistry();}catch{reply.code(503);return {code:'WALLET_REGISTRY_UNAVAILABLE',message:'The official wallet registry is unavailable. Retry when connectivity is restored.'};}});
   await app.register(cors, { origin: config.origin, credentials: true });
   const serveSpa=await registerSecurity(app);
   await app.register(rateLimit, {
@@ -108,6 +112,8 @@ export async function buildApp() {
   await knowledgeAccessRoutes(app);
   await programRoutes(app);
   await googleRoutes(app);
+  await missionRoutes(app);
+  await intentsRoutes(app);
   if(process.env.LOCAL_SHUTDOWN_TOKEN&&process.send){
     app.post('/api/v1/local/shutdown',{config:{rateLimit:false}},async(req,reply)=>{
       assert(req.headers['x-local-shutdown']===process.env.LOCAL_SHUTDOWN_TOKEN,'FORBIDDEN','Invalid local launcher token.',403);
@@ -142,6 +148,9 @@ export async function buildApp() {
     chainConfigured: !!config.contract,
     accelerated: config.accelerated,
     modelConfigured: !!config.model,
+    googleSheetsConfigured:!!process.env.GOOGLE_CLIENT_ID&&!!process.env.GOOGLE_CLIENT_SECRET,
+    modelName:config.model,
+    modelProvider:config.modelProvider,
     books: ["SIMULATION", "TESTNET"],
     priceMode: "NATIVE_NEAR",
     primaryAsset: "NEAR",
@@ -169,7 +178,7 @@ export async function buildApp() {
   });
   app.get("/api/v1/health", async () => {
     await pool.query("SELECT 1");
-    return { status: "ok", database: "postgresql", version: "1.3.0" };
+    return { status: "ok", database: "postgresql", version: "1.4.0" };
   });
   app.get("/api/v1/templates", async () => ({
     templates: [
@@ -391,6 +400,7 @@ export async function buildApp() {
   });
   mutation("/jobs", async (db, a, b) => {
     const parsed = jobSchema.parse(b);
+    if(parsed.missionPlanRequired)assert(parsed.preferredAgentId==='brief-writer'&&parsed.runtimeMode==='REAL_AI','INVALID_MISSION','A mission uses Brief Writer and explicit real AI.');
     if(b.workspaceDraftId){const draft=(await db.query('SELECT * FROM workspace_drafts WHERE id=$1 AND workspace_id=$2 FOR UPDATE',[z.uuid().parse(b.workspaceDraftId),a.workspaceId])).rows[0];assert(draft&&!draft.published_job_id&&draft.revision===b.expectedDraftRevision&&hash(jobSchema.parse(draft.data))===hash(parsed),'DRAFT_CHANGED','The team draft changed or was published. Review its current version.',409);}
     if(parsed.preferredAgentId)assert((await db.query("SELECT 1 FROM agents WHERE id=$1 AND book=$2 AND state='ACTIVE'",[parsed.preferredAgentId,a.book])).rowCount,'AGENT_UNAVAILABLE','The selected agent is unavailable.');
     const knowledge=await knowledgeSnapshot(db,a,parsed.knowledgeIds);
@@ -500,11 +510,11 @@ export async function buildApp() {
     preview(db, a, idSchema.parse(p.id), idSchema.parse(b.bidId)),
   );
   mutation("/jobs/:id/fund", async (db, a, b, p) => {
-    if (a.book === "SIMULATION")
-      return fund(db, a, idSchema.parse(p.id), idSchema.parse(b.previewId));
+    if (a.book === 'SIMULATION'){const job=await loadJob(db,p.id,a,true);const saved=(await db.query('SELECT data FROM funding_previews WHERE id=$1',[b.previewId])).rows[0];requireMissionApproval(job,saved?.data?.bidId);return fund(db,a,idSchema.parse(p.id),idSchema.parse(b.previewId));}
     const j = await loadJob(db, p.id, a, true);
     assert(j.client_id===a.id && j.state==='OPEN','INVALID_STATE','Only the client can fund an open job.');
     assert(j.data.deadline>Date.now(),'JOB_EXPIRED','This job deadline has expired.');
+    requireMissionApproval(j,b.previewId?(await db.query("SELECT data->>'bidId' AS bid_id FROM funding_previews WHERE id=$1",[b.previewId])).rows[0]?.bid_id:b.bidId);
     const pv = (
       await db.query(
         "SELECT * FROM funding_previews WHERE id=$1 AND job_id=$2 AND actor=$3 AND expires_at>now() AND consumed=false",
@@ -854,8 +864,8 @@ export async function buildApp() {
     ]);
     return {
       database: "CONNECTED",
-      rpc: config.contract ? "CONFIGURED" : "NOT_CONFIGURED",
-      runtime: config.model ? "OLLAMA_CONFIGURED" : "DETERMINISTIC",
+      rpc: config.contract ? await view('get_version').then(v=>v===3?'CONNECTED':'VERSION_MISMATCH').catch(()=>'UNAVAILABLE') : "NOT_CONFIGURED",
+      runtime: config.model ? await modelStatus().then(r=>r.state+' | '+r.model) : 'DETERMINISTIC',
       price: { mode: "FIXTURE", priceMicro: "5000000" },
       states: states.rows,
       queue: queue.rows,

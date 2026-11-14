@@ -29,6 +29,8 @@ export const jobSchema = z
     attachmentIds: z.array(z.uuid()).max(5).default([]),
     knowledgeIds:z.array(z.uuid()).max(5).default([]),
     knowledgeChildGrants:z.record(z.string().regex(/^[a-z0-9-]{3,48}$/),z.array(z.uuid()).max(5)).default({}),
+    runtimeMode:z.enum(['DETERMINISTIC','REAL_AI']).optional(),
+    missionPlanRequired:z.boolean().default(false),
     preferredAgentId:z.string().regex(/^[a-z0-9-]{3,48}$/).optional(),
     usdMicro: z
       .string()

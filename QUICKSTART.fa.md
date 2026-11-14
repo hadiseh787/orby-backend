@@ -1,6 +1,10 @@
+# Orby 1.4
+
+Run `npm run local` from the backend folder. It starts PostgreSQL, API, worker, Angular and an already configured local model. Stop with `npm run local:stop`. First-time Windows real-model setup: stop the application, run `npm run demo:model:setup`, then `npm run local`. See [the exact real-demo steps](docs/DEMO_1_4.fa.md). No secrets are distributed; real testnet requires your own deployment/executor configuration.
+
 # اجرای محلی
 
-Version 1.3: the startup command is unchanged. Run `npm run local` from the backend folder. It starts PostgreSQL, API, worker and Angular together. New tools are in Workspace tools; receipts are in each job. Full review-v2 report: `docs/REVIEW_V2_RELEASE.fa.md`.
+Historical 1.3: the startup command is unchanged. Run `npm run local` from the backend folder. It starts PostgreSQL, API, worker and Angular together. New tools are in Workspace tools; receipts are in each job. Full review-v2 report: `docs/REVIEW_V2_RELEASE.fa.md`.
 
 پیش‌نیاز: Git و Node.js نسخهٔ 24 همراه npm. نصب جداگانهٔ Angular، PostgreSQL، Docker، Rust یا Ollama برای اجرای محلی لازم نیست.
 
