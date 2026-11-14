@@ -1,18 +1,18 @@
 # Orby 1.4.1
 
-Current guide: [Complete real demo and setup](backend/docs/RELIABILITY_1_4_1.fa.md). Run `npm run local` from backend. While the local database is running, `npm run demo:seed:samples` adds the isolated 15-job Demo / Sample workspace.
+Current guide: [Complete real demo and setup](backend/docs/RELIABILITY_1_4_1.md). Run `npm run local` from backend. While the local database is running, `npm run demo:seed:samples` adds the isolated 15-job Demo / Sample workspace.
 
 ## Historical entry notes
 
 # Orby 1.4
 
-Run `npm run local` from `backend`. The launcher starts PostgreSQL, API, worker, Angular and a configured local model together. [Real demo guide](backend/docs/DEMO_1_4.fa.md), [verification](backend/docs/VERIFICATION.md), [full continuous video](backend/docs/demo-1.4/). Source-only simulation requires Git and Node.js 24 (22.19 supported). For real local inference, stop the app, run `npm run demo:model:setup` in backend, then restart. Testnet requires deployment-owner configuration; no private keys are distributed.
+Run `npm run local` from `backend`. The launcher starts PostgreSQL, API, worker, Angular and a configured local model together. [Real demo guide](backend/docs/DEMO_1_4.md), [verification](backend/docs/VERIFICATION.md), [full continuous video](backend/docs/demo-1.4/). Source-only simulation requires Git and Node.js 24 (22.19 supported). For real local inference, stop the app, run `npm run demo:model:setup` in backend, then restart. Testnet requires deployment-owner configuration; no private keys are distributed.
 
 # Orby
 
-پیاده‌سازی محلی بر اساس بستهٔ تحویل: فرانت **Angular**، بک **Node.js** و دیتابیس **PostgreSQL**. رابط انگلیسی، ریسپانسیو، با حالت روشن، تیره و خودکار.
+A local implementation based on the handoff package: an **Angular** frontend, a **Node.js** backend and a **PostgreSQL** database. The interface is English and responsive, with light, dark and automatic themes.
 
-دو پوشهٔ برنامه مستقل‌اند و هرکدام `package.json`، lockfile و README خودشان را دارند:
+The two application folders are independent, each with its own `package.json`, lockfile and README:
 
 ```text
 frontend/                 Angular application
@@ -24,9 +24,9 @@ start.ps1                 Local startup
 stop.ps1                  Stop only recorded project processes
 ```
 
-## اجرا در ویندوز
+## Running on Windows
 
-پیش‌نیاز: Git و Node.js نسخهٔ 24 همراه npm. برای دریافت و اجرای پروژه از GitHub:
+Prerequisite: Git and Node.js 24 with npm. To fetch and run the project from GitHub:
 
 ```powershell
 git clone https://github.com/hadiseh787/orby-backend.git
@@ -34,30 +34,30 @@ cd orby-backend
 npm run local
 ```
 
-ریپوها خصوصی‌اند و اجراکننده باید به هر دو دسترسی داشته باشد. لانچر نسخهٔ هماهنگ فرانت را خودکار می‌گیرد؛ نصب وابستگی‌ها، ساخت برنامه و ایجاد دیتابیس هم خودکار است. در نسخهٔ کلون‌شده فایل `start-local.cmd` همین کار را انجام می‌دهد. راهنمای کامل فارسی: [QUICKSTART.fa.md](backend/QUICKSTART.fa.md).
+The repositories are private and the runner must have access to both. The launcher fetches the matching frontend revision automatically; installing dependencies, building the applications and creating the database are automatic too. In the cloned version the file `start-local.cmd` does the same job. Full quickstart guide: [QUICKSTART.md](backend/QUICKSTART.md).
 
-روی `start.cmd` دوبارکلیک کنید؛ دیتابیس، بک، worker و فرانت با هم اجرا می‌شوند و مرورگر باز می‌شود. برای توقف، `stop.cmd` را اجرا کنید. دستور معادل از همین پوشه:
+Double-click `start.cmd`; the database, backend, worker and frontend start together and the browser opens. To stop, run `stop.cmd`. The equivalent command from this folder:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\start.ps1
 ```
 
-آدرس: `http://127.0.0.1:4200`. این اسکریپت PostgreSQL محلی، migration، دادهٔ دمو، API، worker و فرانت را اجرا می‌کند. خروجی سرویس‌ها در همان ترمینال دیده می‌شود و داده‌ها در `backend/.data` می‌مانند. اسکریپت پورت اشغال‌شده را تصاحب نمی‌کند.
+Address: `http://127.0.0.1:4200`. This script starts local PostgreSQL, migrations, demo data, the API, the worker and the frontend. Service output appears in the same terminal and the data stays in `backend/.data`. The script does not take over an occupied port.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\stop.ps1
 ```
 
-از Settings گزینهٔ `Switch demo account` را بزنید. حساب `alex.demo` مشتری است؛ `writer.demo` سازندهٔ Brief Writer و `operator.demo` ادمین است. دموی محلی با **simNEAR** اجرا می‌شود. موجودی دمو، توکن شبکه نیست.
+From Settings, choose `Switch demo account`. The `alex.demo` account is the client; `writer.demo` is the Brief Writer creator and `operator.demo` is the admin. The local demo runs with **simNEAR**. The demo balance is not a network token.
 
-## محدوده
+## Scope
 
-بازار ایجنت، ساخت کار و معیار پذیرش، پیشنهاد قیمت، پیش‌نمایش مالی منقضی‌شونده، تضمین و Escrow، اجرای زیرایجنت، تحویل و چک قطعی، اصلاح، اختلاف و رأی ادمین، تسویه، دفتر مالی، برداشت، شواهد، گزارش‌ها و تنظیمات ظاهر در برنامه پیاده شده‌اند.
+The agent marketplace, job creation with acceptance criteria, price proposals, the expiring financial preview, bond and escrow, sub-agent execution, delivery with deterministic checks, correction, dispute and admin ruling, settlement, the financial ledger, withdrawal, evidence, reports and appearance settings are implemented in the application.
 
-کارهای جدید با مبلغ ثابت NEAR توافق می‌شوند؛ نرخ زندهٔ USD فقط برای نمایش است. توافق‌های قدیمی منطق مرجع خود را حفظ می‌کنند. مدل زبانی با Ollama اختیاری است؛ بدون آن خروجی با برچسب `Deterministic demo` ساخته می‌شود. اعتبار نسخهٔ پایه، پیش‌نمایش تأمین مالی و چرخهٔ استخر **شبیه‌سازی** است. وام واقعی P1، endpoint خارجی، TEE، مین‌نت و Intents جزو این تحویل پایه نیستند.
+New jobs are agreed at a fixed NEAR amount; the live USD rate is display-only. Older agreements keep their own reference logic. The language model via Ollama is optional; without it, output is produced with the `Deterministic demo` label. In the base version, credit, the funding preview and the pool cycle are **simulated**. Real P1 lending, external endpoints, TEE, mainnet and Intents are not part of this base delivery.
 
-اتصال تست‌نت فقط وقتی واقعی محسوب می‌شود که قرارداد مستقر، شناسهٔ قرارداد تنظیم، worker اجرا و رسید شبکه تأیید شده باشد. وضعیت دقیق تست‌ها و استقرار در `VERIFICATION.md` ثبت می‌شود.
+A testnet connection only counts as real when the contract is deployed, the contract id is configured, the worker is running and the network receipt is confirmed. The exact status of tests and deployment is recorded in `VERIFICATION.md`.
 
-راهنمای جزئی: [فرانت](frontend/README.md)، [بک و قرارداد](backend/README.md). فایل‌های `.env`، `.data`، کلیدها و دیتابیس محلی از Git حذف شده‌اند؛ پوشه‌های برنامه را بدون این داده‌های خصوصی منتقل کنید.
+Detailed guides: [frontend](frontend/README.md), [backend and contract](backend/README.md). The `.env` files, `.data`, keys and the local database were removed from Git; move the application folders without these private data.
 
-گزارش تغییرات و آزمون نسخهٔ Orby 1.1: [ORBY_RELEASE.fa.md](backend/docs/ORBY_RELEASE.fa.md).
+Orby 1.1 change and test report: [ORBY_RELEASE.md](backend/docs/ORBY_RELEASE.md).

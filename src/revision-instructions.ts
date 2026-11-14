@@ -1,7 +1,7 @@
 import {assert} from './domain.js';
 export function recommendationPrefix(reason:string){
- const match=/(?:start|begin)\s+(?:the\s+)?recommendation\s+with\s+["'“]?([^\n]+)|شروع\s+Recommendation\s+با\s+([^\n]+)/i.exec(reason);
- return match?String(match[1]||match[2]).trim().replace(/["'”]+$/,'').slice(0,100):null;
+ const match=/(?:start|begin)\s+(?:the\s+)?recommendation\s+with\s+["'“]?([^\n]+)/i.exec(reason);
+ return match?String(match[1]).trim().replace(/["'”]+$/,'').slice(0,100):null;
 }
 export function requireSupportedRevision(feedback:any,deterministic:boolean){
  if(!deterministic)return;

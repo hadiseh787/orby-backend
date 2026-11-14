@@ -8,7 +8,7 @@ The final [continuous 7:24 recording](demo-1.4.1/) passed with real AI, actual s
 
 [Final release evidence](orby-demo-readiness-1.4.1.json), [source-only install and automatic paired-frontend update](orby-clean-start-1.4.1.json), [final redacted receipt with four automatic-check histories](orby-final-redacted-receipt-1.4.1.json), [mobile light/dark WCAG A/AA checks](orby-final-ui-readiness-1.4.1.json), [sample balances and chronology](orby-sample-workspace-1.4.1.json). The complete 27-browser suite also passed against the clean installation. A subsequent focused receipt run required replenishing the simulation creator's available collateral through the normal free-to-bond API; total funds were unchanged. Such business limits remain enforced rather than bypassed for tests.
 
-[Reproduction guide](RELIABILITY_1_4_1.fa.md), [actual distinct agreements and specialist selections](orby-ai-planning-1.4.1.json), [actual model-process outage](orby-model-outage-1.4.1.json), [actual mandatory-dry quote](orby-intents-safe-mode-1.4.1.json), [real revision preflight](orby-real-revision-preflight-1.4.1.json). HTTP timeout/no-route/malformed-response/minimum-amount fixtures are explicitly separate from real provider observations.
+[Reproduction guide](RELIABILITY_1_4_1.md), [actual distinct agreements and specialist selections](orby-ai-planning-1.4.1.json), [actual model-process outage](orby-model-outage-1.4.1.json), [actual mandatory-dry quote](orby-intents-safe-mode-1.4.1.json), [real revision preflight](orby-real-revision-preflight-1.4.1.json). HTTP timeout/no-route/malformed-response/minimum-amount fixtures are explicitly separate from real provider observations.
 
 A real-run regression revealed that the llama.cpp schema converter silently dropped unsupported `\S` patterns; supported character classes and independent prefix-result validation now prevent false acceptance. The rejected main award was not approved: [normal on-chain dispute/refund evidence](orby-revision-regression-refund-1.4.1.json) preserves the failed output and specialist payout.
 
@@ -18,7 +18,7 @@ During the added sample regression, an early static import initially initialized
 
 # Orby 1.4 verification - 14 November 2026
 
-The [actual local-model/testnet mission](orby-real-mission-1.4.json) passed without manual database edits: model-generated editable agreement and approved plan, real child hire, controlled first rejection, exactly one recovery, real main output, client approval and both settlements. The [full recording](demo-1.4/) and [Persian acceptance guide](DEMO_1_4.fa.md) distinguish real execution from fixtures. Model: Qwen2.5-1.5B-Instruct-Q4_K_M, llama.cpp b12375, local CPU. API billing is zero; hardware, electricity and chain gas are unpriced, so the receipt does not call the remainder profit.
+The [actual local-model/testnet mission](orby-real-mission-1.4.json) passed without manual database edits: model-generated editable agreement and approved plan, real child hire, controlled first rejection, exactly one recovery, real main output, client approval and both settlements. The [full recording](demo-1.4/) and [acceptance guide](DEMO_1_4.md) distinguish real execution from fixtures. Model: Qwen2.5-1.5B-Instruct-Q4_K_M, llama.cpp b12375, local CPU. API billing is zero; hardware, electricity and chain gas are unpriced, so the receipt does not call the remainder profit.
 
 
 Final verification: **95 automated tests passed** (22 Node, 34 PostgreSQL, 16 Rust, 23 browser). Both production builds and backup restore passed. The entire browser suite also passed against a [source-only installation](orby-clean-start-1.4.json) with no prior frontend, dependencies, database or owner secrets.
@@ -37,7 +37,7 @@ Google OAuth is unconfigured here and its export controls are visibly disabled. 
 
 # Orby 1.3 verification
 
-Fresh pass: 9 November 2026 on Windows x64 / Node 22.19.0. [Complete review-v2 implementation](REVIEW_V2_RELEASE.fa.md).
+Fresh pass: 9 November 2026 on Windows x64 / Node 22.19.0. [Complete review-v2 implementation](REVIEW_V2_RELEASE.md).
 
 **87 automated tests passed:** 17 Node unit/runtime, 31 isolated PostgreSQL integration, 13 Rust behavioral, 3 Rust financial and 23 production-browser tests. The financial suites additionally exercise 10,000 conservation cases. Both production builds passed. Nine migrations applied; consistent backups, including all new product tables, restored into fresh migrated databases with row-count and integrity verification.
 
@@ -53,7 +53,7 @@ Actual testnet checks passed: [V2 to V3 migration](orby-v3-upgrade.json) compare
 
 ## Historical 1.2 verification
 
-Latest workspace release: 7 November 2026. [Full revised request and implementation checklist](WORKSPACE_RELEASE_2026-11-07.fa.md), [Google Sheets setup](GOOGLE_SHEETS_SETUP.md), [security boundaries](../SECURITY.md).
+Latest workspace release: 7 November 2026. [Full revised request and implementation checklist](WORKSPACE_RELEASE_2026-11-07.md), [Google Sheets setup](GOOGLE_SHEETS_SETUP.md), [security boundaries](../SECURITY.md).
 
 Production Angular and TypeScript builds passed. Node unit/runtime tests: **13**. Isolated PostgreSQL integration tests: **23**, including current inbox state, queue separation, independent milestone terms, program ceilings, all paid-trial payouts, private knowledge snapshots, version-bound approval and uncertain Google append reconciliation. Native Rust financial tests: **3**, with 10,000 conservation cases. All seven migrations applied. A consistent backup restored into a fresh migrated database with file integrity, table row counts and sequences verified.
 
@@ -67,7 +67,7 @@ Live Google OAuth consent was not exercised: owner-supplied OAuth client configu
 
 ## Earlier 1.1 evidence
 
-Latest pass: 7 November 2026. [Current fixes and verification](CHANGES_2026-11-07.fa.md) and [security boundaries](../SECURITY.md) supersede the relevant 6 November findings below. Node tests: 10; isolated PostgreSQL tests: 12 (consecutive clean teardowns); browser tests: 10, including CSP, wallet sandbox RPC and legacy USD submission. Contract code was upgraded without changing the 7 existing jobs or 8 account balances; see [upgrade evidence](orby-upgrade-20261107.json). The real [browser/testnet flow](archive/orby-browser-testnet-1.2.0.json) also passed with enforced CSP, an open bid surviving a price-only update, a five-minute funding preview, settlement and withdrawal.
+Latest pass: 7 November 2026. [Current fixes and verification](CHANGES_2026-11-07.md) and [security boundaries](../SECURITY.md) supersede the relevant 6 November findings below. Node tests: 10; isolated PostgreSQL tests: 12 (consecutive clean teardowns); browser tests: 10, including CSP, wallet sandbox RPC and legacy USD submission. Contract code was upgraded without changing the 7 existing jobs or 8 account balances; see [upgrade evidence](orby-upgrade-20261107.json). The real [browser/testnet flow](archive/orby-browser-testnet-1.2.0.json) also passed with enforced CSP, an open bid surviving a price-only update, a five-minute funding preview, settlement and withdrawal.
 
 The following is the original 6 November baseline.
 
@@ -100,4 +100,4 @@ The final source-only backend checkout was tested on Windows x64 with Node 22.19
 
 Mainnet is disabled. A personal third-party wallet's consent flow has not been exercised; the real selector and development wallet flow have. Ollama is optional and unconfigured. Default execution is explicitly deterministic. Production IPFS requires a persistent trusted node/pinning service. Real lending, arbitrary external runtimes, TEE and Intents remain outside the base scope. A fresh clone needs its own testnet deployment/credentials for blockchain execution; the one-command local simulation needs no wallet or application key. Windows x64 was tested; Linux/macOS were not tested on this machine. This is not an independent security audit.
 
-Detailed findings and deployment requirements: [Persian release report](ORBY_RELEASE.fa.md).
+Detailed findings and deployment requirements: [release report](ORBY_RELEASE.md).

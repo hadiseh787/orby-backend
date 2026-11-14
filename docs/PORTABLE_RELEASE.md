@@ -31,7 +31,7 @@ Public evidence includes the job/child IDs, final transaction hashes and methods
 
 Earlier attempts are retained in Actions. Runs 43629578683 and 43629804797 were cancelled while preparing corrected acceptance fixtures. Run 43631808204 exposed uninitialized contract errors nested in result.error; run 43632685767 exposed the same legacy response shape for missing access keys. Both conditions now have explicit error normalization and regression coverage. Run 43633756723 passed independent provisioning/setup repeat but its browser stopped during the first full model readiness check at the old 120-second test limit. The current UI/test permits the bounded full check and records its measured duration. These attempts are not represented as passing.
 
-The [Persian Mac guide](QUICKSTART_MAC.fa.md) documents the same commands and recovery actions.
+The [Mac quickstart](QUICKSTART_MAC.md) documents the same commands and recovery actions.
 
 ## Verified native evidence
 

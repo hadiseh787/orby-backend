@@ -1,0 +1,50 @@
+1. When we are not yet logged in and have not chosen a demo account, the Settings and Trust & permissions options should not be shown; when the user logs in or picks a demo account, they see them.
+
+2. Near testnet RPC not configured
+
+   * Native arithmetic in src/domain.ts:32-68: for a NEAR job, funding(amount, Q) gives n0 = amount, escrow = 1.1x and bond = 0.2x; in settleJob (src/market.ts:416) for a native job owed = n0 (the n0 value is written from the preview data into the job data at fund time — the full chain was traced) and conservation holds: refund + fee + creatorCredit = escrow.
+   * Contract (contracts/orby-market/src/lib.rs): in settle for a native job, owed is read from j.n0 and division by the zero funding_price of native jobs never happens (the legacy branch is separate); in fund_job for a native job n0 = the bid price and the on-chain escrow is checked against the deposited amount (ESCROW_AMOUNT_MISMATCH); record_bid for a native job reads the minimum price from native_agents and a native-only agent (with a zero legacy min_price) is not allowed to bid on a legacy job.
+   * A new integration test confirms this exact path with exact numbers: a 20 NEAR job, a 1 NEAR bid -> escrow 1.1 NEAR, award 1 NEAR, refund 0.1 NEAR ✓
+
+Important
+
+   1. The job deadline starts at creation, not at funding — src/market.ts:129 (deadline: Date.now()+deadlineMinutes*60000 at creation) and at fund the same stored deadline is used (src/market.ts around 377); the previous version counted the deadline from funding time. Result: a job that waits in OPEN for a while leaves the agent very little time after funding (or expires mid-run). New JOB_EXPIRED guards in preview/fund stop funding a dead job, but the useful execution window is effectively reduced by the listing's age. If this change is intentional, the UI must state it transparently to the client ("the deadline counts from publication"); otherwise the deadline should count from funding.
+   2. The manual bid in the UI is NEAR-only but is also offered on legacy jobs — the bid dialog (src/app.html:1602) takes the amount as "Proposal · NEAR" and submitBid in src/app.ts sends the value with decimalToAtomic (24 decimals); but GET /jobs/open also returns legacy USD jobs and the backend in src/server.ts:459-461 compares that same yocto value directly against the budget and the usdMicro minimum price <- a bid on a legacy job from the UI practically always gets INVALID_AMOUNT. The legacy job budget display also converts USD to NEAR at the fixture rate of 5 dollars (nearValue in src/app.ts), which can be misleading. Solution: either the bid dialog takes its unit from the job type, or legacy jobs are removed/labeled in the manual bid list.
+   3. Permanent Agent ID lock after a failed testnet registration — in mutation("/agents") (src/server.ts:296-316) the existence of any row (even PENDING) is rejected with 409 and the agent row for TESTNET is inserted immediately with PENDING status. If the wallet transaction fails, the frontend clears the pending operation (clearOperation in src/api.ts for the FAILED case) and there is no longer a resume path or a way to remove/release the PENDING agent <- that ID is locked forever in that book, even though the error message says "resume the pending operation". A recovery path is needed (the PENDING agent deleting itself, or re-registering the same ID by the same owner when the previous operation is FAILED).
+
+Minor
+
+   4. Accepting a callback-less signature in verify — src/auth.ts (around 147-153) tries the digest two ways: with and without callbackUrl. This was needed for compatibility with wallets that omit the callback from the digest in the redirect flow, and the one-time nonce, recipient and wallet key remain mandatory; but the NEP-413 binding to the callback context is effectively looser. It should be kept only for that redirect flow the frontend uses and be mentioned in the security document.
+   5. Inconsistent rounding in the USD<-NEAR minimum-price conversion: the automatic bid in requestBids computes a ceiling (ceil) (src/market.ts:184), the manual bid floor in src/server.ts:461 is a floor, and the contract in record_bid uses the contract's own instant price with ceil. The difference is below 1 yocto to a few units with no financial effect, but a single source of truth is better — especially since the base rate in the backend is a fixed 5 dollars but the contract has its own self.price, and if the contract price is ever updated the two diverge.
+   6. set_agent_near_price bumps the agent version — in the contract, changing only the price does agent.version += 1; the backend in preview checks agent_version against the bid's manifestVersion (src/market.ts in preview), so a simple price update silently stales open bids. If the version is only for the manifest, the price should not move it.
+   7. start_deadline mismatch for the accelerated mode between the two books: the contract uses 300 seconds for testnet (fund_job in lib.rs) but the SIMULATION path in src/market.ts:377 is still 30 seconds.
+   8. An incomplete freshness check in src/price.ts: the CoinGecko branch checks rate freshness (under 5 minutes) but the Coinbase branch has no freshness check; a stale rate can be cached for 60 seconds as fresh. It is display-only (referenceOnly) but the stale label exists exactly for this scenario.
+   9. The native job preview still stores priceMicro: "5000000" and quoteId: "fixed-demo-v1" (data in preview, src/market.ts) — although the computation uses the right rate, these fields are misleading in the preview response and the stored record.
+   10. The upload cap counts only unused files (src/attachments.ts: counting job_id IS NULL with a cap of 25); attached files have no cap (5 files x unlimited jobs x 2 MiB as base64 inside PostgreSQL). Acceptable for the demo; for real use a per-user total cap is needed. Also, the count and insert are not atomic against concurrent uploads with different keys.
+   11. Migration 003 is redundant: the ipfs_cid column is created in 002 and also added in 003 with IF NOT EXISTS (migrations/002_attachments.sql and 003_ipfs_reference.sql). Harmless (and a lifesaver if the draft 002 was run somewhere) but a sign that the migration chain needs review.
+   12. Teardown flakiness in the integration suite (minor, test-related not product): on the first run all 9 tests passed but the file was marked failed due to "async activity after test end" — the error "terminating connection due to administrator command" when dropping the test database in the after hook while worker/pool activity was still open. The rerun was fully green (9/9). The teardown should stop the pool and worker first so CI does not randomly go red.
+
+Critical issues
+
+No critically severe issue (lost money, auth bypass, or broken settlement) was found in the new version. The three "Important" items above (deadline from creation, manual bid on legacy jobs, Agent ID lock) are this version's biggest risks and all three are behavioral/operational, not money leaks. Among the earlier findings, the remaining security item is the same disabled CSP (previous number 4), which must be taken seriously for production; the rest of the leftovers are UX and maintenance.
+
+Positive points confirmed in the deep review of the changes:
+
+   * Attachment security is implemented correctly: magic bytes, an extension whitelist, filename sanitization, the nosniff header + Content-Disposition: attachment + Cache-Control: private, no-store on download (src/server.ts download route), and three-layer access control (owner / book / participation in the job). An integration test also confirms 403 for a third-party user before funding and 200 for the creator after settlement.
+   * claimAttachments with FOR UPDATE and the owner+book+unused constraint closes attaching files to a job against races and stealing someone else's files (src/attachments.ts).
+   * The contract migration (migrate_v1) follows the correct append-only pattern and LegacyMarket is defined exactly as the v1 layout.
+   * The pending-operation guard in the frontend prevents double payment with changed input, and by clearing the idempotency key only on success/4xx errors it keeps retries safe (src/api.ts).
+
+Improvement suggestions
+
+   1. Either return the job deadline to counting from funding, or state explicitly in the UI that it counts from publication and show the client and the agent the "actual remaining time" at funding.
+   2. Define and enable a minimal CSP compatible with Angular and the wallet (open item from the previous review; a production prerequisite).
+   3. Move the preview expiry to 3-5 minutes (both in src/market.ts and the matching cap in the contract) — open item from the previous review.
+   4. Unify the login field name (accountId in both routes) — open item from the previous review, a small change.
+   5. Add two or three sample jobs to the seed (one native NEAR OPEN, one settled) so the first run is not empty — open item from the previous review.
+   6. Add a path for the owner to delete/release a PENDING/FAILED agent (fixes major bug 3).
+   7. Make the manual bid dialog aware of the job type (NEAR or USD), or separate legacy jobs from /jobs/open for manual bidding (fixes major bug 2).
+   8. Unify the legacy<->native unit conversion into one function and one rate (preferably the contract's own price) across backend, frontend and contract.
+   9. In funding_previews for a native job, store the real priceMicro/quoteId of the NEAR path so the audit record is not misleading.
+   10. Make the integration suite teardown deterministic (close the pool/worker before dropping the database) so CI does not flake.
+   11. Plan a gradual break-up of the large single files (app.ts 683 lines, app.html 1760 lines, server.ts 1254 lines); now is the best time because the features (attachments, bids, recovery) were just added and show the natural module boundaries.

@@ -1,6 +1,6 @@
 # Orby 1.4.1 actual repeatable demo
 
-[Full continuous video, 7:24](real-mission-45919c01-007b-4309-8872-b9e1d235e47d.webm) · [Actual transaction/model proof](../orby-real-mission-1.4.1.json) · [Persian reproduction guide](../RELIABILITY_1_4_1.fa.md)
+[Full continuous video, 7:24](real-mission-45919c01-007b-4309-8872-b9e1d235e47d.webm) · [Actual transaction/model proof](../orby-real-mission-1.4.1.json) · [reproduction guide](../RELIABILITY_1_4_1.md)
 
 Recorded 14 November 2026, Windows x64, local CPU Qwen2.5-1.5B-Instruct-Q4_K_M with llama.cpp b12375. VP9/WebM, 1440 × 1000, 444.12 seconds. Includes RPC waiting; no financial action is skipped from the successful scenario.
 

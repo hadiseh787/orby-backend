@@ -6,7 +6,7 @@
   "applicationImplemented": false,
   "prototypeType": "local static design preview",
   "productLanguage": "en",
-  "documentationLanguage": "fa",
+  "documentationLanguage": "en",
   "sourceDocumentSha256": "bcf1595d8ea66f4d58fed9057cdbbaef44b122912d2de2b7006a3402195323b7",
   "sourcePages": 14,
   "productSections": 27,
@@ -16,18 +16,18 @@
   "randomArithmeticChecks": 10000,
   "documents": [
     {
-      "file": "PRODUCT_SPEC.fa.pdf",
-      "pages": 26,
-      "sha256": "4ceac054ee1044f27104af95d8353355c25d1cfc92f82e945fefb40979df93db"
+      "file": "PRODUCT_SPEC.pdf",
+      "pages": 47,
+      "sha256": "fd0c60aced76d590890a946a390029441fb3ce590acc96e9fb6231a043417612"
     },
     {
-      "file": "DESIGN_SYSTEM.fa.pdf",
-      "pages": 13,
-      "sha256": "74dadf731ebf84e377c7379cb33268034b8c78fb418d5c51ce6480e240341cec"
+      "file": "DESIGN_SYSTEM.pdf",
+      "pages": 23,
+      "sha256": "0f9e702bee0aeca29440434b014e1f5f17d8f0ee0a23dce369acdfaafcabbb55"
     }
   ],
   "qa": {
-    "strictPdfParse": "passed",
+    "strictPdfParse": "passed (English regeneration)",
     "fontsEmbedded": true,
     "allPagesRendered": true,
     "visualReview": "contact sheets and selected full-resolution pages reviewed",

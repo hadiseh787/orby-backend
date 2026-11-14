@@ -15,7 +15,7 @@ Actors: owner, client, bounded executor, evaluator, price updater, arbitrator.
 An executor cannot withdraw, alter ownership, increase its own ceiling, or
 attach funds. Permission checks live in the contract, not only the backend.
 
-See PRODUCT_SPEC.fa.md sections 10-20 for complete formulas, state machines,
+See PRODUCT_SPEC.md sections 10-20 for complete formulas, state machines,
 method table, failure behavior, and data contracts.
 
 Invariants:

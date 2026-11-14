@@ -1,0 +1,222 @@
+1. When I click connect wallet I get the following error
+[image omitted in the original paste]
+
+2. The currency unit must be NEAR, but show the dollar price next to or under it too — e.g. 10 NEAR with something smaller under or beside it showing 30 dollars.
+
+3. The deadline should be in days, not minutes — e.g. 1 day, 2 days.
+
+4. There should also be a file-attachment capability (the Create a Job page); if it is feasible per the NEAR documentation, the documents should be placed on the NEAR blockchain). There should also be the ability to add more Sources — right now the demo has 3 fixed, but normally it should be a field the user can grow.
+
+5. Registering an agent gave an error
+[image omitted in the original paste]
+
+---
+
+Review and fix the bugs of the NEAR platform and complete its functionality
+
+Review the platform completely and fix all existing bugs. In addition to fixing the current problems, the parts of the product that are incomplete in terms of user experience or technical operation — especially wallet connection, transactions and loading states — must be completed.
+
+Important note: the goal is not just to cosmetically hide errors. All capabilities must really work end-to-end and be connected to the NEAR blockchain infrastructure. Do not use fake data or demo-only behavior.
+
+1. Wallet connection (Connect Wallet)
+
+* Clicking Connect Wallet currently shows an error. Find and fix the cause.
+* NEAR wallet connection must be really implemented.
+* Review the wallets compatible with the NEAR ecosystem and use their standard connection method.
+* The wallet connection state must be preserved across the whole site.
+* The connected wallet address must be displayed.
+* Disconnect and reconnect must be possible.
+* During connection, the different states — Connecting, Connected and Connection Failed — must be shown.
+* If the user rejects the connection request, a proper message must be shown and the site must not break.
+* The selected network (Mainnet or Testnet) must be handled correctly.
+
+2. Price display and currency unit
+
+* The primary price unit must be NEAR, not dollars.
+* The dollar price should also be displayed next to or under the NEAR price in a smaller font.
+* Example:
+   * 10 NEAR
+   * ≈ $30 USD
+* The dollar price must be computed from the real, current NEAR rate.
+* All parts of the site — the job list, job details, job creation, proposals and payments — must follow one price display standard.
+* Financial calculations and transactions must use the correct NEAR unit; the dollar amount is informational only for the user.
+
+3. Deadline display
+
+* The job deadline must not be shown in minutes.
+* Time must be displayed understandably and readably:
+   * 1 day
+   * 2 days
+   * 5 days
+   * 1 week
+* If less than a day remains, showing hours or minutes is acceptable.
+* The remaining time must update dynamically.
+* The Expired state must be shown correctly for jobs whose deadline has passed.
+
+4. Completing the Create a Job page
+
+* Add the ability to upload files and attach documents to a job.
+* It must be possible to add several files.
+* Format and size limits must be defined and validated.
+* Attached files must be viewable and downloadable on the job details page.
+* It must be possible to add more Sources.
+* Currently the demo has only 3 fixed Sources. Remove this limitation so the user can add more Sources when needed.
+* Sources must be removable and editable.
+* The form structure must be flexible, not limited to a fixed number of fields.
+
+Storing files on NEAR
+
+Review the NEAR documentation and determine the best way to store documents and attached files.
+If storing files directly on the NEAR blockchain is not possible or not economically sensible, use an appropriate NEAR ecosystem solution such as decentralized storage, and if needed record the file's hash or reference in the smart contract.
+Avoid storing large files directly on the smart contract's storage.
+
+5. Fixing the Agent registration error
+
+* An error occurs when registering an Agent.
+* Review the complete Agent registration path from start to finish.
+* Look for the cause in the Frontend, Backend, API and Smart Contract.
+* Validate fields and inputs.
+* Handle possible errors in wallet connection, transaction signing, payment and record creation.
+* After a successful registration, the Agent's information must be displayed on the site.
+* Prevent duplicate Agent registration on resubmission.
+* Inform the user of success or failure.
+
+6. Wallet connection and payment wherever needed
+
+Every part of the platform that needs confirmation, on-chain record creation, or payment must connect to the NEAR wallet.
+Review and implement the following:
+* Creating a job
+* Registering an Agent
+* Submitting a bid/proposal
+* Accepting a proposal
+* Confirming work completion
+* Releasing payment
+* Any other operation that per the product logic needs on-chain confirmation.
+
+Requirements:
+* Required operations must be signed with the user's real wallet.
+* If an operation requires a fee or an amount in NEAR, the exact value must be shown to the user before confirmation.
+* Required payments must follow the smart contract's documentation and logic.
+* NEAR gas and storage costs must be considered.
+* Ask the user for a signature only where on-chain confirmation is really needed.
+* No payment or transaction may happen without the user's knowledge and confirmation.
+* After sending a transaction, track its status until the final result is known.
+* Show the transaction hash and the NEAR Explorer link.
+* If a transaction fails, show the cause of the error and the option to retry.
+
+Note: before setting a fixed amount for payments, review the network documentation and the project's current smart contract. Do not confuse the real gas and storage costs with the amount paid as a product fee.
+
+7. Implementing loading and operation states
+
+The site currently has no loading or feedback during operations in many places. This must be fixed on all pages.
+Design and implement a suitable state for every async operation.
+
+Essential items:
+
+Wallet connection
+* Connecting Wallet
+* Waiting for Wallet Approval
+* Wallet Connected
+* Connection Failed
+
+Transactions
+* Preparing Transaction
+* Waiting for Signature
+* Transaction Submitted
+* Transaction Processing
+* Transaction Confirmed
+* Transaction Failed
+
+Site operations
+* Loading Data
+* Creating Job
+* Registering Agent
+* Uploading Files
+* Submitting Proposal
+* Saving Changes
+
+UX requirements:
+* While fetching data from the API, a loading indicator or skeleton must be shown.
+* While submitting a form, the submit button must enter a loading state.
+* During an operation, repeated submissions must be prevented.
+* Related buttons and forms must be correctly disabled while processing.
+* If an operation takes long, the user must know what is happening.
+* After success, success feedback must be shown.
+* On failure, clear and understandable error feedback must be shown.
+* After a page refresh, the status of recorded transactions should be recoverable as far as possible.
+
+8. Error handling
+
+All parts of the site must be reviewed for error handling.
+* No technical error may blank the page or take down the whole site.
+* API, backend, smart contract and wallet errors must be handled.
+* Error messages must be understandable to the user.
+* Technical error details must be logged to the console or a logging system.
+* Network errors and internet disconnections must be handled.
+* Retryable operations must offer a retry.
+* If a transaction fails, the financial state and the job state must not change incorrectly.
+* Duplicate records due to retries must be prevented.
+* Implement a suitable error boundary for the main pages and components.
+
+9. 404 page
+
+Create a dedicated 404 page consistent with the site's current design.
+* Its design must match the current UI and design system.
+* Show a suitable message for the missing page.
+* Include a button back to the home page.
+* Invalid routes must be handled correctly.
+
+10. Full end-to-end review of the product
+
+Beyond the items above, review the whole platform.
+The main user paths must work from start to finish without errors:
+1. Entering the site
+2. Connecting the wallet
+3. Viewing jobs
+4. Creating a job
+5. Uploading files and adding Sources
+6. Registering an Agent
+7. Submitting a proposal
+8. Confirming the proposal
+9. Doing the work
+10. Final confirmation
+11. Payment and release of funds
+12. Viewing transaction status and history
+
+Test all paths with a real wallet and real transactions in the appropriate environment (Testnet for testing, Mainnet for real operations).
+
+11. Execution requirements
+
+Before making changes:
+* Review the project's current structure.
+* Understand the frontend and backend architecture.
+* Review the smart contracts and the NEAR documentation.
+* Find the real cause of the errors.
+* Avoid unnecessary rewrites of parts that work correctly.
+
+While implementing:
+* Keep the site's current visual design.
+* Changes must not be limited to the requested items; fix any related deficiency found during the review.
+* Do not use mock data to simulate core capabilities.
+* All capabilities must really work.
+* Transaction security and server-side and smart-contract validation must be observed.
+
+Expected final output
+
+At the end, deliver a report containing:
+1. The list of all bugs found
+2. The root cause of each bug
+3. The changes and fixes made
+4. The new capabilities implemented
+5. The wallet connection status
+6. The transaction operation status
+7. The end-to-end tests performed and their results
+8. Items that still need APIs, infrastructure or external access
+
+Completion criterion: merely adding UI or showing a success message is not enough. Every capability must really work, transactions must be trackable, and no step may remain display-only or mocked. If access or infrastructure to complete something is missing, report it transparently and declare the state incomplete instead of simulating success.
+
+---
+
+5. Wherever confirmation is needed it must connect to the NEAR wallet and a tiny amount must be paid — follow the NEAR network documentation.
+Handle errors wherever they occur.
+Have a proper 404 page.

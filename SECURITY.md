@@ -1,6 +1,6 @@
 # Runtime security boundaries
 
-Version 1.3 adds indexed V3 contract storage, independent sponsor accounting, reserved exit capacity, exact-version native approval, per-stage knowledge grants and live workspace membership enforcement. See `docs/REVIEW_V2_RELEASE.fa.md` and `docs/DEPENDENCY_REVIEW.md` for verification boundaries.
+Version 1.3 adds indexed V3 contract storage, independent sponsor accounting, reserved exit capacity, exact-version native approval, per-stage knowledge grants and live workspace membership enforcement. See `docs/REVIEW_V2_RELEASE.md` and `docs/DEPENDENCY_REVIEW.md` for verification boundaries.
 
 The same-origin production server applies CSP to all routes and rewrites every SPA document with a random per-response script nonce. Inline handlers, eval, objects and framing by other sites are blocked. HTML is not cached. Angular receives ngCspNonce; the wallet connector receives the same nonce for its sandboxed adapter scripts. Wallet popups use same-origin-allow-popups.
 

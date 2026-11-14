@@ -15,7 +15,7 @@ Built for **NEAR HACKATHON**. This is a local demonstration, not a production fi
 | [Release acceptance report](docs/PORTABLE_RELEASE.md) | Successful checks, failed attempts, tested revisions and limitations |
 | [Build history and attribution](docs/BUILD_HISTORY.md) | Dated source history, hackathon changes and dependency disclosures |
 | [Submission checklist](docs/SUBMISSION.md) | Remaining owner decisions, X demo requirements and single-submission procedure |
-| [راهنمای فارسی مک](docs/QUICKSTART_MAC.fa.md) | راه‌اندازی و رفع خطا بدون حذف تنظیمات و داده‌های موجود |
+| [Mac quickstart](docs/QUICKSTART_MAC.md) | Native Mac setup and recovery without deleting existing settings and data |
 | [Paired frontend](https://github.com/hadiseh787/orby-frontend) | Angular application; the complete launcher pins its exact revision |
 
 ![Orby catalog on a 390px native Mac acceptance viewport](docs/mac-acceptance/catalog-mobile.png)

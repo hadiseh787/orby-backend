@@ -1,0 +1,253 @@
+## Reproducible problems
+
+
+### 1 Draft lost on refresh
+
+
+- Path: `/client/jobs/new`
+- Reproduce: change the form title, add a fourth source, and refresh the browser.
+- Observed: the title reverts to `Compare three project proposals` and the source count returns to the three sample sources.
+- Effect: the user's input is lost and sample data may be submitted in place of real work.
+- Suggestion: autosave the draft scoped to the account, with a save-status notice. Warn before leaving without saving.
+- Priority: immediate.
+
+
+### 2 Late validation and an unsuitable error message
+
+
+- Path: `/client/jobs/new`
+- Reproduce: empty the title, click `3 Review` and then `Publish job`.
+- Observed: reaching the final review may be possible; submission is rejected with the raw message `title: Too small: expected string to have >=5 characters`. The message is at the top of the page, the offending title is on another step, and after fixing the title the message remains until the next action.
+- Effect: the user must find where the error is; the message is technical and the `Reload current view` suggestion is not a proper fix guide.
+- Suggestion: validate each step, show the error next to the field, move focus to the error, and clear the error once fixed. Keep server-side validation.
+- Priority: immediate. The incomplete submission was rejected by the server; acceptance of invalid data was not observed.
+- Evidence: `validation-error.jpg`.
+
+
+### 3 Inconsistent settlement and approval status
+
+
+- Path: `/client/jobs/577d57dc-638f-42b3-8366-9d86129c17f1`
+- Observed: the sample job `Example: completed proposal review` has status `settled`, but in the Deliverables tab the client-approval criterion is `PENDING`. The history has the settlement event but does not show the client approval separately.
+- Effect: the user cannot tell whether approval really happened, the status is stale, or the sample data is inconsistent.
+- Suggestion: derive the criterion status from the recorded decision; show the approver and the decision time in the history. Sample data should follow the same status rules.
+- Priority: immediate for product trust. This observation alone does not prove an approval bypass in the backend.
+- Evidence: `settled-pending.jpg`.
+
+
+### 4 Horizontal overflow of the jobs page on mobile
+
+
+- Path: `/client/jobs`, width 390 and height 844 pixels.
+- Observed: the document width became 426 pixels; the inner table is also wider than its area. In the initial view the date and action columns are not visible and the page top also spills past the edge.
+- Suggestion: summary job cards for mobile, or a bounded, explicit scroll inside the table only; the document itself must not overflow.
+- Priority: high.
+- Evidence: `jobs-mobile-overflow.jpg`.
+
+
+## UI and UX issues
+
+
+### 5 Amount input in atomic units
+
+In the Creator studio's Brief Writer account, the Policy window shows the value `3200000000000000000000000` for the spending cap. It must be enterable and readable as `3.2 simNEAR`, with the conversion done by the application. Showing the raw value is needed only in technical details. This lowers readability and raises the chance of mistakes. Evidence: `policy-atomic-units.jpg`.
+
+
+### 6 Multiple price units on one path
+
+The sample agent cards and profile show prices like `USD 20` labeled `Legacy USD agreement`, while a new order and the balances are shown in simNEAR. The migration label is a technical explanation and does not make price comparison easier for the user. Suggestion: a primary price appropriate to the current environment, one unit across the whole path, and USD only as a secondary estimate. This finding is about display ambiguity; the correctness of conversion or financial settlement was not examined.
+
+
+### 7 The job-creation path does not continue after login
+
+From the signed-out state, `Create a job` opens the demo login window. After logging in, the marketplace page remains and the user must press the same button again. Restore the original destination after login. In the simulation environment, the label `Enter demo` is also more precise than `Connect wallet`.
+
+
+### 8 The final review step is incomplete
+
+The Review step shows the title, budget, deadline, approval policy and the number of sources and criteria; the brief text and the criteria and sources themselves cannot be reviewed directly in it. Before publishing an agreement, an expandable summary of each section and a direct way back to editing it would be useful.
+
+
+### 9 "Defining criteria" is more of a preset-settings selection
+
+In the Criteria step an approval policy can be chosen, but the listed criteria are not editable; when the number of sources changed, the row-count criterion updated correctly. To match promise and behavior, either rename the step "Review template criteria" or provide controlled editing of the criteria before publication.
+
+
+### 10 Too much technical information on the normal path
+
+Phrases like `Fixture price`, `Deterministic`, `Legacy USD agreement`, `atomic`, and hash and storage-location explanations appear on several pages. Clearly showing the demo mode is useful; implementation details belong under "technical details". The Credit page also presents several complex financial concepts at once to a normal user and belongs in an advanced section appropriate to the role.
+
+
+### 11 Agent selection sits behind a long product introduction
+
+In the 1280x720 desktop view, the header and hero take most of the initial height and only the start of the agent cards is visible. On mobile, scrolling is needed before seeing the first agent's information. For a signed-in user, a shorter hero and quick access to recent jobs and agents are more useful. Some explanatory texts and labels are also small.
+
+
+### 12 Agent history and testing are not enough for decisions
+
+In the Format Reviewer profile the work history is limited to short ids and statuses; no link or understandable preview of a sample output was seen. The agent test in the creator environment also shows raw JSON output and has no configurable input before running. A readable sample output, a suitable input type and each agent's practical limits would make choosing easier.
+
+
+## Feature suggestions in priority order
+
+
+1. **Automatic drafts and resumable work:** recover the form and half-finished selections; with a leave warning and the ability to copy a previous job.
+
+
+2. **Next action in the job list:** an understandable status like "waiting for agent selection" or "waiting for your approval", with one action button. Add search and a status filter too.
+
+
+3. **Inspectable sources in the output:** clicking any citation should open the witness text from that source. An id alone is not enough to verify a claim.
+
+
+4. **Configurable acceptance criteria before publishing:** a simple form for item count, maximum length, required sources and the need for human confirmation; reviewing or suggesting criteria from the brief can be added in a later step.
+
+
+5. **A functional agent profile and comparison:** sample output, sample input, clear cost, approximate duration and the difference between demo execution and an LLM. Success statistics should be computed only from real jobs in the same environment and not rely on sample data.
+
+
+6. **Ready-to-use output and feedback:** next to the evidence file, the ability to copy or download the readable output, request a specific correction, and record the rejection reason. These same feedback items later become the basis for quality improvement.
+
+
+7. **Notifications for events needing action:** output ready, proposal received and deadline approaching; avoid repeating notifications for every technical event.
+
+
+## Things that worked correctly in the review
+
+
+- The no-result search had a clear message and a Clear filters button.
+- Light, dark and System modes were selectable.
+- The expected item count in the comparison criterion updated when sources went from three to four.
+- Choosing automatic approval removed the client manual-approval criterion from the form.
+- The agent registration form had the submit button disabled when empty.
+- The home page had no horizontal overflow at 390 pixels and the cards became single-column.
+- The deterministic agent test produced a result and its non-LLM nature was clear in the output.
+
+
+## Suggested fix order
+
+First draft preservation, form validation and approval/settlement consistency; then a readable money unit and the mobile problem; afterwards improving the final review, the next action and the agent profile. Developing the bigger features is worth more after these fixes.
+
+
+Development
+
+Turn a successful job into a personal template
+Next to each job, a "Create template" button; the brief, acceptance criteria and settings are saved. Next time the user enters only the new sources and budget; previous files are not carried over automatically.
+
+Compare agent proposals side by side
+In the Bids tab, the user selects two or three proposals and sees the final amount, delivery time, committed output and completion history in one table; then chooses right there.
+
+Request a correction on a specific part of the output
+The user selects a row or paragraph, writes the problem and presses "Request correction". The new output is saved with a version number and the changes from the previous version are marked; approval stays bound to that version.
+
+Show the witness next to each claim
+Clicking a citation opens a panel showing the source name and the phrase supporting that claim. The user can record "this witness is not sufficient"; this feedback is sent along with the correction request.
+
+An action inbox for jobs needing action
+At the top of My jobs, show only items waiting for the user: "select agent", "review output" or "respond to a correction". Each item has a direct action button and remaining time; once done it leaves the inbox automatically.
+
+
+Continuous agent hiring
+Instead of a one-off order the user says: "analyze my sales report every Monday." The contract includes the execution schedule, a monthly cost cap and the ability to stop; each run has its own output and cost. This capability can create continuous product use.
+Related example: Routines in Lindy.
+1. An agent that works inside company tools
+For example, the user connects Google Sheets and orders: "review these 100 sales leads and write the result into this same table." The output goes directly into the working tool; sensitive actions like sending an email require user confirmation. To start, one connection is enough.
+Related example: Relevance AI's tools and connections.
+2. Customer-private knowledge for all orders
+The company registers the product catalog, brand guide and approved answers once. When ordering, only the relevant set is made available to the chosen agent.
+For example, every writer hired uses the same product information and approved tone.
+Related example: Knowledge in Relevance AI.
+3. A small contest between agents before awarding the project
+The user gives a small sample of the work to two or three agents; with a defined trial budget, receives real output, and then entrusts the main project to their chosen one.
+For example, for processing 500 product descriptions, first gauge the quality of work on three products. My suggestion is to pay the trial cost to every participant.
+Related output-based selection pattern: Contests in Freelancer.
+4. A multi-stage project with independent delivery and payment
+For example, a "market research" order has three stages: gathering evidence, analysis and the final report. Each stage has its own budget, acceptance criteria and approval; after the first stage the client can stop the rest. This capability brings larger projects into Orby.
+Related example: Milestones in Upwork.
+
+
+# Orby — review and connecting signatures to NEAR Testnet
+
+
+Date: 7 November 2026
+
+
+**Result:** an independent Testnet contract was deployed and the local configuration was prepared. A real API flow through to the contract was tested with development-account signatures and 11 successful user transactions. Reactivating the local site requires running the command at the end of this report in the user's terminal.
+
+
+## What confirmation does each action need?
+
+
+| Action | Signer and where it is recorded | Status |
+|---|---|---|
+| Login | NEP-413 message signature by the user; no token transfer or spending authority | Real login tested |
+| Publish order | Client; `open_near_job`, recording the terms and the content hash | Real transaction succeeded |
+| Register agent / change execution permission | Owner; `register_near_agent` / `set_execution_policy` | API and contract path exist; in the development-account deployment both were registered and the permissions applied on-chain |
+| Submit proposal | Agent owner or a pre-authorized executor; `record_bid` | Both real paths tested |
+| Select proposal and fund | Client; `award_and_fund` with the exact escrow amount | Real transaction succeeded |
+| Deposit balance or bond | Account owner; `deposit_funds` / `deposit_bond` with the amount | Bootstrap deposits done on-chain; the signature-review UI tested separately |
+| Start, subcontract, deliver and evaluate | Authorized executor/evaluator within policy; without the client re-signing each step | Real flow succeeded; the key restriction was also tested |
+| Approve output and settle | Client; `approve_job` | Real transaction succeeded; the explicit approval is recorded in Activity and the acceptance criterion |
+| Dispute and arbitrator ruling | Contract party for `open_dispute`; admin for `resolve_dispute` | Both transactions and the case display/closure in the admin queue were tested |
+| Cancel an unfunded order | Client; `cancel_job` | Real transaction succeeded |
+| Enforce the contract deadline | The authorized signer per the state; `claim_due_transition` | Path connected; the child-job deadline automation was really tested. Not all expiry branches ran in this round |
+| Withdraw | Account owner; `withdraw` with 1 yoctoNEAR; then the transfer and the contract callback | Real transfer succeeded; the callback result is the success condition |
+| Stop new commitments or suspend an agent | Admin; `pause_new` / `set_agent_active` | Signature and contract path reviewed; no real change executed in this round |
+| Upload, preview, search and the local agent test | In-app confirmation, no financial transaction | They need no separate transaction; the attachment hash is committed when the agreement is published |
+| Credit and the lending pool | Still a simulated capability with separate data | No Testnet lending contract; its connection is not implemented |
+
+
+## Fixed issues
+
+
+1. **Network not configured:** a new contract and an executor account were configured. The old RPC gave a 429 and a deprecation message during deployment; the defaults changed to FastNEAR's public testnet RPC.
+2. **Signature review:** before every user transaction, the action's effect, account, contract, exact amount and gas estimate are shown. In the policy, the spending cap, bond, executor, permitted specialists and expiry are also visible.
+3. **Queue interference:** the simulation processor no longer takes Testnet requests off the queue.
+4. **Dispute without an admin case:** a confirmed dispute moves from the chain into the application's case file; the admin ruling also closes the case. The reason text stays in the database and its hash goes on-chain.
+5. **Client approval with a PENDING criterion:** after the `approve_job` transaction confirms, the acceptance and the accompanying event are recorded with the transaction hash. An arbitrator ruling is not displayed as client approval.
+6. **Premature success:** executor and user transactions are checked against the final RPC result. A withdrawal is declared successful only with the successful callback event of that withdrawal; a bounced transfer does not count as success.
+7. **Uncertain hash and recovery:** the initial hash is kept separate from the confirmed hash. Signer, contract, method, amount, gas and arguments are matched. A wrong hash cannot bind the operation to itself forever.
+8. **Account interference:** pending operations are bound to the relevant account and contract. Recovery from history and resuming the signature after a reload were added; entering job creation in the Testnet environment opens the wallet path.
+
+
+## Test evidence
+
+
+- 13 unit/runtime tests and 15 database integration tests passed.
+- The TypeScript and Angular builds succeeded; the previous CommonJS warning about the connector remains.
+- 16 checks in the real Testnet flow passed; 11 user transactions, separate from the bootstrap and executor transactions.
+- The executor key was limited to 6 contract methods and a 0.5 testNEAR gas budget; calling execution and withdrawal with that key was rejected. **The gas budget is different from the policy spending cap.**
+- The transaction-review UI, cancel and continue-after-reload were tested with fixture data on a separate port. The image `signature-review-preview.jpg` is a sample of this fixture and not a real transaction receipt.
+- The real flow through the API was tested with development-account signatures; personal confirmation inside the user's third-party wallet was not performed in this round. The existing browser test was updated for the new approval step, but its automated suite did not run in this round.
+
+
+Contract: [af-contract-1794062667702.testnet](https://testnet.nearblocks.io/address/af-contract-1794062667702.testnet)
+
+
+Sample receipts: [approval and settlement](https://testnet.nearblocks.io/txns/GEU39a2JUBXFBrrGRRaGjyfGBWwaF2Bmez1kutBCZpHq),
+[withdrawal](https://testnet.nearblocks.io/txns/37Q6UGSJhuJfYKN954ZeguTpkBQL86doa93ut5HW246R), [arbitrator ruling](https://testnet.nearblocks.io/txns/EWPbmAJ6x5yCwvtosGHgVYiYLRdKAJNS8pC3UpbAkDHj).
+
+
+Reviewable details are in `smoke.json`, `deployment.json` and `executor-verification.json` in this folder. No private key is in these outputs.
+
+The contract code did not change: the previous deployment binary recorded in the repository was read from the chain and its SHA-256 matched the repository document; that same binary was deployed to the new contract. No fresh Rust compilation was done on this machine.
+
+
+## Running the prepared version
+
+On restart, the Codex environment's sandbox stopped the `shmget` call PostgreSQL needs with `Operation not permitted`. The database was not deleted and the fifth migration is applied. To start the server, run from a normal Terminal:
+
+
+```sh
+cd /Users/hess/project/orby-backend
+PATH="/opt/homebrew/opt/node@24/bin:$PATH" NG_BUILD_MAX_WORKERS=1 NG_BUILD_PARALLEL_TS=0 node scripts/local.mjs --no-browser
+```
+
+
+Then open `http://127.0.0.1:4200/`. If a previous simulation session remains, Sign out and press Connect wallet. This test's development accounts do not replace the user's personal wallet.
+
+
+Two product limitations remain: Credit has no lending contract; the current withdrawal uses the free balance and a path to release the unused bond does not yet exist in the contract. Connecting signatures does not create these missing capabilities.
+
+
+Technical references: [transaction finality in NEAR](https://docs.near.org/api/rpc/transactions) and [access key restrictions](https://docs.near.org/protocol/accounts-contracts/access-keys).
