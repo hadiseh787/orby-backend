@@ -512,9 +512,7 @@ export async function buildApp() {
   mutation("/jobs/:id/bids/request", async (db, a, b, p) =>
     requestBids(db, a, idSchema.parse(p.id)),
   );
-  mutation("/jobs/:id/funding-preview", async (db, a, b, p) =>
-    preview(db, a, idSchema.parse(p.id), idSchema.parse(b.bidId)),
-  );
+  mutation("/jobs/:id/funding-preview", async (db, a, b, p) => {if(a.book==='TESTNET'){const status=await testnetHealth();assert(status.mission?.state==='READY','MISSION_NOT_READY',status.mission?.action||'Complete npm run setup:testnet before funding a new job.',503);}return preview(db,a,idSchema.parse(p.id),idSchema.parse(b.bidId));});
   mutation("/jobs/:id/fund", async (db, a, b, p) => {
     if (a.book === 'SIMULATION'){const job=await loadJob(db,p.id,a,true);const saved=(await db.query('SELECT data FROM funding_previews WHERE id=$1',[b.previewId])).rows[0];requireMissionApproval(job,saved?.data?.bidId);return fund(db,a,idSchema.parse(p.id),idSchema.parse(b.previewId));}
     const j = await loadJob(db, p.id, a, true);

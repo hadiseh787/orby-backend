@@ -113,7 +113,7 @@ export async function generateJson(system:string,input:any,schema:any,fetcher:ty
 }
 export async function runModel(input:any,fetcher:typeof fetch=fetch){
  if(!config.model)return {content:deterministicBrief(input),mode:'DETERMINISTIC',usage:null};
- const schema:any={type:'object',properties:{comparison:{type:'array',items:{type:'object',properties:{option:{type:'string'},strengths:{type:'string'},limits:{type:'string'},sources:{type:'array',items:{type:'string'}}},required:['option','strengths','limits','sources'],additionalProperties:false}},recommendation:{type:'string'},sources:{type:'array',items:{type:'string'}}},required:['comparison','recommendation','sources'],additionalProperties:false};
+ const schema:any={type:'object',properties:{comparison:{type:'array',items:{type:'object',properties:{option:{type:'string',maxLength:100},strengths:{type:'string',maxLength:400},limits:{type:'string',maxLength:400},sources:{type:'array',items:{type:'string'}}},required:['option','strengths','limits','sources'],additionalProperties:false}},recommendation:{type:'string'},sources:{type:'array',items:{type:'string'}}},required:['comparison','recommendation','sources'],additionalProperties:false};
  const ids=(input.sources||[]).map((s:any)=>s.id);if(ids.length){schema.properties.sources.items.enum=ids;schema.properties.sources.minItems=1;schema.properties.comparison.items.properties.sources.items.enum=ids;schema.properties.comparison.items.properties.sources.minItems=1;}
  const modelWord=String.raw`[^ "\\\r\n\t]+`;
  const wordRule=input.criteria?.find((c:any)=>c.config?.check==='word-count'&&(!c.config.field||c.config.field==='recommendation'))?.config;

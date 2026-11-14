@@ -71,7 +71,7 @@ export async function buildAgent(id: string, secret: string) {
     };
     runs.set(body.runId, record);
     await persist();
-    void runModel(body.input)
+    void runModel({...body.input,agentRole:catalog.find(a=>a.id===id)?.instructions})
       .then(async (r) => {
         if (runs.get(body.runId)?.status === "CANCELLED") return;
         runs.set(body.runId, {
