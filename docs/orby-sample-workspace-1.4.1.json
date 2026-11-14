@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T14:09:36.864Z",
+  "sampleJobs": 15,
+  "scenarios": 3,
+  "states": {
+    "SETTLED": 3,
+    "OPEN": 3,
+    "REFUNDED": 1,
+    "FUNDED": 1,
+    "REVIEW_OPEN": 2,
+    "DISPUTED": 2,
+    "RUNNING": 2,
+    "CANCELLED": 1
+  },
+  "allLabeled": true,
+  "allFrozen": true,
+  "allSimulation": true,
+  "allJobLedgersBalanced": true,
+  "consistentChronology": true,
+  "knowledge": 2,
+  "templates": 2,
+  "paused_programs": 1,
+  "noFakeChainHashes": true,
+  "noRealAIClaim": true,
+  "repeatIdempotenceVerifiedByIntegration": true,
+  "notice": "Fabricated snapshots in a separate account. Not the actual video or performance evidence."
+}

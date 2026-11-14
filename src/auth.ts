@@ -101,6 +101,7 @@ export async function authRoutes(app: any) {
     assert(config.demo, "FORBIDDEN", "Local demo login is disabled.", 403);
     const allowed = [
       "alex.demo",
+    "samples.demo",
       "writer.demo",
       "researcher.demo",
       "reviewer.demo",

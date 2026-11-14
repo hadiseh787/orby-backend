@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T13:21:05.311Z",
+  "exampleAddressesOnly": true,
+  "successfulQuote": {
+    "dry": true,
+    "network": "MAINNET_PREVIEW_ONLY",
+    "receivedAt": "2026-11-14T13:21:05.293Z",
+    "expiresAt": "2026-11-14T13:24:04.793Z",
+    "originAsset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+    "destinationAsset": "nep141:wrap.near",
+    "amountIn": "10000000",
+    "amountInFormatted": "10.0",
+    "estimatedReceived": "2997947108365456184437500",
+    "estimatedReceivedFormatted": "2.9979471083654561844375",
+    "minimumReceived": "2967967637281801622593125",
+    "amountInUsd": "9.996530000000",
+    "amountOutUsd": "9.953184399773",
+    "fees": null,
+    "feeNotice": "Provider has not itemized route fees; do not interpret this as zero fees. Estimated/minimum received amounts are net quote observations.",
+    "platformSurchargeEstimate": {
+      "basis": "PUBLISHED_UNAUTHENTICATED_RATE_ESTIMATE_NOT_TOTAL_FEES",
+      "basisPoints": 25,
+      "amountAtomic": "25000",
+      "assetId": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+      "source": "https://docs.agentsonintents.com/resources/fees",
+      "asOf": "2026-11-14"
+    },
+    "timeEstimate": 45,
+    "balanceEffect": "NONE",
+    "notice": "Safe Mode: no deposit address, signature, transfer, execution or balance credit."
+  },
+  "invalidAmount": {
+    "status": 400,
+    "body": {
+      "code": "INVALID_AMOUNT",
+      "message": "Enter an amount greater than zero within the supported token range.",
+      "requestId": "req-53",
+      "retryable": false
+    }
+  },
+  "invalidAddress": {
+    "status": 400,
+    "body": {
+      "code": "INVALID_ADDRESS",
+      "message": "Origin refund address must be a 0x address with 40 hexadecimal characters.",
+      "requestId": "req-54",
+      "retryable": false
+    }
+  },
+  "dryFalseRejected": true,
+  "balancesUnchanged": true,
+  "notice": "Real expiring dry quote. Provider outage/timeout/malformed JSON/no-route/minimum-amount handling are separately tested with declared fixtures. No signature or transfer."
+}

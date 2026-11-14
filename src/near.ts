@@ -502,7 +502,7 @@ export async function tickNear() {
             };
           }
           const currentData=(await pool.query('SELECT data FROM jobs WHERE id=$1',[row.id])).rows[0].data;
-          const runtimeInput=executionInput({...row,data:currentData},input);if(revision>0&&!runtimeInput.revisionFeedback){const previous=(await pool.query('SELECT checks,content FROM deliveries WHERE job_id=$1 AND revision=$2',[row.id,revision-1])).rows[0];runtimeInput.revisionFeedback={section:'all',reason:'Correct all failed acceptance checks; use the exact supplied source IDs and requested row count.',previousChecks:previous?.checks||[],previousOutput:previous?.content||null};}await recordInputManifest(pool,row,runtimeInput,row.id+':revision:'+revision);
+          const runtimeInput=executionInput({...row,data:currentData},input);if(revision>0){const previous=(await pool.query('SELECT checks,content FROM deliveries WHERE job_id=$1 AND revision=$2',[row.id,revision-1])).rows[0];runtimeInput.revisionFeedback={...(runtimeInput.revisionFeedback||{section:'all',reason:'Correct all failed acceptance checks; use the exact supplied source IDs and requested row count.'}),previousChecks:previous?.checks||[],previousOutput:previous?.content||null};}await recordInputManifest(pool,row,runtimeInput,row.id+':revision:'+revision);
           const result = await executeModel(row,runtimeInput,revision),
             checks = executionChecks(row,revision,result,evaluate(
               result.content,
@@ -585,7 +585,7 @@ export async function tickNear() {
 }
 export async function materializeChild(root:any,child:any,id:string,db:any=pool){
  assert(root.book==='TESTNET'&&child&&child.parent===root.id,'CHILD_PROJECTION_MISMATCH','The chain child does not belong to this root.');
- const data={...root.data,missionPlan:root.data.missionPlan?{id:root.data.missionPlan.id,controlledFailure:root.data.missionPlan.controlledFailure}:null,missionPlanRequired:false,needsClientAction:false,title:'Specialist source review',description:'Extract claims from the supplied proposal text.',termsHash:child.terms_hash,deadline:Number(child.deadline_ms),creatorId:child.creator,nearYocto:child.usd_micro==='0'?child.escrow:undefined,escrow:child.escrow,n0:child.n0,revision:child.revision,criteria:childCriteria(root.data.criteria),input:scopedChildInput(root.data.input,child.agent_id),approvalPolicy:'AUTO_AFTER_CHECKS',onchain:child};
+ const data={...root.data,missionPlan:root.data.missionPlan?{id:root.data.missionPlan.id,controlledFailure:root.data.missionPlan.controlledFailure}:null,missionPlanRequired:false,needsClientAction:false,title:child.agent_id==='format-reviewer'?'Specialist format review':'Specialist source review',description:child.agent_id==='format-reviewer'?'Review supplied content for structure, required fields and citations. Report the evidence and remaining limitations.':'Extract claims from the supplied proposal text.',termsHash:child.terms_hash,deadline:Number(child.deadline_ms),creatorId:child.creator,nearYocto:child.usd_micro==='0'?child.escrow:undefined,escrow:child.escrow,n0:child.n0,revision:child.revision,criteria:childCriteria(root.data.criteria),input:scopedChildInput(root.data.input,child.agent_id),approvalPolicy:'AUTO_AFTER_CHECKS',onchain:child};
  return db.query("INSERT INTO jobs(id,book,client_id,parent_id,agent_id,state,data) VALUES($1,'TESTNET',$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING RETURNING id",[id,child.client,root.id,child.agent_id,child.state,data]);
 }
 function stableId(value: string) {

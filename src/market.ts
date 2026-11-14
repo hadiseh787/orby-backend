@@ -84,6 +84,7 @@ export async function loadJob(db: DB, id: string, a?: Actor, lock = false) {
       "You do not have access to this job.",
       403,
     );
+  if(lock&&a)assert(!j.data.sampleFrozen,'SAMPLE_READ_ONLY','This Demo / Sample snapshot is read-only. Copy it to a fresh job to execute or make decisions.',409);
   return j;
 }
 export async function mutate(
@@ -595,8 +596,8 @@ export async function fundChild(
   const data = {
     runtimeMode:j.data.runtimeMode,
     missionPlan:j.data.missionPlan?{id:j.data.missionPlan.id,controlledFailure:j.data.missionPlan.controlledFailure}:null,
-    title: "Specialist source review",
-    description: "Extract claims from the supplied proposal text.",
+    title: "Specialist "+ag.name,
+    description: agentId==='format-reviewer'?"Review supplied content for structure, required fields and citations. Report the evidence and remaining limitations.":"Extract claims from the supplied proposal text.",
     input: scopedChildInput(j.data.input,agentId),
     criteria: childCriteria(j.data.criteria),
     approvalPolicy: "AUTO_AFTER_CHECKS",

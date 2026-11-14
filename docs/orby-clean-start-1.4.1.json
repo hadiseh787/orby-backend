@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T14:24:03.277Z",
+  "platform": "win32",
+  "node": "v22.19.0",
+  "sourceOnly": true,
+  "initialEnv": false,
+  "initialDependencies": false,
+  "initialFrontend": false,
+  "initialOwnerKeys": false,
+  "pairedFrontendRevision": "c7e62399d28b86afb2bcfc86a5a1f4fbf24cc0ae",
+  "managedFrontendUpdateVerified": true,
+  "migrations": 10,
+  "browserTests": {
+    "passed": 27,
+    "failed": 0
+  },
+  "seedSampleJobs": 15,
+  "samplesPreservedAcrossRestarts": true,
+  "defaultReadiness": {
+    "version": "1.4.1",
+    "checkedAt": "2026-11-14T14:24:03.176Z",
+    "testnet": {
+      "network": "testnet",
+      "contractId": null,
+      "executorConfigured": false,
+      "state": "NOT_CONFIGURED",
+      "message": "No testnet contract is configured in this backend installation.",
+      "action": "Set NEAR_NETWORK=testnet, NEAR_CONTRACT_ID and the deployment owner executor settings in backend .env, then restart npm run local. Source-only installs intentionally contain no private keys."
+    },
+    "model": {
+      "state": "NOT_CONFIGURED",
+      "model": null,
+      "provider": "OLLAMA"
+    }
+  },
+  "notice": "Fresh PostgreSQL on 5547 and API on 4315. No local model or owner deployment keys copied. Default simulation is explicit; actual model/testnet evidence is recorded on the owner installation."
+}

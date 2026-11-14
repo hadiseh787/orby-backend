@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T13:39:25.456Z",
+  "network": "testnet",
+  "jobId": "835f8e8c-277c-411e-8d39-b8608ca21e37",
+  "rootSettlement": {
+    "award": "0",
+    "fee": "0",
+    "refund": "4400000000000000000000000",
+    "creator_credit": "0",
+    "penalty": "0",
+    "shortfall": false,
+    "fallback_used": false
+  },
+  "transactions": [
+    {
+      "method": "open_dispute",
+      "hash": "AnJNpjmsZBjJMrz8UsEVxUbqc76yTsaCouacKR8sLoze",
+      "explorer": "https://testnet.nearblocks.io/txns/AnJNpjmsZBjJMrz8UsEVxUbqc76yTsaCouacKR8sLoze"
+    },
+    {
+      "method": "resolve_dispute",
+      "hash": "6Bk5FPfCVtvYbkNGpX4fE3iPwKLfXQscDb3Y5DZMAsFG",
+      "explorer": "https://testnet.nearblocks.io/txns/6Bk5FPfCVtvYbkNGpX4fE3iPwKLfXQscDb3Y5DZMAsFG"
+    },
+    {
+      "method": "withdraw",
+      "hash": "Bkt7Ua3mVcnQ7WzdoPzxVRQah6RrRtEHHXRQp6mHmTt6",
+      "explorer": "https://testnet.nearblocks.io/txns/Bkt7Ua3mVcnQ7WzdoPzxVRQah6RrRtEHHXRQp6mHmTt6"
+    }
+  ],
+  "mainAwardNotApproved": true,
+  "immutableDeliveryNotRewritten": true,
+  "manualDatabaseEdits": false,
+  "notice": "The first specialist failed once, recovered and was paid. The main model revision did not apply the requested prefix; normal client dispute, admin zero-award resolution and callback-confirmed withdrawal fully refunded root escrow. A new fresh mission is used for final acceptance."
+}

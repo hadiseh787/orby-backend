@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T13:39:43.718Z",
+  "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+  "recommendation": "Audit revision: Based on the provided sources, option 'proposal-a' seems the most suitable due to its simple technical detail and strong budget. However, it lacks user testing, clear milestones, and a maintenance plan, which are crucial for software delivery. Option 'proposal-b' includes user testing and clear milestones, but its broad capabilities and complex scope make it uncertain. Option 'proposal-c' has broad capabilities and complex scope but lacks user testing and clear milestones. Therefore, option 'proposal-a' is the best choice.",
+  "usage": {
+    "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+    "provider": "OPENAI_COMPATIBLE",
+    "inputTokens": 799,
+    "outputTokens": 304,
+    "durationMs": 11841,
+    "billedUsd": "0",
+    "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+    "costComplete": false,
+    "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost."
+  },
+  "comparisonPreserved": true,
+  "diagnosticInferenceOnly": true,
+  "jobDeliveryNotRewritten": true
+}

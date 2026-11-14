@@ -1,0 +1,70 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T14:24:03.278Z",
+  "version": "1.4.1",
+  "frontendRevision": "c7e62399d28b86afb2bcfc86a5a1f4fbf24cc0ae",
+  "testCounts": {
+    "node": 29,
+    "postgres": 36,
+    "rust": 16,
+    "browser": 27,
+    "totalUnique": 108
+  },
+  "bothBuildsPassed": true,
+  "backupRestorePassed": true,
+  "cleanInstallPassed": true,
+  "modelReady": {
+    "state": "READY",
+    "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+    "provider": "OPENAI_COMPATIBLE"
+  },
+  "testnetReady": {
+    "network": "testnet",
+    "contractId": "af-contract-1793954330698.testnet",
+    "executorConfigured": true,
+    "state": "CONNECTED",
+    "message": "Server RPC, wallet RPC and deployed V3 contract verified on testnet.",
+    "action": "Connect a testnet wallet to sign in."
+  },
+  "realMissionJobId": "45919c01-007b-4309-8872-b9e1d235e47d",
+  "rootRevision": 1,
+  "requestedPrefixApplied": true,
+  "otherRowsPreserved": true,
+  "oldApprovalRejected": true,
+  "specialistControlledFailureAndOneRecovery": true,
+  "confirmedMissionTransactions": 17,
+  "modelDeliveryAttempts": 4,
+  "receiptVerified": true,
+  "openTestnetEscrows": 0,
+  "actualDryQuotePassed": true,
+  "actualModelOutagePassed": true,
+  "twoDistinctRealAgreements": true,
+  "twoGoalDependentSpecialists": true,
+  "sampleJobs": 15,
+  "sampleLedgersAndChronologyVerified": true,
+  "mobileLightDarkChecks": [
+    {
+      "theme": "Light",
+      "width": 390,
+      "violations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "theme": "Dark",
+      "width": 390,
+      "violations": 0,
+      "horizontalOverflow": false
+    }
+  ],
+  "secretPatternScanPassed": true,
+  "googleSheets": "DISABLED_UNTIL_OAUTH_CONFIGURED",
+  "publicRepositories": false,
+  "publicSubmission": false,
+  "limits": [
+    "Development adapter signed real testnet transactions; human HOT/Meteor not verified.",
+    "No mainnet signing, transfer or balance credit.",
+    "Local API billing observed as zero; complete compute/gas costs unpriced.",
+    "Linux/macOS and independent security audit not verified."
+  ],
+  "correctedTestIsolationIncident": "Backed up and restored exact affected simulation fixtures; existing jobs and intended samples preserved. See separate recovery summary."
+}

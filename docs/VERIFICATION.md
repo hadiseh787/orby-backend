@@ -1,3 +1,19 @@
+# Orby 1.4.1 verification - 14 November 2026
+
+The final [continuous 7:24 recording](demo-1.4.1/) passed with real AI, actual specialist hire, controlled rejection and exactly one recovery, applied recommendation revision, preserved prior output/other rows, stale-approval rejection and testnet settlement of version 1. [All 17 transactions](orby-real-mission-1.4.1.json) are CONFIRMED with explorer hashes. Four actual model delivery attempts are retained. No manual database edits were used for this financial scenario.
+
+**108 automated tests passed:** 29 Node unit/runtime, 36 isolated PostgreSQL, 16 Rust and 27 browser. Both production builds passed. Browser checks preserve prior balance, settlement amount, progress, theme, mobile and signature-review behavior; new checks exercise quote edit/expiry/outage, AI readiness and editable acceptance, visible recommendation revision and compact sample snapshots.
+
+[Final release evidence](orby-demo-readiness-1.4.1.json), [source-only install and automatic paired-frontend update](orby-clean-start-1.4.1.json), [final redacted receipt with four automatic-check histories](orby-final-redacted-receipt-1.4.1.json), [mobile light/dark WCAG A/AA checks](orby-final-ui-readiness-1.4.1.json), [sample balances and chronology](orby-sample-workspace-1.4.1.json). The complete 27-browser suite also passed against the clean installation. A subsequent focused receipt run required replenishing the simulation creator's available collateral through the normal free-to-bond API; total funds were unchanged. Such business limits remain enforced rather than bypassed for tests.
+
+[Reproduction guide](RELIABILITY_1_4_1.fa.md), [actual distinct agreements and specialist selections](orby-ai-planning-1.4.1.json), [actual model-process outage](orby-model-outage-1.4.1.json), [actual mandatory-dry quote](orby-intents-safe-mode-1.4.1.json), [real revision preflight](orby-real-revision-preflight-1.4.1.json). HTTP timeout/no-route/malformed-response/minimum-amount fixtures are explicitly separate from real provider observations.
+
+A real-run regression revealed that the llama.cpp schema converter silently dropped unsupported `\S` patterns; supported character classes and independent prefix-result validation now prevent false acceptance. The rejected main award was not approved: [normal on-chain dispute/refund evidence](orby-revision-regression-refund-1.4.1.json) preserves the failed output and specialist payout.
+
+During the added sample regression, an early static import initially initialized the database pool before the test database URL was selected. The exact 28 accidental fixture jobs were removed after a consistent backup, their simulation ledger effects reversed, pre-test agent/policy versions recovered from a rehearsal snapshot, and all prior jobs plus the 15 intended samples preserved. No new real transaction hash was created by those tests. The helper is now imported after database selection and an explicit current_database assertion prevents this class of test run. [Recovery summary](orby-test-isolation-recovery-1.4.1.json).
+
+## Historical 1.4 verification
+
 # Orby 1.4 verification - 14 November 2026
 
 The [actual local-model/testnet mission](orby-real-mission-1.4.json) passed without manual database edits: model-generated editable agreement and approved plan, real child hire, controlled first rejection, exactly one recovery, real main output, client approval and both settlements. The [full recording](demo-1.4/) and [Persian acceptance guide](DEMO_1_4.fa.md) distinguish real execution from fixtures. Model: Qwen2.5-1.5B-Instruct-Q4_K_M, llama.cpp b12375, local CPU. API billing is zero; hardware, electricity and chain gas are unpriced, so the receipt does not call the remainder profit.

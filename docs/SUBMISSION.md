@@ -1,3 +1,9 @@
+# Orby 1.4.1 current demo artifacts
+
+[Complete real-model/testnet recording and 17 confirmed transactions](demo-1.4.1/), [reproduction guide](RELIABILITY_1_4_1.fa.md), [final verification](VERIFICATION.md). The current video includes goal-dependent planning, one controlled specialist failure and recovery, an actually applied client revision, stale-approval rejection and settlement of version 1. These supersede earlier recordings for the current review. The sources remain private; no public post, visibility change or final contest submission was performed.
+
+## Earlier preparation notes
+
 # Orby 1.4 demo submission preparation
 
 Current artifacts: [real-model/testnet recording](demo-1.4/), [transaction proof](orby-real-mission-1.4.json), [reproduction guide](DEMO_1_4.fa.md), [verification](VERIFICATION.md). These supersede the old simulation-only demo for the current submission. The contest-period 1.4 changes are planning, bounded recovery, live activity, real AI, economics, mandatory-dry Intents preview and the requested usability fixes. Existing marketplace/escrow code predates this release; Git history preserves build dates.

@@ -1,3 +1,25 @@
+# Orby 1.4.1 - repeatable real-model/testnet demo
+
+[Full continuous real demo, 7:24](docs/demo-1.4.1/real-mission-45919c01-007b-4309-8872-b9e1d235e47d.webm) | [Actual mission and 17 confirmed transactions](docs/orby-real-mission-1.4.1.json)
+
+[Complete Persian reproduction guide](docs/RELIABILITY_1_4_1.fa.md) | [Current verification](docs/VERIFICATION.md) | [Real model/planning proof](docs/orby-ai-planning-1.4.1.json) | [Actual dry quote](docs/orby-intents-safe-mode-1.4.1.json)
+
+Install Git and Node.js 24 with npm (22.19 also supported), clone this backend and run:
+
+```powershell
+npm run local
+```
+
+The launcher fetches the exact frontend pinned in workspace.json, installs locked dependencies, starts PostgreSQL, applies ten migrations and runs API, worker, Angular and a configured model together. Both repositories remain private. No global Angular CLI or separate PostgreSQL installation is needed. Stop with Ctrl+C or npm run local:stop.
+
+For Windows real AI: stop the app, run npm run demo:model:setup once, then npm run local. Settings > Installation readiness verifies actual RPC networks, deployed V3 contract and model availability. Source-only installs contain no owner keys and explicitly report unconfigured testnet/model prerequisites. Use .env.example and your own deployment for independent real-testnet execution.
+
+While the database is running, `npm run demo:seed:samples` creates an isolated Demo / Sample workspace with 15 frozen, labeled jobs, two knowledge collections, two templates and a paused program. Repeating it creates no duplicates or user-data deletion. Select Demo / Sample workspace from Settings. Samples are excluded from real performance statistics and never claim real model execution or fake chain hashes. Run fresh jobs for actual acceptance.
+
+The 1.4.1 changes correct quote transport/validation errors, separate real-model readiness from deterministic simulation, enforce actual recommendation revisions and preserve version/hash-bound approval. Two real goals selected different permitted specialists; an actual model outage returned a clear error with no substitute result or payment. Mainnet Intents remains mandatory-dry, with no signing or credit. Google export remains disabled when unconfigured.
+
+## Historical 1.4 release
+
 # Orby backend
 
 Orby 1.4 turns a client brief into an approved, budget-capped agent mission. The main agent selects an existing specialist, funds its subcontract from the creator balance, performs at most one specialist recovery, delivers real local-model output, and settles on NEAR testnet only after the client approves the exact delivery version.

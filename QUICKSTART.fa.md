@@ -1,3 +1,9 @@
+# Orby 1.4.1
+
+Current guide: [Complete real demo and setup](docs/RELIABILITY_1_4_1.fa.md). Run `npm run local` from backend. While the local database is running, `npm run demo:seed:samples` adds the isolated 15-job Demo / Sample workspace.
+
+## Historical entry notes
+
 # Orby 1.4
 
 Run `npm run local` from the backend folder. It starts PostgreSQL, API, worker, Angular and an already configured local model. Stop with `npm run local:stop`. First-time Windows real-model setup: stop the application, run `npm run demo:model:setup`, then `npm run local`. See [the exact real-demo steps](docs/DEMO_1_4.fa.md). No secrets are distributed; real testnet requires your own deployment/executor configuration.

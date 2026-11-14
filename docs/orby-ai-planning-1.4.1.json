@@ -1,0 +1,157 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T13:20:23.714Z",
+  "readiness": {
+    "version": "1.4.1",
+    "checkedAt": "2026-11-14T13:19:54.091Z",
+    "testnet": {
+      "network": "testnet",
+      "contractId": "af-contract-1793954330698.testnet",
+      "executorConfigured": true,
+      "state": "CONNECTED",
+      "message": "Server RPC, wallet RPC and deployed V3 contract verified on testnet.",
+      "action": "Connect a testnet wallet to sign in."
+    },
+    "model": {
+      "state": "READY",
+      "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+      "provider": "OPENAI_COMPATIBLE"
+    }
+  },
+  "drafts": [
+    {
+      "goal": "Compare an email marketing pilot with an influencer campaign. Evaluate attribution, opt-in consent, conversion testing and capped weekly spending using supplied fabricated campaign sources.",
+      "title": "Email Marketing Pilot vs Influencer Campaign Comparison",
+      "description": "Evaluate the effectiveness of an email marketing pilot compared to an influencer campaign in terms of attribution, opt-in consent, conversion testing, and capped weekly spending.",
+      "acceptanceSummary": "Compare and evaluate the email marketing pilot and influencer campaign for their effectiveness in terms of attribution, opt-in consent, conversion testing, and capped weekly spending.",
+      "acceptance": {
+        "minWords": 10,
+        "maxWords": 200,
+        "requireSources": true
+      },
+      "usage": {
+        "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+        "provider": "OPENAI_COMPATIBLE",
+        "inputTokens": 94,
+        "outputTokens": 126,
+        "durationMs": 4871,
+        "billedUsd": "0",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "costComplete": false,
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost."
+      },
+      "notice": "Suggested agreement only. Review the existing acceptance rules, sources and budget before publication."
+    },
+    {
+      "goal": "Compare battery runtime, charging compatibility and ingress-protection evidence in supplied fabricated product specifications. Identify untested claims and required evidence.",
+      "title": "Battery Runtime, Charging Compatibility, and Ingress-Proof Comparison Agreement",
+      "description": "This agreement outlines the comparison of battery runtime, charging compatibility, and ingress-proof evidence between two fabricated product specifications. It identifies any untested claims and requires the inclusion of necessary evidence.",
+      "acceptanceSummary": "Agreement to compare battery runtime, charging compatibility, and ingress-proof evidence between two fabricated product specifications. Identifies untested claims and requires evidence.",
+      "acceptance": {
+        "minWords": 10,
+        "maxWords": 200,
+        "requireSources": true
+      },
+      "usage": {
+        "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+        "provider": "OPENAI_COMPATIBLE",
+        "inputTokens": 89,
+        "outputTokens": 130,
+        "durationMs": 4949,
+        "billedUsd": "0",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "costComplete": false,
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost."
+      },
+      "notice": "Suggested agreement only. Review the existing acceptance rules, sources and budget before publication."
+    }
+  ],
+  "plans": [
+    {
+      "goal": "Extract precise source evidence and citations from supplied proposals. The source evidence specialist must extract factual claims before the writer recommends an option.",
+      "expected": "source-extractor",
+      "jobId": "6db0afee-7c47-42d9-85fc-bb642ba33115",
+      "plan": {
+        "id": "24eae058-b0ca-49c7-9bef-b52cdefc2adf",
+        "bidId": "c9568700-f8fa-41a2-933e-0f9eeaac88d6",
+        "termsHash": "6727b5f4b9dcfbfb179e6fd56c7351a8b7ad8f19e933c463052c1b1429d27d3c",
+        "rootAgentId": "brief-writer",
+        "policyVersion": 26,
+        "steps": [
+          "Review the provided proposals to identify the main analysis, specialist work, and final synthesis.",
+          "Identify the role of the Source Extractor in the process.",
+          "Extract factual claims and citations from the proposals, ensuring accuracy and completeness.",
+          "Ensure that all required fields, structure, and word counts are met before delivery."
+        ],
+        "reason": "The Source Extractor specializes in finding relevant claims and citations within the text provided. This specialist will be responsible for extracting precise source evidence and citations from the proposals, ensuring that all factual claims are accurately identified and documented.",
+        "specialist": {
+          "agentId": "source-extractor",
+          "amount": "1000000000000000000000000"
+        },
+        "clientEscrowCeiling": "4400000000000000000000000",
+        "awardCeiling": "4000000000000000000000000",
+        "specialistCeiling": "2500000000000000000000000",
+        "fundingSource": "CREATOR_FREE_BALANCE",
+        "maximumRecoveryAttempts": 1,
+        "controlledFailure": false,
+        "approved": false,
+        "usage": {
+          "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+          "provider": "OPENAI_COMPATIBLE",
+          "inputTokens": 186,
+          "outputTokens": 143,
+          "durationMs": 6971,
+          "billedUsd": "0",
+          "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+          "costComplete": false,
+          "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost."
+        },
+        "createdAt": "2026-11-14T13:20:16.277Z"
+      }
+    },
+    {
+      "goal": "Audit JSON formatting, mandatory field completeness, citation fields and acceptance structure. Choose the format review specialist to check output structure, rather than extracting new evidence.",
+      "expected": "format-reviewer",
+      "jobId": "c9685daa-159d-468b-a0d8-45ecb69b9ee5",
+      "plan": {
+        "id": "94414e71-070b-4705-b62b-976e907bfe90",
+        "bidId": "88db0c98-562a-4e1f-ae21-b36739cc1e2a",
+        "termsHash": "0c17501b5378b00cae01ab6e745c8573384ed7641285990cce5e2bd635568993",
+        "rootAgentId": "brief-writer",
+        "policyVersion": 26,
+        "steps": [
+          "1. Review the JSON document for required fields such as 'name', 'email', 'date', etc.",
+          "2. Check for mandatory fields completeness, ensuring all required fields are present and filled out.",
+          "3. Verify the structure of the JSON document to ensure it follows the expected format.",
+          "4. Examine the citation fields to ensure they are correctly formatted and include all necessary information."
+        ],
+        "reason": "The Format Reviewer specializes in checking required fields, structure, and word counts before delivery. This is the most suitable specialist for auditing JSON formatting, mandatory field completeness, citation fields, and acceptance structure.",
+        "specialist": {
+          "agentId": "format-reviewer",
+          "amount": "400000000000000000000000"
+        },
+        "clientEscrowCeiling": "4400000000000000000000000",
+        "awardCeiling": "4000000000000000000000000",
+        "specialistCeiling": "2500000000000000000000000",
+        "fundingSource": "CREATOR_FREE_BALANCE",
+        "maximumRecoveryAttempts": 1,
+        "controlledFailure": false,
+        "approved": false,
+        "usage": {
+          "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+          "provider": "OPENAI_COMPATIBLE",
+          "inputTokens": 191,
+          "outputTokens": 155,
+          "durationMs": 7314,
+          "billedUsd": "0",
+          "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+          "costComplete": false,
+          "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost."
+        },
+        "createdAt": "2026-11-14T13:20:23.683Z"
+      }
+    }
+  ],
+  "unfundedPlanningOnly": true,
+  "notice": "Real local model with fabricated input sources. Two different editable agreements and two goal-dependent specialist selections. Planning jobs were cancelled through the API without funding."
+}

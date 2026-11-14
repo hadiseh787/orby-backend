@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T13:21:54.757Z",
+  "actualLocalModelProcessStopped": true,
+  "readiness": {
+    "state": "UNAVAILABLE",
+    "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+    "provider": "OPENAI_COMPATIBLE"
+  },
+  "errorStatus": 503,
+  "errorCode": "MODEL_UNAVAILABLE",
+  "message": "The real model could not complete this request. Check the model service and retry. No deterministic result or payment was substituted.",
+  "noDeterministicFallback": true,
+  "balancesUnchanged": true,
+  "notice": "Actual local process outage, not an HTTP response fixture. The normal launcher is restarted after this check."
+}

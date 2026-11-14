@@ -1,3 +1,4 @@
+import {seedRichSamples} from './seed-rich-samples.js';
 import { pool, transaction } from "../src/db.js";
 import { hash, Q } from "../src/domain.js";
 import { randomUUID } from "node:crypto";
@@ -100,6 +101,7 @@ await transaction(async (db) => {
   await db.query("SELECT pg_advisory_xact_lock(10102)");
   for (const id of [
     "alex.demo",
+    "samples.demo",
     "writer.demo",
     "researcher.demo",
     "reviewer.demo",
@@ -170,6 +172,7 @@ await transaction(async (db) => {
     "INSERT INTO price_snapshots VALUES('fixed-demo-v1','FIXTURE','5000000',now(),'{\"referenceOnly\":true}') ON CONFLICT DO NOTHING",
   );
   await seedExamples(db,sampleSources,defaultCriteria);
+  if(process.argv.includes('--samples'))console.log('Demo / Sample snapshots ready:',await seedRichSamples(db));
   if (
     !(await db.query("SELECT 1 FROM pool_epochs WHERE state='FUNDRAISING'"))
       .rowCount

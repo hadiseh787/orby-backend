@@ -1,3 +1,4 @@
+import {readiness,testnetHealth} from './readiness.js';
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
@@ -102,6 +103,7 @@ export async function buildApp() {
       });
     if (status >= 500) req.log.error(e);
   });
+  app.get('/api/v1/readiness',async()=>readiness());
   await authRoutes(app);
   await workspaceRoutes(app);
   await workspaceTeamRoutes(app);
@@ -178,7 +180,7 @@ export async function buildApp() {
   });
   app.get("/api/v1/health", async () => {
     await pool.query("SELECT 1");
-    return { status: "ok", database: "postgresql", version: "1.4.0" };
+    return { status: "ok", database: "postgresql", version: "1.4.1" };
   });
   app.get("/api/v1/templates", async () => ({
     templates: [
@@ -251,6 +253,7 @@ export async function buildApp() {
       state: r.state,
       displayMinPriceNear:r.data.minPriceNear||await agreementPrice(book).then(p=>agentMinimum(r.data,true,p.priceMicro)).catch(()=>null),
       records:records.map(x=>{const allowed=viewer?.book===book&&(viewer.id===x.client_id||viewer.id===r.owner_id||viewer.roles.includes('admin'));return {id:x.id,state:x.state,created_at:x.created_at,title:allowed?x.title:'Completed '+(x.category||'agent')+' work',url:allowed?'/client/jobs/'+x.id:null};}),
+      sampleRecords:book==='SIMULATION'?(await pool.query("SELECT id,state,data->>'title' AS title FROM jobs WHERE agent_id=$1 AND book='SIMULATION' AND data->>'seededExample' LIKE 'rich-v1-%' ORDER BY created_at DESC",[r.id])).rows.map(x=>({...x,url:viewer?.book===book&&(viewer.id==='samples.demo'||viewer.id===r.owner_id||viewer.roles.includes('admin'))?'/client/jobs/'+x.id:null})):[],
       example:{sources:[{id:'sample-a',text:'Proposal A has a clear scope and testing milestones.'},{id:'sample-b',text:'Proposal B has a lower budget but an uncertain support plan.'}]},
       sampleOutput:deterministicBrief({sources:[{id:'sample-a',text:'Proposal A has a clear scope and testing milestones.'},{id:'sample-b',text:'Proposal B has a lower budget but an uncertain support plan.'}]}),
     };
@@ -477,7 +480,7 @@ export async function buildApp() {
         "SELECT * FROM deliveries WHERE job_id=$1 ORDER BY revision DESC",
         [id],
       ),
-      pool.query("SELECT * FROM job_events WHERE job_id=$1 ORDER BY id", [id]),
+      pool.query("SELECT * FROM job_events WHERE job_id=$1 OR job_id IN (SELECT id FROM jobs WHERE parent_id=$1) ORDER BY id", [id]),
       pool.query("SELECT * FROM jobs WHERE parent_id=$1 ORDER BY created_at", [
         id,
       ]),
@@ -498,7 +501,8 @@ export async function buildApp() {
       })),
       deliveries: deliveries.rows.map(d=>({...d,checks:decisionChecks(d,decisions.rows,terminal(j.state))})),
       decisions:decisions.rows,
-      events: events.rows,
+      events: events.rows.map(e=>({...e,stage:e.job_id===id?'MAIN':'SPECIALIST'})),
+      runtimeAttempts:(await pool.query("SELECT m.run_key AS \"runKey\",m.job_id AS \"jobId\",m.state,m.data->'usage' AS usage,m.data->>'forcedFailure' AS failure,(SELECT d.checks FROM deliveries d WHERE d.job_id=m.job_id AND m.run_key=m.job_id::text||':delivery:'||d.revision::text) AS checks FROM model_runs m WHERE m.job_id=ANY($1::uuid[]) ORDER BY m.created_at",[[id,...children.rows.map(c=>c.id)]])).rows,
       children: children.rows.map(dto),
       dispute: d.rows[0] || null,
     };
@@ -862,9 +866,11 @@ export async function buildApp() {
         [a.book],
       ),
     ]);
+    const chainHealth=await testnetHealth();
     return {
       database: "CONNECTED",
-      rpc: config.contract ? await view('get_version').then(v=>v===3?'CONNECTED':'VERSION_MISMATCH').catch(()=>'UNAVAILABLE') : "NOT_CONFIGURED",
+      rpc: chainHealth.state,
+      testnetReadiness:chainHealth,
       runtime: config.model ? await modelStatus().then(r=>r.state+' | '+r.model) : 'DETERMINISTIC',
       price: { mode: "FIXTURE", priceMicro: "5000000" },
       states: states.rows,

@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T13:12:33.416Z",
+  "consistentRecoveryBackup": true,
+  "removedOnlyIdentifiedTestJobs": 28,
+  "existingJobHashesPreserved": true,
+  "intendedSamplesPreserved": 15,
+  "exactSimulationLedgerEffectsReversed": true,
+  "newRealTransactionHashesFromAccidentalTests": 0,
+  "productionDatabaseGuardAdded": true,
+  "deferredHelperImport": true,
+  "notice": "Corrected an early test-helper import before temporary database selection. Recovery used bounded fixture identities and a transactional balance reversal; no private backup contents or keys are published."
+}

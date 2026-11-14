@@ -25,7 +25,7 @@ async function tickOnce() {
   const task = await transaction(async (db) => {
     const t = (
       await db.query(
-        "SELECT o.* FROM outbox_jobs o JOIN jobs j ON j.id=o.job_id WHERE j.book='SIMULATION' AND o.type='EXECUTE' AND (o.state='QUEUED' OR (o.state='RUNNING' AND o.lease_until<now())) AND o.next_attempt<=now() ORDER BY o.next_attempt FOR UPDATE OF o SKIP LOCKED LIMIT 1",
+        "SELECT o.* FROM outbox_jobs o JOIN jobs j ON j.id=o.job_id WHERE j.book='SIMULATION' AND COALESCE(j.data->>'sampleFrozen','false')<>'true' AND o.type='EXECUTE' AND (o.state='QUEUED' OR (o.state='RUNNING' AND o.lease_until<now())) AND o.next_attempt<=now() ORDER BY o.next_attempt FOR UPDATE OF o SKIP LOCKED LIMIT 1",
       )
     ).rows[0];
     if (!t) return null;
@@ -82,7 +82,7 @@ async function tickOnce() {
   });
   if (task) {
     try {
-      const input=executionInput(task.job,task.job.data.runtimeInput);await recordInputManifest(pool,task.job,input,task.runId);
+      const input=executionInput(task.job,task.job.data.runtimeInput);if(task.job.data.revision>0){const previous=(await pool.query('SELECT checks,content FROM deliveries WHERE job_id=$1 AND revision=$2',[task.job.id,task.job.data.revision-1])).rows[0];input.revisionFeedback={...(input.revisionFeedback||{section:'all',reason:'Correct the failed checks.'}),previousOutput:previous?.content,previousChecks:previous?.checks};}await recordInputManifest(pool,task.job,input,task.runId);
       const result=await executeModel(task.job,input,task.job.data.revision);
       await pool.query('UPDATE run_input_manifests SET manifest=manifest||$3::jsonb WHERE job_id=$1 AND run_key=$2',[task.job.id,task.runId,{runtimeAccepted:true,executionMode:result.mode}]);
       await transaction(async (db) => {
@@ -180,7 +180,7 @@ async function tickOnce() {
   }
   const due = (
     await pool.query(
-      "SELECT id FROM jobs WHERE book='SIMULATION' AND state='REVIEW_OPEN' AND data->>'approvalPolicy'='AUTO_AFTER_CHECKS' AND (data->>'reviewDeadline')::bigint<$1 LIMIT 20",
+      "SELECT id FROM jobs WHERE book='SIMULATION' AND COALESCE(data->>'sampleFrozen','false')<>'true' AND state='REVIEW_OPEN' AND data->>'approvalPolicy'='AUTO_AFTER_CHECKS' AND (data->>'reviewDeadline')::bigint<$1 LIMIT 20",
       [Date.now()],
     )
   ).rows;

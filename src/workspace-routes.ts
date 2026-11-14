@@ -1,3 +1,4 @@
+import {requireSupportedRevision} from './revision-instructions.js';
 import {randomUUID} from 'node:crypto';
 import {type FastifyInstance} from 'fastify';
 import {z} from 'zod';
@@ -34,7 +35,7 @@ export async function workspaceRoutes(app:FastifyInstance) {
     const d=await latestDelivery(db,j,z.number().int().parse(b.revision),z.string().length(64).parse(b.deliveryHash));
     const sourceId=b.sourceId?z.string().max(80).parse(b.sourceId):undefined;
     if(sourceId)assert(j.data.input.sources.some((s:any)=>s.id===sourceId),'INVALID_SOURCE','This source does not belong to the job.');
-    const feedback={reason,section,revision:d.revision,deliveryHash:d.hash,...(sourceId?{sourceId}:{})};
+    const feedback={reason,section,revision:d.revision,deliveryHash:d.hash,...(sourceId?{sourceId}:{})};requireSupportedRevision(feedback,j.data.runtimeMode==='DETERMINISTIC'||j.data.executionMode==='DETERMINISTIC');
     if(a.book==='TESTNET'){
       const result=await proposal(db,a.id,'request_revision',{job_id:j.id,revision:d.revision,delivery_hash:d.hash,feedback_hash:hash(feedback)},'0',j.id);
       await db.query('UPDATE chain_operations SET context=$2 WHERE id=$1',[result.operation.operationId,{feedback}]);return result;

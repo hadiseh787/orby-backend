@@ -1,6 +1,6 @@
 {
   "name": "orby-backend",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -27,7 +27,8 @@
     "test:browser:testnet": "tsx tests/browser-testnet.ts",
     "test:ipfs": "tsx tests/ipfs-smoke.ts",
     "test:product": "tsx --test tests/product-integration.ts",
-    "demo:model:setup": "node scripts/setup-demo-model.mjs"
+    "demo:model:setup": "node scripts/setup-demo-model.mjs",
+    "demo:seed:samples": "tsx scripts/seed.ts --samples"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

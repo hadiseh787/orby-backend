@@ -1,3 +1,9 @@
+# Orby 1.4.1
+
+Current guide: [Complete real demo and setup](backend/docs/RELIABILITY_1_4_1.fa.md). Run `npm run local` from backend. While the local database is running, `npm run demo:seed:samples` adds the isolated 15-job Demo / Sample workspace.
+
+## Historical entry notes
+
 # Orby 1.4
 
 Run `npm run local` from `backend`. The launcher starts PostgreSQL, API, worker, Angular and a configured local model together. [Real demo guide](backend/docs/DEMO_1_4.fa.md), [verification](backend/docs/VERIFICATION.md), [full continuous video](backend/docs/demo-1.4/). Source-only simulation requires Git and Node.js 24 (22.19 supported). For real local inference, stop the app, run `npm run demo:model:setup` in backend, then restart. Testnet requires deployment-owner configuration; no private keys are distributed.
