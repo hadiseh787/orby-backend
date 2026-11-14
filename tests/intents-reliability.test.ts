@@ -16,7 +16,7 @@ test('provider calls force dry true even for internal callers and expose no depo
 });
 test('quote failures have distinct safe errors for low amount, no route, bad address, timeout and unavailable provider',async()=>{
  const body=safeQuoteBody(input,tokens);
- for(const [status,message,code] of [[400,'amount too low','QUOTE_AMOUNT_TOO_LOW'],[400,'no route','QUOTE_NO_ROUTE'],[400,'invalid refund address','INVALID_ADDRESS'],[503,'upstream secret=do-not-expose','QUOTE_SERVICE_UNAVAILABLE']] as const){await assert.rejects(fetchDryQuote(body,(async()=>Response.json({message},{status})) as typeof fetch),(e:any)=>e.code===code&&!e.message.includes('do-not-expose'));}
+ for(const [status,message,code] of [[400,'amount too low','QUOTE_AMOUNT_TOO_LOW'],[400,'no route','QUOTE_NO_ROUTE'],[422,'No possible route for current params','QUOTE_NO_ROUTE'],[401,'unauthorized','QUOTE_AUTH_REQUIRED'],[403,'forbidden','QUOTE_AUTH_REQUIRED'],[429,'rate limit','QUOTE_RATE_LIMITED'],[400,'invalid request','QUOTE_INPUT_REJECTED'],[400,'invalid refund address','INVALID_ADDRESS'],[503,'upstream secret=do-not-expose','QUOTE_SERVICE_UNAVAILABLE']] as const){await assert.rejects(fetchDryQuote(body,(async()=>Response.json({message},{status})) as typeof fetch),(e:any)=>e.code===code&&!e.message.includes('do-not-expose'));}
  await assert.rejects(fetchDryQuote(body,(async()=>{throw new DOMException('secret upstream','TimeoutError');}) as typeof fetch),{code:'QUOTE_TIMEOUT'});
  await assert.rejects(fetchDryQuote(body,(async()=>{throw new TypeError('fetch failed');}) as typeof fetch),{code:'QUOTE_CONNECTION_FAILED'});
  await assert.rejects(fetchDryQuote(body,(async()=>new Response('<html>proxy failure</html>',{status:502})) as typeof fetch),{code:'QUOTE_RESPONSE_INVALID'});

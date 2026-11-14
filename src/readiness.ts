@@ -1,4 +1,5 @@
-import {config} from './config.js';
+import {execFileSync} from 'node:child_process';
+import {config,projectRoot,envFile} from './config.js';
 import {modelStatus} from './runtime.js';
 export async function testnetHealth(fetcher:typeof fetch=fetch){
  const base={network:'testnet',contractId:config.contract||null,executorConfigured:!!(config.serviceAccount&&config.serviceKey)};
@@ -14,4 +15,5 @@ export async function testnetHealth(fetcher:typeof fetch=fetch){
   return {...base,state:'CONNECTED',message:'Server RPC, wallet RPC and deployed V3 contract verified on testnet.',action:base.executorConfigured?'Connect a testnet wallet to sign in.':'Configure the limited executor signer before running a mission.'};
  }catch(e:any){return {...base,state:'UNAVAILABLE',message:e.message==='CONTRACT_NOT_DEPLOYED'?'The configured account has no deployed contract.':e.message==='CONTRACT_VERSION_MISMATCH'?'The deployed contract version is incompatible.':'Cannot verify the RPC response and deployed testnet contract.',action:'Check testnet RPC connectivity and contract deployment, then retry readiness. No confirmed payment is inferred.'};}
 }
-export async function readiness(){return {version:'1.4.1',checkedAt:new Date().toISOString(),testnet:await testnetHealth(),model:await modelStatus()};}
+function commit(){try{return execFileSync('git',['rev-parse','HEAD'],{cwd:projectRoot,encoding:'utf8',windowsHide:true}).trim();}catch{return 'archive-no-git';}}
+export async function readiness(){const db=new URL(config.databaseUrl);return {version:'1.4.1',backendCommit:commit(),installation:{backendPort:config.port,apiOrigin:config.origin,envFile:config.demo?envFile:undefined,database:{host:db.hostname,port:db.port||'5432',name:db.pathname.slice(1)}},checkedAt:new Date().toISOString(),testnet:await testnetHealth(),model:await modelStatus(fetch,true)};}

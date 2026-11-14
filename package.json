@@ -28,7 +28,8 @@
     "test:ipfs": "tsx tests/ipfs-smoke.ts",
     "test:product": "tsx --test tests/product-integration.ts",
     "demo:model:setup": "node scripts/setup-demo-model.mjs",
-    "demo:seed:samples": "tsx scripts/seed.ts --samples"
+    "demo:seed:samples": "tsx scripts/seed.ts --samples",
+    "test:browser:isolated": "node scripts/test-browser.mjs"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

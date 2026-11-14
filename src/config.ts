@@ -1,4 +1,8 @@
-import "dotenv/config";
+import dotenv from 'dotenv';
+import {fileURLToPath} from 'node:url';
+export const projectRoot=fileURLToPath(new URL('../',import.meta.url));
+export const envFile=fileURLToPath(new URL('../.env',import.meta.url));
+dotenv.config({path:envFile,quiet:true});
 export const config = {
   host: process.env.HOST || "127.0.0.1",
   port: Number(process.env.PORT || 3000),

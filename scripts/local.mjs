@@ -107,7 +107,7 @@ try{
     await run('git',['checkout','--detach',workspace.frontendRevision],{cwd:managed});
   }
   if(!frontend){
-    frontend=resolve('.workspace/frontend');mkdirSync(dirname(frontend),{recursive:true});console.log('Fetching the matching private frontend repository…');
+    frontend=resolve('.workspace/frontend');mkdirSync(dirname(frontend),{recursive:true});console.log('Fetching the matching frontend repository…');
     if(existsSync(frontend)&&readdirSync(frontend).length)throw Error('The frontend destination is not empty. Use --frontend to select your existing checkout.');
     await run('git',['clone',workspace.frontendRepository,frontend]);
     await run('git',['checkout','--detach',workspace.frontendRevision],{cwd:frontend});
@@ -117,10 +117,18 @@ try{
     const generated=readFileSync('.env.example','utf8').replace('agent_local_only',randomBytes(24).toString('hex'));
     writeFileSync('.env',generated,{mode:0o600});console.log('Created local .env with a new development database password.');
   }
-  const localEnv={...require('dotenv').parse(readFileSync('.env')),...process.env};
+  const localEnv={...process.env,...require('dotenv').parse(readFileSync('.env'))};
   const connection=new URL(localEnv.DATABASE_URL||'postgresql://agent:agent_local_only@127.0.0.1:5433/orby');
   if(arg('--db-port')||process.env.LOCAL_DB_PORT)connection.port=String(dbPort);
   const env={...localEnv,HOST:'127.0.0.1',PORT:String(port),APP_ORIGIN:url,FRONTEND_DIST:join(frontend,'dist/orby/browser'),DATABASE_URL:connection.href,LOCAL_SHUTDOWN_TOKEN:randomBytes(32).toString('hex'),NODE_ENV:'development'};
+  if(env.LLM_PROVIDER==='OLLAMA'&&env.OLLAMA_MODEL){
+    const endpoint=env.OLLAMA_URL||'http://127.0.0.1:11434';
+    if(!await healthy(endpoint+'/api/tags')){
+      const executable=env.OLLAMA_EXECUTABLE||resolve('.tools/ollama/ollama.exe');if(!existsSync(executable))throw Error('Ollama is unavailable. Run npm run demo:model:setup.');
+      const modelOut=openSync('.data/ollama.stdout.log','a'),modelErr=openSync('.data/ollama.stderr.log','a');const child=spawn(executable,['serve'],{cwd:root,env:{...env,OLLAMA_HOST:'127.0.0.1:11434',OLLAMA_NO_CLOUD:'1',OLLAMA_GO_TEMPLATE:'1'},stdio:['ignore',modelOut,modelErr],windowsHide:true});closeSync(modelOut);closeSync(modelErr);children.push({name:'ollama',child});child.on('error',e=>console.error('Ollama:',e.message));
+      let ready=false;for(let n=0;n<60;n++){if(await healthy(endpoint+'/api/tags')){ready=true;break;}await delay(1000);}if(!ready)throw Error('Ollama did not start.');
+    }
+  }
   if(env.LLM_PROVIDER==='OPENAI_COMPATIBLE'&&env.LLAMA_SERVER_PATH&&env.LLAMA_MODEL_PATH){
     const modelOrigin=new URL(env.LLM_URL||'http://127.0.0.1:11435/v1').origin;
     if(!await healthy(modelOrigin+'/health')){
@@ -140,7 +148,7 @@ try{
   }
   await run(process.execPath,['--import','tsx','scripts/wait-db.ts'],{env});
   await run(process.execPath,['--import','tsx','scripts/migrate.ts'],{env});
-  await run(process.execPath,['--import','tsx','scripts/seed.ts'],{env});
+  await run(process.execPath,['--import','tsx','scripts/seed.ts','--samples'],{env});
   launch('api',['dist/server.js'],env);launch('worker',['dist/worker.js'],env);
   writeFileSync(state,JSON.stringify({pid:process.pid,url,token:env.LOCAL_SHUTDOWN_TOKEN,frontend},null,2),{mode:0o600});
   process.on('SIGINT',()=>void shutdown());process.on('SIGTERM',()=>void shutdown());
