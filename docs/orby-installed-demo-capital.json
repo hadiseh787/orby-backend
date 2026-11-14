@@ -1,0 +1,7 @@
+{
+  "network": "testnet",
+  "amount": "4 testNEAR",
+  "source": "Owned creator free balance withdrawn through ordinary API and callback-confirmed contract withdrawal, then transferred from owned creator wallet to owned client wallet. No database edits, faucet or mainnet funds.",
+  "withdrawalHash": "HRwAAzYPAYtRubCV1KHae5Ytmj3rbaxr4nic6ibwqrzR",
+  "transferHash": "HjbsoYqqY4nUZ9GdENG7tVf4nwrsBNW2DeJm3gaVmhbL"
+}

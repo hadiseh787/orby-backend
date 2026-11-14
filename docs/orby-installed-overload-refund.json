@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T16:14:48.925Z",
+  "network": "testnet",
+  "jobId": "f2395087-8dea-427a-b940-657a3ab9cf2f",
+  "rootSettlement": {
+    "award": "0",
+    "fee": "0",
+    "refund": "4400000000000000000000000",
+    "creator_credit": "0",
+    "penalty": "0",
+    "shortfall": false,
+    "fallback_used": false
+  },
+  "transactions": [
+    {
+      "method": "open_dispute",
+      "hash": "GrMx5yKsBaLL4KZerD6XB4UWrtBswC1dXSDvidPW4ZGQ",
+      "recoveredAfterDisconnect": true
+    },
+    {
+      "method": "resolve_dispute",
+      "hash": "3S9s68p9QdDzFCpHoGZgphrXy4VjfJ1udazpyjLZj9dm",
+      "explorer": "https://testnet.nearblocks.io/txns/3S9s68p9QdDzFCpHoGZgphrXy4VjfJ1udazpyjLZj9dm"
+    },
+    {
+      "method": "withdraw",
+      "hash": "9c9PYop4Wfhia3mA8qN8aSx3Uw1E3tEMuWWtWA67bJkg",
+      "explorer": "https://testnet.nearblocks.io/txns/9c9PYop4Wfhia3mA8qN8aSx3Uw1E3tEMuWWtWA67bJkg"
+    }
+  ],
+  "mainAwardNotApproved": true,
+  "immutableDeliveryNotRewritten": true,
+  "manualDatabaseEdits": false,
+  "notice": "The specialist recovered once and was paid. Concurrent health probes overloaded Ollama; root first inference failed and a recovered revision used the allowance. Normal client dispute and zero-award resolution refund the root; callback-confirmed withdrawal recycles only owned testnet funds. No delivery, assertion or database row was rewritten."
+}

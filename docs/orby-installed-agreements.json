@@ -1,0 +1,107 @@
+{
+  "passed": true,
+  "origin": "http://127.0.0.1:4200",
+  "checkedAt": "2026-11-14T16:50:42.353Z",
+  "modelTags": {
+    "models": [
+      {
+        "name": "orby-qwen2.5:1.5b",
+        "model": "orby-qwen2.5:1.5b",
+        "modified_at": "2026-11-14T20:19:40.1857162+03:30",
+        "size": 1117321215,
+        "digest": "854ef71379229cdea6609fbbb7c505412deca1b49ff8bb9880bc69a029105671",
+        "details": {
+          "parent_model": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+          "format": "gguf",
+          "family": "qwen2",
+          "families": [
+            "qwen2"
+          ],
+          "parameter_size": "1.8B",
+          "quantization_level": "Q4_K_M",
+          "context_length": 32768,
+          "embedding_length": 1536,
+          "runner": "llamacpp"
+        },
+        "capabilities": [
+          "completion"
+        ]
+      }
+    ]
+  },
+  "independentProbe": {
+    "model": "orby-qwen2.5:1.5b",
+    "endpoint": "http://127.0.0.1:11434",
+    "done": true,
+    "response": "Yes, I can respond.",
+    "templateSource": "go_template",
+    "structured": {
+      "done": true,
+      "content": {
+        "comparison": [
+          "Plan A",
+          "Plan B",
+          "Plan C"
+        ],
+        "recommendation": "Ten to twenty English words include words like love or hate"
+      }
+    },
+    "checkedAt": "2026-11-14T16:49:45.214Z"
+  },
+  "results": [
+    {
+      "goal": "Compare software vendors with supplied proposals, prioritizing automated testing and long-term maintenance.",
+      "result": {
+        "title": "Software Vendor Comparison Agreement",
+        "description": "An agreement to compare software vendors based on their proposals, with a focus on automated testing and long-term maintenance.",
+        "acceptanceSummary": "We will compare software vendors based on their proposals, prioritizing automated testing and long-term maintenance.",
+        "acceptance": {
+          "minWords": 15,
+          "maxWords": 250,
+          "requireSources": true
+        },
+        "usage": {
+          "model": "orby-qwen2.5:1.5b",
+          "provider": "OLLAMA",
+          "inputTokens": 132,
+          "outputTokens": 101,
+          "durationMs": 3691,
+          "billedUsd": "0",
+          "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+          "costComplete": false,
+          "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost."
+        },
+        "notice": "Suggested agreement only. Review the existing acceptance rules, sources and budget before publication."
+      },
+      "repeatedRequestReturnsSameResult": true
+    },
+    {
+      "goal": "Compare three farm irrigation plans from supplied sources, prioritizing water savings and drought resilience.",
+      "result": {
+        "title": "Comparison of Farm Irrigation Plans",
+        "description": "Compare three irrigation plans from provided sources, focusing on water savings and drought resilience.",
+        "acceptanceSummary": "I will compare three farm irrigation plans from provided sources, prioritizing water savings and drought resilience.",
+        "acceptance": {
+          "minWords": 15,
+          "maxWords": 250,
+          "requireSources": true
+        },
+        "usage": {
+          "model": "orby-qwen2.5:1.5b",
+          "provider": "OLLAMA",
+          "inputTokens": 133,
+          "outputTokens": 97,
+          "durationMs": 2762,
+          "billedUsd": "0",
+          "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+          "costComplete": false,
+          "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost."
+        },
+        "notice": "Suggested agreement only. Review the existing acceptance rules, sources and budget before publication."
+      },
+      "repeatedRequestReturnsSameResult": true
+    }
+  ],
+  "balancesUnchanged": true,
+  "notice": "Real editable agreements only; no publication, funding or job creation."
+}

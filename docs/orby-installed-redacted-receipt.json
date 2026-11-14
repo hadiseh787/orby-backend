@@ -1,0 +1,505 @@
+{
+  "receipt": {
+    "schemaVersion": 1,
+    "sample": false,
+    "receiptId": "deec5916-9113-4e37-b5f9-b40cbf004097",
+    "generatedAt": "2026-11-14T16:50:42.807Z",
+    "visibility": "REDACTED",
+    "book": "TESTNET",
+    "unit": "testNEAR",
+    "jobId": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+    "contractId": "af-contract-1793954330698.testnet",
+    "contracts": [
+      {
+        "jobId": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "parentId": null,
+        "state": "SETTLED",
+        "clientId": "af-client-1793954382407.testnet",
+        "creatorId": "af-writer-1793954392244.testnet",
+        "agentId": "brief-writer",
+        "termsHash": "9d2339394b75262a27378acace1f758ae1ca6b3dd685ceb36c8a5a52ac5574d2",
+        "amounts": {
+          "agreedBudget": "4000000000000000000000000",
+          "escrow": "4400000000000000000000000",
+          "award": "4000000000000000000000000",
+          "fee": "400000000000000000000000",
+          "refund": "400000000000000000000000",
+          "creatorCredit": "3600000000000000000000000",
+          "debtPaid": "0",
+          "bond": "800000000000000000000000",
+          "penalty": "0"
+        },
+        "conservation": true,
+        "childFunding": "CLIENT_ESCROW",
+        "delivery": {
+          "revision": 1,
+          "hash": "fa841f7cc88427ae546e73b7365797f1e0091a20dacdb24e5890038474167dbf",
+          "checks": [
+            {
+              "type": "AUTO_CHECK",
+              "required": true,
+              "result": "PASS"
+            },
+            {
+              "type": "AUTO_CHECK",
+              "required": true,
+              "result": "PASS"
+            },
+            {
+              "type": "AUTO_CHECK",
+              "required": true,
+              "result": "PASS"
+            },
+            {
+              "type": "AUTO_CHECK",
+              "required": true,
+              "result": "PASS"
+            },
+            {
+              "type": "CLIENT_APPROVE",
+              "required": true,
+              "result": "PASS"
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "kind": "REVISION_REQUEST",
+            "revision": 0,
+            "deliveryHash": "e530f6831bf8b688b74b1ea104d1000f92a36e659abfe7d9245ef64686a2745d",
+            "actor": "af-client-1793954382407.testnet",
+            "decidedAt": "2026-11-14T16:41:07.977Z",
+            "txHash": "6w3QXbSGN5XYgFWjPXBckj5Pwi32iWCT8zPrCc3ECV6a",
+            "basis": "EXPLICIT_ACTION"
+          },
+          {
+            "kind": "APPROVE",
+            "revision": 1,
+            "deliveryHash": "fa841f7cc88427ae546e73b7365797f1e0091a20dacdb24e5890038474167dbf",
+            "actor": "af-client-1793954382407.testnet",
+            "decidedAt": "2026-11-14T16:42:13.911Z",
+            "txHash": "7bhb5afqXqwjehqyWhvfrbnF1ToEUan1iGR1D2png5eE",
+            "basis": "FINAL_CONTRACT_OPERATION"
+          }
+        ],
+        "origin": "CONTRACT_PROJECTION"
+      },
+      {
+        "jobId": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+        "parentId": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "SETTLED",
+        "clientId": "af-writer-1793954392244.testnet",
+        "creatorId": "af-researcher-1793954401423.testnet",
+        "agentId": "source-extractor",
+        "termsHash": "e5792f9daa84bf18c06897fb0f2d638cf357c7b13b1f9417a73e448a94d836e3",
+        "amounts": {
+          "agreedBudget": "1000000000000000000000000",
+          "escrow": "1000000000000000000000000",
+          "award": "1000000000000000000000000",
+          "fee": "0",
+          "refund": "0",
+          "creatorCredit": "1000000000000000000000000",
+          "debtPaid": "0",
+          "bond": "200000000000000000000000",
+          "penalty": "0"
+        },
+        "conservation": true,
+        "childFunding": "CREATOR_FREE_BALANCE",
+        "delivery": {
+          "revision": 1,
+          "hash": "fb9fdcd512bd9df0ff0ac6ca73b1a203a0799eb299e92c77783f6c1d9263dbd6",
+          "checks": [
+            {
+              "type": "AUTO_CHECK",
+              "required": true,
+              "result": "PASS"
+            },
+            {
+              "type": "AUTO_CHECK",
+              "required": true,
+              "result": "PASS"
+            },
+            {
+              "type": "AUTO_CHECK",
+              "required": true,
+              "result": "PASS"
+            }
+          ]
+        },
+        "decisions": [],
+        "origin": "CONTRACT_PROJECTION"
+      }
+    ],
+    "attempts": [
+      {
+        "jobId": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+        "revision": 1,
+        "hash": "fb9fdcd512bd9df0ff0ac6ca73b1a203a0799eb299e92c77783f6c1d9263dbd6",
+        "checks": [
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          }
+        ]
+      },
+      {
+        "jobId": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "revision": 1,
+        "hash": "fa841f7cc88427ae546e73b7365797f1e0091a20dacdb24e5890038474167dbf",
+        "checks": [
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          }
+        ]
+      },
+      {
+        "jobId": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+        "revision": 0,
+        "hash": "7aa29210d2a9b4b4d4d0b5e727d18c1a814c5b82a4c392a11bb6181ec809e65d",
+        "checks": [
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Controlled demo fault",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "FAIL"
+          }
+        ]
+      },
+      {
+        "jobId": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "revision": 0,
+        "hash": "e530f6831bf8b688b74b1ea104d1000f92a36e659abfe7d9245ef64686a2745d",
+        "checks": [
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          },
+          {
+            "label": "Acceptance check",
+            "type": "AUTO_CHECK",
+            "required": true,
+            "result": "PASS"
+          }
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "id": "94b35b4e-6591-42b7-b541-29b25b54b869",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "open_near_job",
+        "tx_hash": "BXaerKL4JXCWFnXVeT9DYx9fm4fatYunLWKHBJkc84nv",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:35:21.590Z"
+      },
+      {
+        "id": "4bb35989-4d18-4017-b4ca-8aa8da1a1659",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "record_bid",
+        "tx_hash": "AtL5id36MFigRanALNzTdNWxbHjdtkxAYyFcr6LTg1km",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:35:44.138Z"
+      },
+      {
+        "id": "3fb66626-6e0c-48e8-b7f3-9e52608fee2b",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "award_and_fund",
+        "tx_hash": "zdnhPuEcEnEw6yxAYAD5uTStcG9wsBVf2JH1fFkPXHj",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:36:00.143Z"
+      },
+      {
+        "id": "21d8fd06-3f92-4a0b-ab3c-113d71b73b5d",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "start_job",
+        "tx_hash": "B9r8XAEpccXJsBCBPD8w2FXkbeLfYzZxYw8kiiHruzuL",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:36:18.642Z"
+      },
+      {
+        "id": "56c56dd7-4a50-411f-b561-e6478aabdc68",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "fund_child",
+        "tx_hash": "6PsQxiHjhxU9bUqUaanSPYirVToPpL7s1mqTUtF3YWS",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:36:34.738Z"
+      },
+      {
+        "id": "5d9a2fd0-89a5-41ff-a39c-c14380a0e1e5",
+        "job_id": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+        "state": "CONFIRMED",
+        "method": "start_job",
+        "tx_hash": "73E5ZXSMPxpUDYYZqnm53qxjDdA9nbz26FSCjBgb9LFJ",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:36:51.607Z"
+      },
+      {
+        "id": "530b3997-f3c3-455c-9b82-d6920f8e40b0",
+        "job_id": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+        "state": "CONFIRMED",
+        "method": "submit_delivery",
+        "tx_hash": "EQUdy4JE18c7FDki21ef9V2opdpBZcWCArPjB9bjWYRU",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:37:15.937Z"
+      },
+      {
+        "id": "73aaaf88-0c55-4e6a-9714-94463419a18f",
+        "job_id": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+        "state": "CONFIRMED",
+        "method": "record_checks",
+        "tx_hash": "HcpMLz5w3R6F4Ws7GAtadzArUoypxAyszpUrug8vt6WU",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:37:30.750Z"
+      },
+      {
+        "id": "73b506e9-e353-47a1-9f2f-55d62de2da42",
+        "job_id": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+        "state": "CONFIRMED",
+        "method": "submit_delivery",
+        "tx_hash": "89Yu1dPYGrPjKF9oSUUJ2Z364EtueYe3YrQ347KmKRx5",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:38:00.795Z"
+      },
+      {
+        "id": "5e5db521-934a-4337-9aff-edf543dbc172",
+        "job_id": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+        "state": "CONFIRMED",
+        "method": "record_checks",
+        "tx_hash": "C6FfU5F5LmtHLxFJAtjKrc6Rw9WdAZ9DL3o3a2znwjKT",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:38:15.064Z"
+      },
+      {
+        "id": "e758bb52-43e7-4a94-9c59-f491f5af4c18",
+        "job_id": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+        "state": "CONFIRMED",
+        "method": "claim_due_transition",
+        "tx_hash": "Hb3VrSG8o6V1xzdqAToQZLdtKhVz7xJNfMAbRU8RxFdX",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:39:59.696Z"
+      },
+      {
+        "id": "63642bc7-a3ad-458e-a111-1355faac85f9",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "submit_delivery",
+        "tx_hash": "2TiWQLAYNmrTSsRjXrrrxNHHuLrTsZL3wJcwFNFfboPG",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:40:28.333Z"
+      },
+      {
+        "id": "3960e421-93a8-461a-8819-27abf8e834c8",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "record_checks",
+        "tx_hash": "5xeCYLRbZmctDqWbBYt6KbZ5ZPA5HYJUQH23EhMoVhb2",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:40:42.539Z"
+      },
+      {
+        "id": "a624f594-b159-4659-92ac-fa99f2a0a231",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "request_revision",
+        "tx_hash": "6w3QXbSGN5XYgFWjPXBckj5Pwi32iWCT8zPrCc3ECV6a",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:40:58.532Z"
+      },
+      {
+        "id": "e3cacc88-02b6-4bbc-9ea3-2be68d881b6b",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "submit_delivery",
+        "tx_hash": "6hzGRAo4JqWnuaH2t5wXoPEwsh2qkcrc1FG4Y6XXCbfe",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:41:28.239Z"
+      },
+      {
+        "id": "58fb3331-3578-4f92-bf3f-effd98c01a74",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "record_checks",
+        "tx_hash": "6QeWcVjxjcUZZiYvCqE9BPB6fKBDqCSiGksYR1Tqp8Em",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:41:42.821Z"
+      },
+      {
+        "id": "23d1fb2b-5136-4bca-95e3-99392ca9ed4b",
+        "job_id": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+        "state": "CONFIRMED",
+        "method": "approve_delivery",
+        "tx_hash": "7bhb5afqXqwjehqyWhvfrbnF1ToEUan1iGR1D2png5eE",
+        "finality": "FINAL",
+        "created_at": "2026-11-14T16:41:59.491Z"
+      }
+    ],
+    "accountWithdrawals": [],
+    "economics": {
+      "creatorIncome": "3600000000000000000000000",
+      "specialistActual": "1000000000000000000000000",
+      "specialistCommitted": "1000000000000000000000000",
+      "platformFee": "400000000000000000000000",
+      "remainingBeforeUnpricedCosts": "2600000000000000000000000",
+      "modelRuns": [
+        {
+          "runKey": "aaf5ab66-8333-4a12-a884-496b45f3a6f9:delivery:0",
+          "state": "SUCCEEDED",
+          "usage": {
+            "model": "orby-qwen2.5:1.5b",
+            "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+            "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+            "provider": "OLLAMA",
+            "billedUsd": "0",
+            "durationMs": 8178,
+            "inputTokens": 392,
+            "costComplete": false,
+            "outputTokens": 233
+          },
+          "createdAt": "2026-11-14T16:37:05.892Z"
+        },
+        {
+          "runKey": "aaf5ab66-8333-4a12-a884-496b45f3a6f9:delivery:1",
+          "state": "SUCCEEDED",
+          "usage": {
+            "model": "orby-qwen2.5:1.5b",
+            "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+            "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+            "provider": "OLLAMA",
+            "billedUsd": "0",
+            "durationMs": 10126,
+            "inputTokens": 848,
+            "costComplete": false,
+            "outputTokens": 224
+          },
+          "createdAt": "2026-11-14T16:37:48.802Z"
+        },
+        {
+          "runKey": "aa117b1e-a031-4402-a5dc-f5eab770d9ec:delivery:0",
+          "state": "SUCCEEDED",
+          "usage": {
+            "model": "orby-qwen2.5:1.5b",
+            "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+            "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+            "provider": "OLLAMA",
+            "billedUsd": "0",
+            "durationMs": 11033,
+            "inputTokens": 561,
+            "costComplete": false,
+            "outputTokens": 293
+          },
+          "createdAt": "2026-11-14T16:40:15.469Z"
+        },
+        {
+          "runKey": "aa117b1e-a031-4402-a5dc-f5eab770d9ec:delivery:1",
+          "state": "SUCCEEDED",
+          "usage": {
+            "model": "orby-qwen2.5:1.5b",
+            "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+            "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+            "provider": "OLLAMA",
+            "billedUsd": "0",
+            "durationMs": 10981,
+            "inputTokens": 1165,
+            "costComplete": false,
+            "outputTokens": 262
+          },
+          "createdAt": "2026-11-14T16:41:15.370Z"
+        }
+      ],
+      "planningUsage": {
+        "model": "orby-qwen2.5:1.5b",
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "provider": "OLLAMA",
+        "billedUsd": "0",
+        "durationMs": 3937,
+        "inputTokens": 246,
+        "costComplete": false,
+        "outputTokens": 105
+      },
+      "costsComplete": false,
+      "profit": null,
+      "notice": "Remaining funds are not profit: local inference electricity/hardware and gas allocation are not fully priced. Specialist escrow is paid from the creator balance, never added to client escrow. Unknown model attempts are retained as unknown costs."
+    },
+    "notice": "Transaction hashes establish recorded operations, not factual correctness or independent human review. Child work is funded from the creator balance. Any included account withdrawal is separate activity, not an additional job charge.",
+    "digest": "5c8f3c3d257fd7a9b06baa8616f554425aad2fe38cc0c228924411b72e6ddb9e"
+  },
+  "verification": {
+    "integrity": "VALID",
+    "status": "VERIFIED_CONTRACT_STATE",
+    "observedAt": "2026-11-14T16:50:46.081Z",
+    "reason": "Recorded terms, delivery version and settlement match the final contract view. Content quality is not established by this check."
+  }
+}

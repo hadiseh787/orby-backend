@@ -1,0 +1,280 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T16:34:17.117Z",
+  "notice": "Independent model-only diagnostics on a copy of the previous input. No job state, delivery, budget or payment was changed. Two initial generations plus real recommendation revision with explicit ChatML template.",
+  "runs": [
+    {
+      "mode": "OLLAMA",
+      "content": {
+        "comparison": [
+          {
+            "option": "Proposal A",
+            "strengths": "Strong technical detail",
+            "limits": "No user testing plan",
+            "sources": [
+              "proposal-a"
+            ]
+          },
+          {
+            "option": "Proposal B",
+            "strengths": "Includes user testing, clear milestones, maintenance plan",
+            "limits": "Broad capabilities, complex scope, uncertain milestones",
+            "sources": [
+              "proposal-b"
+            ]
+          },
+          {
+            "option": "Proposal C",
+            "strengths": "Broad capabilities, complex scope, uncertain milestones",
+            "limits": "No user testing plan",
+            "sources": [
+              "proposal-c"
+            ]
+          }
+        ],
+        "recommendation": "Proposal B offers a balanced approach with user testing, clear milestones, and a maintenance plan, making it the most suitable option for the client's needs.",
+        "sources": [
+          "proposal-a",
+          "proposal-b",
+          "proposal-c"
+        ]
+      },
+      "usage": {
+        "model": "orby-qwen2.5:1.5b",
+        "provider": "OLLAMA",
+        "inputTokens": 561,
+        "outputTokens": 199,
+        "durationMs": 10286,
+        "billedUsd": "0",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "costComplete": false,
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost."
+      },
+      "checks": [
+        {
+          "id": "structure",
+          "type": "AUTO_CHECK",
+          "config": {
+            "keys": [
+              "comparison",
+              "recommendation",
+              "sources"
+            ],
+            "check": "json-required-keys"
+          },
+          "required": true,
+          "description": "A comparison with all required fields",
+          "result": "PASS",
+          "evidence": "Checked required JSON fields."
+        },
+        {
+          "id": "items",
+          "type": "AUTO_CHECK",
+          "config": {
+            "max": 3,
+            "min": 3,
+            "check": "item-count"
+          },
+          "required": true,
+          "description": "Comparison rows: 3",
+          "result": "PASS",
+          "evidence": "Observed 3 items."
+        },
+        {
+          "id": "length",
+          "type": "AUTO_CHECK",
+          "config": {
+            "max": 300,
+            "min": 10,
+            "check": "word-count"
+          },
+          "required": true,
+          "description": "Recommendation: 10–300 words",
+          "result": "PASS",
+          "evidence": "Observed 25 words."
+        },
+        {
+          "id": "sources",
+          "type": "AUTO_CHECK",
+          "config": {
+            "check": "source-ids"
+          },
+          "required": true,
+          "description": "Every comparison cites supplied sources",
+          "result": "PASS",
+          "evidence": "Compared citations with supplied source identifiers."
+        },
+        {
+          "id": "approval",
+          "type": "CLIENT_APPROVE",
+          "required": true,
+          "description": "You approve the delivered version explicitly",
+          "result": "PENDING",
+          "evidence": "Explicit client approval is required."
+        }
+      ]
+    },
+    {
+      "mode": "OLLAMA",
+      "content": {
+        "comparison": [
+          {
+            "option": "Proposal A",
+            "strengths": "Strong technical detail",
+            "limits": "No user testing plan",
+            "sources": [
+              "proposal-a"
+            ]
+          },
+          {
+            "option": "Proposal B",
+            "strengths": "Includes user testing, clear milestones, maintenance plan",
+            "limits": "Broad capabilities, complex scope, uncertain milestones",
+            "sources": [
+              "proposal-b"
+            ]
+          },
+          {
+            "option": "Proposal C",
+            "strengths": "Broad capabilities, complex scope, uncertain milestones",
+            "limits": "No user testing plan",
+            "sources": [
+              "proposal-c"
+            ]
+          }
+        ],
+        "recommendation": "Proposal B offers a balanced approach with user testing, clear milestones, and a maintenance plan, making it the most suitable option for the client's needs.",
+        "sources": [
+          "proposal-a",
+          "proposal-b",
+          "proposal-c"
+        ]
+      },
+      "usage": {
+        "model": "orby-qwen2.5:1.5b",
+        "provider": "OLLAMA",
+        "inputTokens": 561,
+        "outputTokens": 199,
+        "durationMs": 6011,
+        "billedUsd": "0",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "costComplete": false,
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost."
+      },
+      "checks": [
+        {
+          "id": "structure",
+          "type": "AUTO_CHECK",
+          "config": {
+            "keys": [
+              "comparison",
+              "recommendation",
+              "sources"
+            ],
+            "check": "json-required-keys"
+          },
+          "required": true,
+          "description": "A comparison with all required fields",
+          "result": "PASS",
+          "evidence": "Checked required JSON fields."
+        },
+        {
+          "id": "items",
+          "type": "AUTO_CHECK",
+          "config": {
+            "max": 3,
+            "min": 3,
+            "check": "item-count"
+          },
+          "required": true,
+          "description": "Comparison rows: 3",
+          "result": "PASS",
+          "evidence": "Observed 3 items."
+        },
+        {
+          "id": "length",
+          "type": "AUTO_CHECK",
+          "config": {
+            "max": 300,
+            "min": 10,
+            "check": "word-count"
+          },
+          "required": true,
+          "description": "Recommendation: 10–300 words",
+          "result": "PASS",
+          "evidence": "Observed 25 words."
+        },
+        {
+          "id": "sources",
+          "type": "AUTO_CHECK",
+          "config": {
+            "check": "source-ids"
+          },
+          "required": true,
+          "description": "Every comparison cites supplied sources",
+          "result": "PASS",
+          "evidence": "Compared citations with supplied source identifiers."
+        },
+        {
+          "id": "approval",
+          "type": "CLIENT_APPROVE",
+          "required": true,
+          "description": "You approve the delivered version explicitly",
+          "result": "PENDING",
+          "evidence": "Explicit client approval is required."
+        }
+      ]
+    }
+  ],
+  "revision": {
+    "content": {
+      "comparison": [
+        {
+          "option": "Proposal A",
+          "strengths": "Strong technical detail",
+          "limits": "No user testing plan",
+          "sources": [
+            "proposal-a"
+          ]
+        },
+        {
+          "option": "Proposal B",
+          "strengths": "Includes user testing, clear milestones, maintenance plan",
+          "limits": "Broad capabilities, complex scope, uncertain milestones",
+          "sources": [
+            "proposal-b"
+          ]
+        },
+        {
+          "option": "Proposal C",
+          "strengths": "Broad capabilities, complex scope, uncertain milestones",
+          "limits": "No user testing plan",
+          "sources": [
+            "proposal-c"
+          ]
+        }
+      ],
+      "recommendation": "Audit revision: Proposal B offers a balanced approach with user testing, clear milestones, and a maintenance plan, making it the most suitable option for the client's needs.",
+      "sources": [
+        "proposal-a",
+        "proposal-b",
+        "proposal-c"
+      ]
+    },
+    "mode": "OLLAMA",
+    "usage": {
+      "model": "orby-qwen2.5:1.5b",
+      "provider": "OLLAMA",
+      "inputTokens": 772,
+      "outputTokens": 178,
+      "durationMs": 7549,
+      "billedUsd": "0",
+      "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+      "costComplete": false,
+      "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost."
+    }
+  },
+  "endpoint": "http://127.0.0.1:11434",
+  "ollamaVersion": "0.40.16",
+  "rendering": "Explicit OLLAMA_GO_TEMPLATE=1 plus tracked ChatML template"
+}

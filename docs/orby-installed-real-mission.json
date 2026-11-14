@@ -1,0 +1,208 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T16:42:26.290Z",
+  "network": "testnet",
+  "contractId": "af-contract-1793954330698.testnet",
+  "jobId": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+  "childId": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+  "model": "orby-qwen2.5:1.5b",
+  "provider": "OLLAMA",
+  "controlledFirstFailure": true,
+  "oneRecovery": true,
+  "rootRevision": 1,
+  "revisionPrefixApplied": true,
+  "otherRowsPreserved": true,
+  "staleApprovalRejected": true,
+  "manualDatabaseChanges": false,
+  "specialistAmount": "1000000000000000000000000",
+  "rootSettlement": {
+    "award": "4000000000000000000000000",
+    "fee": "400000000000000000000000",
+    "refund": "400000000000000000000000",
+    "creator_credit": "3600000000000000000000000",
+    "penalty": "0",
+    "shortfall": false,
+    "fallback_used": false
+  },
+  "childSettlement": {
+    "award": "1000000000000000000000000",
+    "fee": "0",
+    "refund": "0",
+    "creator_credit": "1000000000000000000000000",
+    "penalty": "0",
+    "shortfall": false,
+    "fallback_used": false
+  },
+  "modelAttempts": [
+    {
+      "runKey": "aaf5ab66-8333-4a12-a884-496b45f3a6f9:delivery:0",
+      "state": "SUCCEEDED",
+      "mode": "OLLAMA",
+      "usage": {
+        "model": "orby-qwen2.5:1.5b",
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "provider": "OLLAMA",
+        "billedUsd": "0",
+        "durationMs": 8178,
+        "inputTokens": 392,
+        "costComplete": false,
+        "outputTokens": 233
+      }
+    },
+    {
+      "runKey": "aaf5ab66-8333-4a12-a884-496b45f3a6f9:delivery:1",
+      "state": "SUCCEEDED",
+      "mode": "OLLAMA",
+      "usage": {
+        "model": "orby-qwen2.5:1.5b",
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "provider": "OLLAMA",
+        "billedUsd": "0",
+        "durationMs": 10126,
+        "inputTokens": 848,
+        "costComplete": false,
+        "outputTokens": 224
+      }
+    },
+    {
+      "runKey": "aa117b1e-a031-4402-a5dc-f5eab770d9ec:delivery:0",
+      "state": "SUCCEEDED",
+      "mode": "OLLAMA",
+      "usage": {
+        "model": "orby-qwen2.5:1.5b",
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "provider": "OLLAMA",
+        "billedUsd": "0",
+        "durationMs": 11033,
+        "inputTokens": 561,
+        "costComplete": false,
+        "outputTokens": 293
+      }
+    },
+    {
+      "runKey": "aa117b1e-a031-4402-a5dc-f5eab770d9ec:delivery:1",
+      "state": "SUCCEEDED",
+      "mode": "OLLAMA",
+      "usage": {
+        "model": "orby-qwen2.5:1.5b",
+        "notice": "Local inference; electricity, hardware and chain gas are not priced. Zero API billing does not establish zero total cost.",
+        "costKind": "LOCAL_PROVIDER_NO_API_FEE",
+        "provider": "OLLAMA",
+        "billedUsd": "0",
+        "durationMs": 10981,
+        "inputTokens": 1165,
+        "costComplete": false,
+        "outputTokens": 262
+      }
+    }
+  ],
+  "transactions": [
+    {
+      "method": "open_near_job",
+      "hash": "BXaerKL4JXCWFnXVeT9DYx9fm4fatYunLWKHBJkc84nv"
+    },
+    {
+      "method": "award_and_fund",
+      "hash": "zdnhPuEcEnEw6yxAYAD5uTStcG9wsBVf2JH1fFkPXHj"
+    },
+    {
+      "method": "request_revision",
+      "hash": "6w3QXbSGN5XYgFWjPXBckj5Pwi32iWCT8zPrCc3ECV6a"
+    },
+    {
+      "method": "approve_delivery",
+      "hash": "7bhb5afqXqwjehqyWhvfrbnF1ToEUan1iGR1D2png5eE"
+    }
+  ],
+  "chainOperations": [
+    {
+      "method": "open_near_job",
+      "state": "CONFIRMED",
+      "tx_hash": "BXaerKL4JXCWFnXVeT9DYx9fm4fatYunLWKHBJkc84nv"
+    },
+    {
+      "method": "record_bid",
+      "state": "CONFIRMED",
+      "tx_hash": "AtL5id36MFigRanALNzTdNWxbHjdtkxAYyFcr6LTg1km"
+    },
+    {
+      "method": "award_and_fund",
+      "state": "CONFIRMED",
+      "tx_hash": "zdnhPuEcEnEw6yxAYAD5uTStcG9wsBVf2JH1fFkPXHj"
+    },
+    {
+      "method": "start_job",
+      "state": "CONFIRMED",
+      "tx_hash": "B9r8XAEpccXJsBCBPD8w2FXkbeLfYzZxYw8kiiHruzuL"
+    },
+    {
+      "method": "fund_child",
+      "state": "CONFIRMED",
+      "tx_hash": "6PsQxiHjhxU9bUqUaanSPYirVToPpL7s1mqTUtF3YWS"
+    },
+    {
+      "method": "start_job",
+      "state": "CONFIRMED",
+      "tx_hash": "73E5ZXSMPxpUDYYZqnm53qxjDdA9nbz26FSCjBgb9LFJ"
+    },
+    {
+      "method": "submit_delivery",
+      "state": "CONFIRMED",
+      "tx_hash": "EQUdy4JE18c7FDki21ef9V2opdpBZcWCArPjB9bjWYRU"
+    },
+    {
+      "method": "record_checks",
+      "state": "CONFIRMED",
+      "tx_hash": "HcpMLz5w3R6F4Ws7GAtadzArUoypxAyszpUrug8vt6WU"
+    },
+    {
+      "method": "submit_delivery",
+      "state": "CONFIRMED",
+      "tx_hash": "89Yu1dPYGrPjKF9oSUUJ2Z364EtueYe3YrQ347KmKRx5"
+    },
+    {
+      "method": "record_checks",
+      "state": "CONFIRMED",
+      "tx_hash": "C6FfU5F5LmtHLxFJAtjKrc6Rw9WdAZ9DL3o3a2znwjKT"
+    },
+    {
+      "method": "claim_due_transition",
+      "state": "CONFIRMED",
+      "tx_hash": "Hb3VrSG8o6V1xzdqAToQZLdtKhVz7xJNfMAbRU8RxFdX"
+    },
+    {
+      "method": "submit_delivery",
+      "state": "CONFIRMED",
+      "tx_hash": "2TiWQLAYNmrTSsRjXrrrxNHHuLrTsZL3wJcwFNFfboPG"
+    },
+    {
+      "method": "record_checks",
+      "state": "CONFIRMED",
+      "tx_hash": "5xeCYLRbZmctDqWbBYt6KbZ5ZPA5HYJUQH23EhMoVhb2"
+    },
+    {
+      "method": "request_revision",
+      "state": "CONFIRMED",
+      "tx_hash": "6w3QXbSGN5XYgFWjPXBckj5Pwi32iWCT8zPrCc3ECV6a"
+    },
+    {
+      "method": "submit_delivery",
+      "state": "CONFIRMED",
+      "tx_hash": "6hzGRAo4JqWnuaH2t5wXoPEwsh2qkcrc1FG4Y6XXCbfe"
+    },
+    {
+      "method": "record_checks",
+      "state": "CONFIRMED",
+      "tx_hash": "6QeWcVjxjcUZZiYvCqE9BPB6fKBDqCSiGksYR1Tqp8Em"
+    },
+    {
+      "method": "approve_delivery",
+      "state": "CONFIRMED",
+      "tx_hash": "7bhb5afqXqwjehqyWhvfrbnF1ToEUan1iGR1D2png5eE"
+    }
+  ],
+  "notice": "Real local model and real testnet transactions. Development wallet adapter signs real messages/transactions using ignored fixture keys; no human HOT/Meteor signature is claimed. The first specialist rejection is an explicitly enabled controlled demo fault."
+}

@@ -1,0 +1,68 @@
+{
+  "checkedAt": "2026-11-14T16:00:45.386Z",
+  "status": 201,
+  "input": {
+    "originAsset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+    "destinationAsset": "nep141:wrap.near",
+    "amountDecimal": "100",
+    "recipient": "f5cf6e377daf813126a8d56e083697b25566aac997cb912892b188eb4004b9e1",
+    "refundTo": "0x60c4a4dc1ef774e76dce850e5610a3798cb52ac0"
+  },
+  "body": {
+    "dry": true,
+    "swapType": "EXACT_INPUT",
+    "slippageTolerance": 100,
+    "originAsset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+    "destinationAsset": "nep141:wrap.near",
+    "amount": "100000000",
+    "recipient": "f5cf6e377daf813126a8d56e083697b25566aac997cb912892b188eb4004b9e1",
+    "refundTo": "0x60c4a4dc1ef774e76dce850e5610a3798cb52ac0",
+    "depositType": "ORIGIN_CHAIN",
+    "recipientType": "DESTINATION_CHAIN",
+    "refundType": "ORIGIN_CHAIN",
+    "deadline": "2026-11-14T16:03:44.874Z"
+  },
+  "response": {
+    "quote": {
+      "amountIn": "100000000",
+      "amountInFormatted": "100.0",
+      "amountInUsd": "99.961500000000",
+      "minAmountIn": "100000000",
+      "amountOut": "30982849057362346333126164",
+      "amountOutFormatted": "30.982849057362346333126164",
+      "amountOutUsd": "99.454945474133",
+      "minAmountOut": "30673020566788722869794902",
+      "timeEstimate": 47,
+      "refundFee": "300000",
+      "withdrawFee": "0"
+    },
+    "quoteRequest": {
+      "dry": true,
+      "depositMode": "SIMPLE",
+      "swapType": "EXACT_INPUT",
+      "slippageTolerance": 100,
+      "originAsset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+      "depositType": "ORIGIN_CHAIN",
+      "destinationAsset": "nep141:wrap.near",
+      "amount": "100000000",
+      "refundTo": "0x60c4a4dc1ef774e76dce850e5610a3798cb52ac0",
+      "refundType": "ORIGIN_CHAIN",
+      "recipient": "f5cf6e377daf813126a8d56e083697b25566aac997cb912892b188eb4004b9e1",
+      "recipientType": "DESTINATION_CHAIN",
+      "deadline": "2026-11-14T16:03:44.874Z",
+      "confidentiality": "public",
+      "quoteWaitingTimeMs": 0,
+      "insured": false,
+      "appFees": [
+        {
+          "recipient": "5880ad2b362620fadf759cbceb1cd5737ce8c6ed7fb8e9942881e6731f9247dd",
+          "fee": 20
+        }
+      ]
+    },
+    "signature": "ed25519:2cjmj6eriqVDqDgbJmmYzx7tH1hKKbNRgBdjhVYryV9ds7oRnZmTtN87i1FEWRJrajpaafivHqaNU1joUoKXDMF7",
+    "timestamp": "2026-11-14T16:00:45.095Z",
+    "correlationId": "763d4ae6-217a-4890-8868-fc8049c2d9f9"
+  },
+  "addressOwnership": "NEAR implicit address from project-controlled public key; EVM address from newly generated local key stored only in ignored .data. Mainnet addresses have not been funded. No mainnet transaction or signature."
+}

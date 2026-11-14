@@ -1,0 +1,48 @@
+{
+  "passed": true,
+  "origin": "http://127.0.0.1:4200",
+  "checkedAt": "2026-11-14T16:44:49.848Z",
+  "readiness": {
+    "version": "1.4.1",
+    "backendCommit": "9b8bbb27e4ca60631a9b681cf2c396d683348c6d",
+    "installation": {
+      "backendPort": 4200,
+      "apiOrigin": "http://127.0.0.1:4200",
+      "envFile": "C:\\Projects\\Orby\\backend\\.env",
+      "database": {
+        "host": "127.0.0.1",
+        "port": "5433",
+        "name": "orby"
+      }
+    },
+    "checkedAt": "2026-11-14T16:44:39.737Z",
+    "testnet": {
+      "network": "testnet",
+      "contractId": "af-contract-1793954330698.testnet",
+      "executorConfigured": true,
+      "state": "CONNECTED",
+      "message": "Server RPC, wallet RPC and deployed V3 contract verified on testnet.",
+      "action": "Connect a testnet wallet to sign in."
+    },
+    "model": {
+      "state": "UNAVAILABLE",
+      "model": "orby-qwen2.5:1.5b",
+      "provider": "OLLAMA",
+      "inferenceVerified": false
+    }
+  },
+  "modelFailure": {
+    "status": 503,
+    "body": {
+      "code": "MODEL_UNAVAILABLE",
+      "message": "The real model could not complete this request. Check the model service and retry. No deterministic result or payment was substituted.",
+      "requestId": "req-br",
+      "retryable": false
+    }
+  },
+  "jobStatePreserved": true,
+  "modelRunsPreserved": true,
+  "operationsPreserved": true,
+  "manualDatabaseChanges": false,
+  "notice": "Actual owned Ollama process stopped. No fixed result or payment substituted."
+}

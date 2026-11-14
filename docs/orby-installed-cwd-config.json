@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "cwd": "C:/Projects/Agent Freelancer",
+  "config": {
+    "envFile": "C:\\Projects\\Orby\\backend\\.env",
+    "contractId": "af-contract-1793954330698.testnet",
+    "model": "orby-qwen2.5:1.5b",
+    "provider": "OLLAMA",
+    "database": "/orby"
+  }
+}

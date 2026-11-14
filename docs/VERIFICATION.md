@@ -1,3 +1,5 @@
+Current installed-machine verification: [actual Ollama/testnet demo, failures and limits](INSTALLED_DEMO_VERIFICATION.md). The following report is historical.
+
 # Orby 1.4.1 verification - 14 November 2026
 
 The final [continuous 7:24 recording](demo-1.4.1/) passed with real AI, actual specialist hire, controlled rejection and exactly one recovery, applied recommendation revision, preserved prior output/other rows, stale-approval rejection and testnet settlement of version 1. [All 17 transactions](orby-real-mission-1.4.1.json) are CONFIRMED with explorer hashes. Four actual model delivery attempts are retained. No manual database edits were used for this financial scenario.

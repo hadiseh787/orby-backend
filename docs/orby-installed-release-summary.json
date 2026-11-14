@@ -1,0 +1,41 @@
+{
+  "checkedAt": "2026-11-14T16:53:15.274Z",
+  "status": "ACCEPTANCE_PASSED",
+  "implementationBackend": "36cf6243b5cbc2c0b250231c6bd4208c422cbd16",
+  "frontend": "184d5f412d08047dabec2ab3b4370896c0adc71f",
+  "origin": "http://127.0.0.1:4200",
+  "backendPort": 4200,
+  "database": "127.0.0.1:5433/orby",
+  "model": "orby-qwen2.5:1.5b",
+  "ollamaEndpoint": "http://127.0.0.1:11434",
+  "rpc": "https://testnet-rpc.intea.rs",
+  "walletRpc": "https://test.rpc.fastnear.com",
+  "contract": "af-contract-1793954330698.testnet",
+  "job": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+  "child": "aaf5ab66-8333-4a12-a884-496b45f3a6f9",
+  "finalTransaction": "7bhb5afqXqwjehqyWhvfrbnF1ToEUan1iGR1D2png5eE",
+  "relatedConfirmedTransactions": 17,
+  "actualModelAttempts": 4,
+  "tests": {
+    "node": 31,
+    "postgresql": 36,
+    "rust": 16,
+    "browserIsolated": 27
+  },
+  "ownerDatabaseBrowserRun": {
+    "passed": 23,
+    "failed": 4,
+    "failuresPreserved": "orby-installed-failed-rehearsal.json"
+  },
+  "sourceOnlyFreshClone": {
+    "passed": true,
+    "origin": "http://127.0.0.1:4202",
+    "model": "NOT_CONFIGURED",
+    "contract": "NOT_CONFIGURED",
+    "ownerSecretsCopied": false
+  },
+  "restartPersistenceVerified": true,
+  "simulatedFallbackClaimedAsAI": false,
+  "manualDatabaseEdits": false,
+  "video": "installed-demo/real-mission-aa117b1e-a031-4402-a5dc-f5eab770d9ec.webm"
+}

@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "origin": "http://127.0.0.1:4200",
+  "checkedAt": "2026-11-14T16:46:36.510Z",
+  "readiness": {
+    "version": "1.4.1",
+    "backendCommit": "9b8bbb27e4ca60631a9b681cf2c396d683348c6d",
+    "installation": {
+      "backendPort": 4200,
+      "apiOrigin": "http://127.0.0.1:4200",
+      "envFile": "C:\\Projects\\Orby\\backend\\.env",
+      "database": {
+        "host": "127.0.0.1",
+        "port": "5433",
+        "name": "orby"
+      }
+    },
+    "checkedAt": "2026-11-14T16:46:30.785Z",
+    "testnet": {
+      "network": "testnet",
+      "contractId": "af-contract-1793954330698.testnet",
+      "executorConfigured": true,
+      "state": "UNAVAILABLE",
+      "message": "Cannot verify the RPC response and deployed testnet contract.",
+      "action": "Check testnet RPC connectivity and contract deployment, then retry readiness. No confirmed payment is inferred."
+    },
+    "model": {
+      "state": "READY",
+      "model": "orby-qwen2.5:1.5b",
+      "provider": "OLLAMA",
+      "inferenceVerified": true,
+      "checkedAt": "2026-11-14T16:46:34.417Z"
+    }
+  },
+  "jobStatePreserved": true,
+  "modelRunsPreserved": true,
+  "operationsPreserved": true,
+  "manualDatabaseChanges": false,
+  "notice": "The same backend was restarted with its RPC address temporarily set to an unreachable loopback endpoint; no signing occurred. Owner .env is restored after this drill."
+}

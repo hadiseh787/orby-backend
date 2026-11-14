@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "origin": "http://127.0.0.1:4202",
+  "backendCommit": "9b8bbb27e4ca60631a9b681cf2c396d683348c6d",
+  "frontend": {
+    "version": "1.4.1",
+    "commit": "184d5f412d08047dabec2ab3b4370896c0adc71f",
+    "builtAt": "2026-11-14T16:43:24.618Z"
+  },
+  "clonedFromGitHub": true,
+  "priorEnv": false,
+  "priorDatabase": false,
+  "priorNodeModules": false,
+  "frontendFetchedByLauncher": true,
+  "samplesVisible": 15,
+  "readiness": {
+    "version": "1.4.1",
+    "backendCommit": "9b8bbb27e4ca60631a9b681cf2c396d683348c6d",
+    "installation": {
+      "backendPort": 4202,
+      "apiOrigin": "http://127.0.0.1:4202",
+      "envFile": "C:\\Projects\\Orby\\backend\\.data\\installed-clean-clone\\backend\\.env",
+      "database": {
+        "host": "127.0.0.1",
+        "port": "5434",
+        "name": "orby"
+      }
+    },
+    "checkedAt": "2026-11-14T16:45:55.645Z",
+    "testnet": {
+      "network": "testnet",
+      "contractId": null,
+      "executorConfigured": false,
+      "state": "NOT_CONFIGURED",
+      "message": "No testnet contract is configured in this backend installation.",
+      "action": "Set NEAR_NETWORK=testnet, NEAR_CONTRACT_ID and the deployment owner executor settings in backend .env, then restart npm run local. Source-only installs intentionally contain no private keys."
+    },
+    "model": {
+      "state": "NOT_CONFIGURED",
+      "model": null,
+      "provider": "OLLAMA"
+    }
+  },
+  "notice": "Separate source-only reproduction check on 4202/5434. No owner secrets copied. Explicitly NOT_CONFIGURED for real model/testnet; it does not replace actual 4200 owner-installation acceptance."
+}

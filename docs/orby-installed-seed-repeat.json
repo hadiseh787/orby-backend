@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "database": "orby",
+  "seedRuns": 2,
+  "samples": {
+    "jobs": 15,
+    "knowledge": 2,
+    "templates": 2,
+    "programs": [
+      {
+        "state": "PAUSED",
+        "next_run_at": null
+      }
+    ]
+  },
+  "userJobsBefore": 213,
+  "allUserJobsPreserved": true,
+  "duplicatesCreated": false,
+  "manualDatabaseEdits": false
+}

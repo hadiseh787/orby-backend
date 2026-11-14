@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-14T16:30:47.567Z",
+  "network": "testnet",
+  "jobId": "3afcbe47-4bb5-4018-9777-e5ed757accb5",
+  "rootSettlement": {
+    "award": "0",
+    "fee": "0",
+    "refund": "4400000000000000000000000",
+    "creator_credit": "0",
+    "penalty": "0",
+    "shortfall": false,
+    "fallback_used": false
+  },
+  "transactions": [
+    {
+      "method": "open_dispute",
+      "hash": "2NQXKyuq1FwDVAt2EPsRELvc8RZYuLivUqZF7GVecCwC",
+      "explorer": "https://testnet.nearblocks.io/txns/2NQXKyuq1FwDVAt2EPsRELvc8RZYuLivUqZF7GVecCwC"
+    },
+    {
+      "method": "resolve_dispute",
+      "hash": "2VLN6osoxcmTBve7hoyoL3aMBg2SuTE2DvRodE4yWBdE",
+      "explorer": "https://testnet.nearblocks.io/txns/2VLN6osoxcmTBve7hoyoL3aMBg2SuTE2DvRodE4yWBdE"
+    },
+    {
+      "method": "withdraw",
+      "hash": "yEKrJKVPxbk8rRH94rWNeRnZdLWYfYfxwmXqLg4SabS",
+      "explorer": "https://testnet.nearblocks.io/txns/yEKrJKVPxbk8rRH94rWNeRnZdLWYfYfxwmXqLg4SabS"
+    }
+  ],
+  "mainAwardNotApproved": true,
+  "immutableDeliveryNotRewritten": true,
+  "manualDatabaseEdits": false,
+  "notice": "The second Ollama rehearsal exposed an independent native Jinja/PEG schema integration failure. The root first attempt failed; recovery used its revision allowance. Normal on-chain dispute/refund and callback-confirmed withdrawal preserve all attempts and specialist payout. No acceptance, assertion or database row was rewritten."
+}

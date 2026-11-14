@@ -1,0 +1,78 @@
+{
+  "origin": "http://127.0.0.1:4200",
+  "checkedAt": "2026-11-14T16:52:16.775Z",
+  "readiness": {
+    "version": "1.4.1",
+    "backendCommit": "36cf6243b5cbc2c0b250231c6bd4208c422cbd16",
+    "installation": {
+      "backendPort": 4200,
+      "apiOrigin": "http://127.0.0.1:4200",
+      "envFile": "C:\\Projects\\Orby\\backend\\.env",
+      "database": {
+        "host": "127.0.0.1",
+        "port": "5433",
+        "name": "orby"
+      }
+    },
+    "checkedAt": "2026-11-14T16:52:21.498Z",
+    "testnet": {
+      "network": "testnet",
+      "contractId": "af-contract-1793954330698.testnet",
+      "executorConfigured": true,
+      "state": "CONNECTED",
+      "message": "Server RPC, wallet RPC and deployed V3 contract verified on testnet.",
+      "action": "Connect a testnet wallet to sign in."
+    },
+    "model": {
+      "state": "READY",
+      "model": "orby-qwen2.5:1.5b",
+      "provider": "OLLAMA",
+      "inferenceVerified": true,
+      "checkedAt": "2026-11-14T16:52:25.923Z"
+    }
+  },
+  "browserRecheckClicked": true,
+  "frontend": {
+    "version": "1.4.1",
+    "commit": "184d5f412d08047dabec2ab3b4370896c0adc71f",
+    "builtAt": "2026-11-14T16:48:45.143Z"
+  },
+  "samples": {
+    "visibleJobs": 15,
+    "account": "samples.demo",
+    "sampleLabels": true,
+    "database": "orby"
+  },
+  "quote": {
+    "sameInputAsDirect": true,
+    "result": {
+      "dry": true,
+      "network": "MAINNET_PREVIEW_ONLY",
+      "receivedAt": "2026-11-14T16:52:27.710Z",
+      "expiresAt": "2026-11-14T16:55:26.976Z",
+      "originAsset": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+      "destinationAsset": "nep141:wrap.near",
+      "amountIn": "100000000",
+      "amountInFormatted": "100.0",
+      "estimatedReceived": "32167027208928386456030968",
+      "estimatedReceivedFormatted": "32.167027208928386456030968",
+      "minimumReceived": "31845356936839102591470658",
+      "amountInUsd": "99.963600000000",
+      "amountOutUsd": "99.396114075589",
+      "fees": null,
+      "feeNotice": "Provider has not itemized route fees; do not interpret this as zero fees. Estimated/minimum received amounts are net quote observations.",
+      "platformSurchargeEstimate": {
+        "basis": "PUBLISHED_UNAUTHENTICATED_RATE_ESTIMATE_NOT_TOTAL_FEES",
+        "basisPoints": 25,
+        "amountAtomic": "250000",
+        "assetId": "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+        "source": "https://docs.agentsonintents.com/resources/fees",
+        "asOf": "2026-11-14"
+      },
+      "timeEstimate": 45,
+      "balanceEffect": "NONE",
+      "notice": "Safe Mode: no deposit address, signature, transfer, execution or balance credit."
+    },
+    "balancesUnchanged": true
+  }
+}

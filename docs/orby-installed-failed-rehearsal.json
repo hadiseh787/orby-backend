@@ -1,0 +1,25 @@
+{
+  "jobId": "f2395087-8dea-427a-b940-657a3ab9cf2f",
+  "passed": false,
+  "cause": "Concurrent uncapped health probes overloaded Ollama during stress testing. A separate schema grammar defect allowed JSON delimiters/control characters inside the recommendation word pattern. Both failures were recorded explicitly; no fallback result was accepted.",
+  "checksNotDisabled": true,
+  "manualDatabaseChanges": false,
+  "resolution": "Normal on-chain dispute, zero main award, full root refund and callback-confirmed withdrawal. Specialist payment and immutable failed/accepted attempts preserved.",
+  "fix": "Health inference uses a provider/model keyed single-flight promise and a 10-second result cache. Explicit Settings Recheck bypasses cached success. 25 simultaneous checks now require one inference in regression test.",
+  "refundEvidence": "orby-installed-overload-refund.json",
+  "browserSuite": {
+    "passed": 23,
+    "failed": 4,
+    "failedTests": [
+      "layout admin loading within 5 seconds",
+      "quality report count beyond 20-item API window",
+      "knowledge-funded job exceeding existing writer concurrent-bond policy",
+      "knowledge create beyond existing 25-collection quota"
+    ]
+  },
+  "notice": "Failures are retained. No test assertion, balance, delivery or acceptance row was edited to claim a pass.",
+  "additionalFailedJob": "3afcbe47-4bb5-4018-9777-e5ed757accb5",
+  "additionalRefundEvidence": "orby-installed-parser-refund.json",
+  "finalFix": "Provider/model keyed single-flight health checks, explicit Go ChatML model rendering and a JSON-safe word grammar that excludes quote, backslash and control whitespace. Actual 11434 model-only preflight passed twice plus a real revision before the fresh financial run.",
+  "regressionNote": "The four long-lived-owner-database failures are retained above. All unchanged 27 browser assertions then passed in a newly seeded disposable simulation database on 4201. This regression fixture result does not substitute for the real owner-installation scenario on 4200."
+}

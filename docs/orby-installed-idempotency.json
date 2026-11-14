@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "origin": "http://127.0.0.1:4200",
+  "jobId": "aa117b1e-a031-4402-a5dc-f5eab770d9ec",
+  "checkedAt": "2026-11-14T16:52:23.790Z",
+  "concurrentApprovalReplays": 2,
+  "repeatedFinalTransactionReconciliations": 2,
+  "operations": 17,
+  "modelAttempts": 4,
+  "chainSettlementUnchanged": true,
+  "clientBalanceUnchanged": true,
+  "newSignatureOrTransfer": false,
+  "manualDatabaseChanges": false
+}

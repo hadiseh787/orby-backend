@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "origin": "http://127.0.0.1:4200",
+  "concurrentChecks": 25,
+  "inferenceRequests": 1,
+  "durationMs": 669,
+  "model": "orby-qwen2.5:1.5b",
+  "checkedAt": "2026-11-14T16:16:22.679Z"
+}
