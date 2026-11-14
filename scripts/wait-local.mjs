@@ -1,0 +1,1 @@
+﻿for(let n=0;n<300;n++){try{const r=await fetch('http://127.0.0.1:4200/api/v1/health');if(r.ok){console.log('Local application ready');process.exit(0)}}catch{}await new Promise(r=>setTimeout(r,1000))}throw Error('Local application failed to start. Inspect .data/mac-launch.log privately.');

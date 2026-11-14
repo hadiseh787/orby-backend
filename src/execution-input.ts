@@ -1,3 +1,4 @@
+import {catalogAgent} from './catalog.js';
 import {randomUUID} from 'node:crypto';
 import {hash,assert} from './domain.js';
 import {type DB} from './db.js';
@@ -10,7 +11,7 @@ export function scopedChildInput(input:any,agentId:string){
 }
 export function executionInput(job:any,derived?:any){
  const original=job.data?.input||job.input||{},data=job.data||job;
- return {...original,...derived,schemaVersion:inputSchemaVersion,knowledge:original.knowledge||[],brief:data.description,criteria:data.criteria||[],...(data.revisionFeedback?{revisionFeedback:data.revisionFeedback}:{})};
+ return {...original,...derived,...(data.catalogRevision>=2?{agentRole:catalogAgent(job.agent_id||data.agentId)?.instructions||null}:{}),schemaVersion:inputSchemaVersion,knowledge:original.knowledge||[],brief:data.description,criteria:data.criteria||[],...(data.revisionFeedback?{revisionFeedback:data.revisionFeedback}:{})};
 }
 export async function recordInputManifest(db:DB,job:any,input:any,runKey:string){
  const granted=(await db.query('SELECT snapshot_id,active FROM knowledge_grants WHERE job_id=$1 AND recipient=$2',[job.parent_id||job.id,job.parent_id?job.agent_id:'MAIN'])).rows;

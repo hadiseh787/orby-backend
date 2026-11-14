@@ -1,3 +1,4 @@
+import {catalogAgent,scenarios} from './catalog.js';
 import {readiness,testnetHealth} from './readiness.js';
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
@@ -180,7 +181,7 @@ export async function buildApp() {
   });
   app.get("/api/v1/health", async () => {
     await pool.query("SELECT 1");
-    return { status: "ok", database: "postgresql", version: "1.4.1" };
+    return { status: "ok", database: "postgresql", version: "1.5.0" };
   });
   app.get("/api/v1/templates", async () => ({
     templates: [
@@ -204,6 +205,7 @@ export async function buildApp() {
       },
     ],
   }));
+  app.get('/api/v1/scenarios',async()=>({scenarios:scenarios.map(s=>({...s,preview:deterministicBrief(s.input),executionNotice:'Demo / Sample preview. Deterministic illustration, not a live model run or paid result.'}))}));
   app.get("/api/v1/agents", async (req: any) => {
     const book = req.query.book === "TESTNET" ? "TESTNET" : "SIMULATION";
     const rows = (
@@ -254,8 +256,8 @@ export async function buildApp() {
       displayMinPriceNear:r.data.minPriceNear||await agreementPrice(book).then(p=>agentMinimum(r.data,true,p.priceMicro)).catch(()=>null),
       records:records.map(x=>{const allowed=viewer?.book===book&&(viewer.id===x.client_id||viewer.id===r.owner_id||viewer.roles.includes('admin'));return {id:x.id,state:x.state,created_at:x.created_at,title:allowed?x.title:'Completed '+(x.category||'agent')+' work',url:allowed?'/client/jobs/'+x.id:null};}),
       sampleRecords:book==='SIMULATION'?(await pool.query("SELECT id,state,data->>'title' AS title FROM jobs WHERE agent_id=$1 AND book='SIMULATION' AND data->>'seededExample' LIKE 'rich-v1-%' ORDER BY created_at DESC",[r.id])).rows.map(x=>({...x,url:viewer?.book===book&&(viewer.id==='samples.demo'||viewer.id===r.owner_id||viewer.roles.includes('admin'))?'/client/jobs/'+x.id:null})):[],
-      example:{sources:[{id:'sample-a',text:'Proposal A has a clear scope and testing milestones.'},{id:'sample-b',text:'Proposal B has a lower budget but an uncertain support plan.'}]},
-      sampleOutput:deterministicBrief({sources:[{id:'sample-a',text:'Proposal A has a clear scope and testing milestones.'},{id:'sample-b',text:'Proposal B has a lower budget but an uncertain support plan.'}]}),
+      example:catalogAgent(r.id)?.example||{sources:[{id:'sample-a',text:'Proposal A has a clear scope and testing milestones.'},{id:'sample-b',text:'Proposal B has a lower budget but an uncertain support plan.'}]},
+      sampleOutput:deterministicBrief(catalogAgent(r.id)?.example||{sources:[{id:'sample-a',text:'Proposal A has a clear scope and testing milestones.'},{id:'sample-b',text:'Proposal B has a lower budget but an uncertain support plan.'}]}),
     };
   });
   mutation("/agents", async (db, a, b) => {

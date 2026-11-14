@@ -1,0 +1,49 @@
+﻿name: Native macOS independent acceptance
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apple-silicon:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: npm
+      - name: Require native Apple Silicon
+        run: |
+          test "$(uname -m)" = arm64
+          node -e "if(process.platform!=='darwin'||process.arch!=='arm64')process.exit(1)"
+      - run: npm ci --no-audit --no-fund
+      - name: Install and accept real model without owner secrets
+        run: npm run setup:model
+      - name: Provision independently owned testnet installation
+        run: npm run setup:testnet
+      - name: Start the complete installation
+        run: |
+          node scripts/local.mjs --no-browser > .data/mac-launch.log 2>&1 &
+          echo $! > .data/mac-launch.pid
+          node scripts/wait-local.mjs
+      - name: Install browser for the paired frontend
+        run: |
+          cd .workspace/frontend
+          npx playwright install chromium
+      - name: Real model and testnet acceptance with new local keys
+        run: node --import tsx tests/mac-acceptance.ts --run
+      - name: New specialist deliveries, seed repeatability and restart preservation
+        run: node --import tsx tests/portable-catalog-acceptance.ts
+      - name: Stop only this installation
+        if: always()
+        run: node scripts/local.mjs --stop
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-mac-public-evidence
+          path: |
+            docs/mac-acceptance/
+            docs/orby-mac-acceptance.json
+            docs/orby-portable-catalog-acceptance.json
+          if-no-files-found: ignore

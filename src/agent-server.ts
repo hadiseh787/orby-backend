@@ -1,14 +1,11 @@
+import {catalog} from './catalog.js';
 import Fastify from "fastify";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { hash, assert } from "./domain.js";
 import { verifyRuntime, runModel } from "./runtime.js";
-export const localAgents = [
-  { id: "brief-writer", port: 4101, price: "20000000" },
-  { id: "source-extractor", port: 4102, price: "5000000" },
-  { id: "format-reviewer", port: 4103, price: "2000000" },
-];
+export const localAgents=catalog.map((a,i)=>({id:a.id,port:4101+i,price:a.minPriceUsdMicro}));
 export async function buildAgent(id: string, secret: string) {
   const spec = localAgents.find((a) => a.id === id);
   assert(spec, "UNKNOWN_AGENT", "Unknown local runtime.");

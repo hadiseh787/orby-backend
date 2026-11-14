@@ -1,0 +1,19 @@
+{
+  "contractVersion": 3,
+  "source": "contracts/orby-market",
+  "notice": "Versioned WASM for independent macOS/Windows setup. Verify SHA-256 before deployment. No signing credentials.",
+  "artifacts": [
+    {
+      "file": "orby_market.wasm",
+      "bytes": 422738,
+      "sha256": "676076b76abaf05c69a029b009534c56f43b35951dd7cff6ec75a6f1a59fdf5d",
+      "codeHash": "7xYJk1AzN3NQqrFt3R5vSrqDKLAuXVbxMPud2CARSa2x"
+    },
+    {
+      "file": "uploader.wasm",
+      "bytes": 40422,
+      "sha256": "3c5ea5219ea061b320c74832f38e8097904e9cec061fab4dc03cd74301ab9a32",
+      "codeHash": "54fAer3ekAR6Hi6X6P7mSp4NJwTRXWUraKztdrySWkHo"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import {findOllama,installationHelp} from './setup-support.mjs';
 import {existsSync,readFileSync,mkdirSync,writeFileSync,rmSync,openSync,closeSync,readdirSync} from 'node:fs';
 import {resolve,dirname,join} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
@@ -124,8 +125,8 @@ try{
   if(env.LLM_PROVIDER==='OLLAMA'&&env.OLLAMA_MODEL){
     const endpoint=env.OLLAMA_URL||'http://127.0.0.1:11434';
     if(!await healthy(endpoint+'/api/tags')){
-      const executable=env.OLLAMA_EXECUTABLE||resolve('.tools/ollama/ollama.exe');if(!existsSync(executable))throw Error('Ollama is unavailable. Run npm run demo:model:setup.');
-      const modelOut=openSync('.data/ollama.stdout.log','a'),modelErr=openSync('.data/ollama.stderr.log','a');const child=spawn(executable,['serve'],{cwd:root,env:{...env,OLLAMA_HOST:'127.0.0.1:11434',OLLAMA_NO_CLOUD:'1',OLLAMA_GO_TEMPLATE:'1'},stdio:['ignore',modelOut,modelErr],windowsHide:true});closeSync(modelOut);closeSync(modelErr);children.push({name:'ollama',child});child.on('error',e=>console.error('Ollama:',e.message));
+      const executable=findOllama(env);if(!executable)throw Error(installationHelp());
+      const modelOut=openSync('.data/ollama.stdout.log','a'),modelErr=openSync('.data/ollama.stderr.log','a');const child=spawn(executable,['serve'],{cwd:root,env:{...env,OLLAMA_HOST:new URL(endpoint).host,OLLAMA_NO_CLOUD:'1',OLLAMA_GO_TEMPLATE:'1'},stdio:['ignore',modelOut,modelErr],windowsHide:true});closeSync(modelOut);closeSync(modelErr);children.push({name:'ollama',child});child.on('error',e=>console.error('Ollama:',e.message));
       let ready=false;for(let n=0;n<60;n++){if(await healthy(endpoint+'/api/tags')){ready=true;break;}await delay(1000);}if(!ready)throw Error('Ollama did not start.');
     }
   }
