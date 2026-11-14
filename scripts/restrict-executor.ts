@@ -1,15 +1,4 @@
-import 'dotenv/config';
-import {readFile,writeFile} from 'node:fs/promises';
-import {existsSync} from 'node:fs';
-import {connect,keyStores,KeyPair,utils} from 'near-api-js';
+// Compatibility entry point: reconcile the existing owned deployment and limited signer safely.
 import {config} from '../src/config.js';
-const accounts=JSON.parse(await readFile('.data/near/accounts.json','utf8'));
-const file='.data/near/executor-limited.json';
-const key=existsSync(file)?KeyPair.fromString(JSON.parse(await readFile(file,'utf8')).privateKey):KeyPair.fromRandom('ed25519');
-await writeFile(file,JSON.stringify({accountId:accounts.executor.accountId,privateKey:key.toString(),publicKey:key.getPublicKey().toString()},null,2));
-const keyStore=new keyStores.InMemoryKeyStore();await keyStore.setKey('testnet',accounts.executor.accountId,KeyPair.fromString(accounts.executor.privateKey));
-const near=await connect({networkId:'testnet',nodeUrl:config.rpc,keyStore}),account=await near.account(accounts.executor.accountId);
-const methods=['record_bid','start_job','fund_child','submit_delivery','record_checks','claim_due_transition'];
-const keys=await account.getAccessKeys();if(!keys.some(k=>k.public_key===key.getPublicKey().toString()))await account.addKey(key.getPublicKey(),config.contract,methods,BigInt(utils.format.parseNearAmount('0.5')!));
-const env=await readFile('.env','utf8');await writeFile('.env',env.replace(/^NEAR_SERVICE_PRIVATE_KEY=.*$/m,'NEAR_SERVICE_PRIVATE_KEY='+key.toString()));
-console.log('Executor restricted to six contract methods, no attached deposits, and a 0.5 testNEAR gas allowance.');
+if(!config.contract)throw Error('Configure an owned deployment with npm run setup:testnet first. No runtime key was changed.');
+await import('./setup-testnet.js');

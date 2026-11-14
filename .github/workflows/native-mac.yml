@@ -27,6 +27,8 @@ jobs:
           node scripts/local.mjs --no-browser > .data/mac-launch.log 2>&1 &
           echo $! > .data/mac-launch.pid
           node scripts/wait-local.mjs
+      - name: Repeat setup without changing existing jobs or model/database settings
+        run: node --import tsx tests/testnet-setup-repeat.ts
       - name: Install browser for the paired frontend
         run: |
           cd .workspace/frontend
@@ -38,6 +40,9 @@ jobs:
       - name: Stop only this installation
         if: always()
         run: node scripts/local.mjs --stop
+      - name: Export only public diagnostics
+        if: always()
+        run: node scripts/collect-public-acceptance.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -46,4 +51,5 @@ jobs:
             docs/mac-acceptance/
             docs/orby-mac-acceptance.json
             docs/orby-portable-catalog-acceptance.json
+            docs/orby-portable-repeat.json
           if-no-files-found: ignore

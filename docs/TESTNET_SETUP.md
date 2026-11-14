@@ -1,33 +1,22 @@
-﻿# Independent NEAR testnet setup
+# Independent NEAR testnet setup
 
-Cloning source does not grant access to the owner's signer. The installed owner demonstration is already deployed; do not redeploy it merely to run the local UI. Independent deployments need their own accounts, keys, balances and V3 WASM.
+Use Node 24 with npm (22.19+ also supported), Git and internet. macOS Apple Silicon and Windows use the same commands from the backend folder. Rust and PowerShell are not required for the versioned demo artifacts.
 
-Use Node.js 22.19+ or 24, Rust/cargo with `wasm32-unknown-unknown`, and the platform compiler required by near-sdk 5.30.1. The repository pins Rust dependencies in Cargo.lock.
-
-```powershell
-rustup target add wasm32-unknown-unknown
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-contract.ps1
-npm.cmd run contract:optimize
+```sh
+npm ci
+npm run setup:model
+npm run setup:testnet
+npm run local
 ```
 
-Inspect `scripts/deploy.ts` before invoking `npm.cmd run near:deploy`. It creates project-specific accounts through the public TESTNET faucet only when absent, saves generated credentials in ignored `.data/near/accounts.json`, deploys the compiled contract, calls the actual `new({admin,evaluator,updater,accelerated:true})` initializer, registers agents and policies and funds development testnet balances. Faucet availability and required test tokens are external dependencies; the tool fails explicitly rather than pretending an account exists. Back up your existing local key files before running a deployment against an existing workspace.
+Keep the existing .env and .data/postgres. Setup creates local testnet identities only when absent, checkpoints them before contacting the public faucet, verifies WASM checksums, deploys/initializes V3, synchronizes eight manifests, policies, prices and creator balances, installs a separate six-method limited executor key, and verifies mission readiness. Healthy existing contracts are retained. Existing jobs, database credentials and model configuration are preserved. No private Windows file is required or distributed.
 
-The deployment script writes backend `.env` with these loader-supported settings:
+The loader-supported settings are NEAR_NETWORK, NEAR_RPC_URL, NEAR_WALLET_RPC_URL, NEAR_CONTRACT_ID, NEAR_SERVICE_ACCOUNT, NEAR_SERVICE_PRIVATE_KEY and NEAR_ADMIN_ACCOUNT. Setup writes real locally generated values after validation; placeholders and a public contract ID do not supply signing authority. A configured external deployment without matching authorization is not silently replaced.
 
-```
-NEAR_NETWORK=testnet
-NEAR_RPC_URL=https://test.rpc.fastnear.com
-NEAR_WALLET_RPC_URL=https://test.rpc.fastnear.com
-NEAR_CONTRACT_ID=<your deployed V3 contract>
-NEAR_SERVICE_ACCOUNT=<your executor account>
-NEAR_SERVICE_PRIVATE_KEY=<your locally stored limited function-call key>
-NEAR_ADMIN_ACCOUNT=<your admin account>
-```
+The runtime function-call key permits only record_bid, start_job, fund_child, submit_delivery, record_checks and claim_due_transition on the selected contract, with a finite gas allowance. Deployment/admin owner keys remain in ignored local owner-only files and are never used as runtime authority. Do not publish .env, .data/near/accounts.json, executor-limited.json or setup-state.json. The latter can contain pending preauthorized signed bytes.
 
-Values above are placeholders, not working credentials. Source-only clones do not distribute the project keys. An existing configuration must not be overwritten with placeholders. The key used by backend must be the exact private key corresponding to its on-chain function-call access key; CLI keychain storage alone does not configure backend.
+On interruption, rerun the same command. Pending hashes are reconciled before retry; only identical signed bytes can be rebroadcast. Successful stages are not repaid. A final failed transaction needs cause repair and explicit --retry-failed. Faucet/RPC availability and test tokens are external requirements. The command prints a safe stage, error code and recovery action.
 
-The service key is separate from deployment/admin authority. The verified owner key permits only `record_bid`, `start_job`, `fund_child`, `submit_delivery`, `record_checks` and `claim_due_transition` on the exact contract. Inspect an independent deployment's access-key permissions and the matching policy `executor` before claiming readiness. After an independent deployment run `node --import tsx scripts/restrict-executor.ts` from backend. It generates a separate local function-call key, adds the six-method permission with a 0.5 testNEAR gas allowance and updates only the backend executor key. Verify permissions on chain and restart the backend. The full-access account owner key remains a private development fixture; never configure it as the runtime signer or publish it.
+npm run near:deploy and scripts/deploy.ts now route through the same safe provisioner. Automatic --upgrade-only code replacement is deliberately rejected. scripts/restrict-executor.ts reconciles an already configured owned deployment through the same permission checks; it cannot provision an unidentified public contract.
 
-Restart `npm.cmd run local`. Settings > Recheck connections must verify testnet RPC, a deployed contract with `get_version()==3`, and a real model. For real acceptance use your testnet wallet for NEP-413 sign-in and transaction signatures; fund that wallet using your own faucet/test balances. Confirm final RPC outcomes and settlement/withdrawal callbacks, not just a transaction hash. Mainnet coins and signing keys are never required.
-
-Official references: [NEAR CLI](https://docs.near.org/tools/near-cli), [NEAR RPC](https://docs.near.org/api/rpc/introduction). Development scripts and fixture keys are for local testnet work, not a production key-management design.
+Settings distinguishes connectivity from actual mission readiness. A funded client must still review and sign its own escrow. Use the [README](../README.md) for the complete independent Mac procedure and [portable recovery guide](PORTABLE_SETUP.md) for stage-specific repairs, versioned artifacts and acceptance commands.
