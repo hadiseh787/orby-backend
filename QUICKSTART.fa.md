@@ -1,41 +1,59 @@
-# Orby 1.4.1
+# راه اندازی نسخه ۱٫۵ Orby
 
-Current guide: [Complete real demo and setup](docs/RELIABILITY_1_4_1.fa.md). Run `npm run local` from backend. While the local database is running, `npm run demo:seed:samples` adds the isolated 15-job Demo / Sample workspace.
+این صفحه، ورودی فعلی راه‌اندازی است. هر دو مخزن بک‌اند و فرانت‌اند عمومی‌اند؛ راهنماهای نسخه‌های ۱٫۴ و ۱٫۴٫۱ مدارک تاریخی‌اند و نباید به‌عنوان دستور فعلی نصب استفاده شوند.
 
-## Historical entry notes
+- [راهنمای کامل فارسی مک](docs/QUICKSTART_MAC.fa.md)
+- [README کامل و پیش‌نیازها](README.md)
+- [راهنمای داور و نتیجهٔ مورد انتظار هر مرحله](docs/JUDGES_GUIDE.md)
+- [ویدئوی واقعی و مدارک پذیرش مک مستقل](docs/mac-acceptance/README.md)
+- [گزارش پذیرش و محدودیت‌ها](docs/PORTABLE_RELEASE.md)
 
-# Orby 1.4
+## پیش نیاز
 
-Run `npm run local` from the backend folder. It starts PostgreSQL, API, worker, Angular and an already configured local model. Stop with `npm run local:stop`. First-time Windows real-model setup: stop the application, run `npm run demo:model:setup`, then `npm run local`. See [the exact real-demo steps](docs/DEMO_1_4.fa.md). No secrets are distributed; real testnet requires your own deployment/executor configuration.
+Git و Node.js نسخهٔ ۲۴ LTS همراه npm؛ یا نسخهٔ ۲۲٫۱۹ به بالا در شاخهٔ ۲۲. Node 26 توسط راه‌انداز پشتیبانی نمی‌شود. نصب اولیه اینترنت و چند گیگابایت فضای آزاد برای مدل می‌خواهد. کاربر معمولی سیستم باشید؛ PostgreSQL محلی با root اجرا نمی‌شود.
 
-# اجرای محلی
+برای دموی آماده، Angular CLI سراسری، Docker، دیتابیس جداگانه، Rust یا PowerShell روی مک لازم نیست. برای Linux، Ollama رسمی جداگانه نصب شود؛ نتیجهٔ پذیرش مک به معنی تست Linux نیست.
 
-Historical 1.3: the startup command is unchanged. Run `npm run local` from the backend folder. It starts PostgreSQL, API, worker and Angular together. New tools are in Workspace tools; receipts are in each job. Full review-v2 report: `docs/REVIEW_V2_RELEASE.fa.md`.
+## نصب تازه با مدل و تست نت
 
-پیش‌نیاز: Git و Node.js نسخهٔ 24 همراه npm. نصب جداگانهٔ Angular، PostgreSQL، Docker، Rust یا Ollama برای اجرای محلی لازم نیست.
+هر دستور را فقط پس از موفقیت دستور قبلی اجرا کنید:
 
-هر دو ریپو خصوصی‌اند؛ اکانت GitHub اجراکننده باید به هر دو دسترسی داشته باشد و Git با همان اکانت وارد شده باشد. نصب اول اینترنت می‌خواهد.
-
-```powershell
+```sh
 git clone https://github.com/hadiseh787/orby-backend.git
 cd orby-backend
+npm ci
+npm run setup:model
+npm run setup:testnet
 npm run local
 ```
 
-در ویندوز به‌جای دستور آخر می‌توان روی `start-local.cmd` دوبارکلیک کرد. نصب وابستگی‌ها، دریافت نسخهٔ هماهنگ فرانت، ساخت برنامه، ایجاد تنظیمات و دیتابیس، migration و دادهٔ اولیه خودکار انجام می‌شود. فرانت، API و worker با همان یک ترمینال اجرا می‌شوند. ترمینال را باز نگه دارید.
+`setup:testnet` حساب‌ها و کلیدهای توسعه را روی همین دستگاه تولید می‌کند و تراکنش‌های واقعی تست‌نت برای استقرار و تنظیم قرارداد می‌فرستد. آدرس عمومی قرارداد شخص دیگر اختیار امضا نمی‌دهد. کلیدها داخل Git نیستند. موجودی faucet و ارتباط RPC باید در دسترس باشند.
 
-آدرس برنامه: **http://127.0.0.1:4200**
+## به روزرسانی نصب موجود
 
-برای ورود، `Open local demo` و حساب `Alex · Client` را انتخاب کنید. این محیط با موجودی شبیه‌سازی اجرا می‌شود و کیف پول نمی‌خواهد.
+از پوشهٔ واقعی بک‌اند، اجرای قبلی را متوقف کنید و این مراحل را انجام دهید:
 
-توقف: `Ctrl+C` در ترمینال، `npm run local:stop` یا فایل `stop-local.cmd`. اجرای دوباره اطلاعات قبلی را حفظ می‌کند. دیتابیس در `.data/postgres` ذخیره می‌شود.
-
-اگر هر دو ریپو را ZIP گرفته‌اید، آن‌ها را کنار هم استخراج کنید؛ در این حالت برای اجرا فقط Node.js همراه npm لازم است. نام‌های پوشهٔ GitHub مانند `orby-frontend-main` هم شناسایی می‌شوند.
-
-اگر پورت‌ها اشغال‌اند:
-
-```powershell
-node scripts/local.mjs --port 4300 --db-port 5434
+```sh
+npm run local:stop
+git pull --ff-only
+npm ci
+npm run setup:model
+npm run setup:testnet
+npm run local
 ```
 
-فایل‌های خصوصی و کلیدهای تست‌نت داخل ریپو قرار ندارند. اجرای واقعی تست‌نت تنظیمات و کلیدهای مخصوص خودش را می‌خواهد؛ تولید خروجی با مدل زبانی هم به Ollama و مدل نصب‌شده نیاز دارد. اجرای پیش‌فرض از ایجنت قطعی محلی استفاده می‌کند. جزئیات پیاده‌سازی و محدودهٔ تست در `docs/VERIFICATION.md` ثبت شده است.
+فایل `.env`، پوشهٔ `.data/postgres` و فایل‌های خصوصی `.data/near` را نگه دارید. تغییرات محلی Git را پیش از به‌روزرسانی حفظ کنید. جایگزینی تنظیمات با نمونهٔ خالی، حذف دیتابیس یا reset سخت بخشی از راه‌اندازی نیست.
+
+در ویندوز می‌توان از `npm.cmd` استفاده کرد. نشانی برنامه **http://127.0.0.1:4200** است؛ فرانت هماهنگ، API، worker، دیتابیس و مدل پیکربندی‌شده از همین اجرا بالا می‌آیند. ترمینال را باز نگه دارید. توقف با Ctrl+C یا `npm run local:stop` و اجرای بعدی فقط با `npm run local` است.
+
+## چه نتیجه ای باید ببینید
+
+در Settings، روی Recheck connections بزنید. مسیر تنظیمات و نسخهٔ واقعی برنامه را ببینید. قرارداد باید CONNECTED، مأموریت READY و مدل READY باشد. اتصال قرارداد به‌تنهایی آمادگی مأموریت نیست. بررسی واقعی مدل شامل JSON و Revision است و بار اول می‌تواند چند دقیقه طول بکشد.
+
+برای شبیه‌سازی، می‌توان دو دستور setup را انجام نداد و فقط `npm run local` را اجرا کرد. با حساب نمونه وارد شوید؛ simNEAR موجودی شبیه‌سازی است و خروجی deterministic، اجرای واقعی مدل نیست. اجرای واقعی مدل با موجودی شبیه‌سازی نیز از تسویهٔ تست‌نت جداست.
+
+برای مأموریت تست‌نت، کیف‌پول تست‌نت خودتان را با موجودی کافی وصل کنید. توافق، برنامه و سقف escrow را بررسی و امضا کنید. تحویل، Revision 1 و مبلغ تسویه را بازبینی کنید؛ رسید واقعی باید VERIFIED_CONTRACT_STATE و تراکنش نهایی داشته باشد. ویدئوی پذیرش از کیف‌پول توسعهٔ خودکار استفاده می‌کند و کلیک انسانی در HOT/Meteor را ادعا نمی‌کند.
+
+Intents فقط Quote واقعی مین‌نت با `dry:true` است؛ انتقال وجه، امضا یا شارژ موجودی ندارد. Google Sheets بدون OAuth غیرفعال می‌ماند. شرح رفع خطاهای faucet، RPC، مدل، کلید و دیتابیس در [راهنمای بازیابی](docs/PORTABLE_SETUP.md) است.
+
+آماده‌سازی مخزن به معنی ثبت مسابقه نیست. پست ویدئویی عمومی X، اطلاعات نهایی تیم و تأیید ارسال یک‌باره هنوز باید طبق [چک‌لیست مسابقه](docs/SUBMISSION.md) تکمیل شوند.
