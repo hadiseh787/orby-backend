@@ -87,3 +87,5 @@ Historical Windows-only proof is retained in [the prior verification](docs/INSTA
 ## License and scope
 
 Source: [MIT](LICENSE). Ollama/Qwen retain upstream licenses. No owner secret is distributed, including through CI evidence. RPC/faucet/provider availability and client testnet funding remain external prerequisites. No production hosting, mainnet payments/lending, TEE, multisig or new large finance module is included. Publishing source does not submit a contest entry or post to social networks.
+
+Cold model verification runs actual schema and revision inference; on native CPU-only installations the first check can take several minutes. The UI keeps CHECKING visible and permits up to seven minutes for full readiness, then shows a specific failure instead of enabling REAL_AI prematurely. Verified compatibility is cached briefly for the same model digest; explicit checks still verify current service availability.
